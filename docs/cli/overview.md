@@ -3,12 +3,12 @@ title: CLI Overview
 summary: CLI installation and setup
 ---
 
-The Paperclip CLI handles instance setup, diagnostics, and control-plane operations.
+The FideliOS CLI handles instance setup, diagnostics, and control-plane operations.
 
 ## Usage
 
 ```sh
-pnpm paperclipai --help
+pnpm fidelios --help
 ```
 
 ## Global Options
@@ -17,7 +17,7 @@ All commands support:
 
 | Flag | Description |
 |------|-------------|
-| `--data-dir <path>` | Local Paperclip data root (isolates from `~/.paperclip`) |
+| `--data-dir <path>` | Local FideliOS data root (isolates from `~/.fidelios`) |
 | `--api-base <url>` | API base URL |
 | `--api-key <token>` | API authentication token |
 | `--context <path>` | Context file path |
@@ -29,7 +29,7 @@ Company-scoped commands also accept `--company-id <id>`.
 For clean local instances, pass `--data-dir` on the command you run:
 
 ```sh
-pnpm paperclipai run --data-dir ./tmp/paperclip-dev
+pnpm fidelios run --data-dir ./tmp/fidelios-dev
 ```
 
 ## Context Profiles
@@ -38,26 +38,26 @@ Store defaults to avoid repeating flags:
 
 ```sh
 # Set defaults
-pnpm paperclipai context set --api-base http://localhost:3100 --company-id <id>
+pnpm fidelios context set --api-base http://localhost:3100 --company-id <id>
 
 # View current context
-pnpm paperclipai context show
+pnpm fidelios context show
 
 # List profiles
-pnpm paperclipai context list
+pnpm fidelios context list
 
 # Switch profile
-pnpm paperclipai context use default
+pnpm fidelios context use default
 ```
 
 To avoid storing secrets in context, use an env var:
 
 ```sh
-pnpm paperclipai context set --api-key-env-var-name PAPERCLIP_API_KEY
-export PAPERCLIP_API_KEY=...
+pnpm fidelios context set --api-key-env-var-name FIDELIOS_API_KEY
+export FIDELIOS_API_KEY=...
 ```
 
-Context is stored at `~/.paperclip/context.json`.
+Context is stored at `~/.fidelios/context.json`.
 
 ## Command Categories
 

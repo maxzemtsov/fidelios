@@ -1,6 +1,6 @@
 # CLI Reference
 
-Paperclip CLI now supports both:
+FideliOS CLI now supports both:
 
 - instance setup/diagnostics (`onboard`, `doctor`, `configure`, `env`, `allowed-hostname`)
 - control-plane client operations (issues, approvals, agents, activity, dashboard)
@@ -10,19 +10,19 @@ Paperclip CLI now supports both:
 Use repo script in development:
 
 ```sh
-pnpm paperclipai --help
+pnpm fidelios --help
 ```
 
 First-time local bootstrap + run:
 
 ```sh
-pnpm paperclipai run
+pnpm fidelios run
 ```
 
 Choose local instance:
 
 ```sh
-pnpm paperclipai run --instance dev
+pnpm fidelios run --instance dev
 ```
 
 ## Deployment Modes
@@ -31,16 +31,16 @@ Mode taxonomy and design intent are documented in `doc/DEPLOYMENT-MODES.md`.
 
 Current CLI behavior:
 
-- `paperclipai onboard` and `paperclipai configure --section server` set deployment mode in config
-- runtime can override mode with `PAPERCLIP_DEPLOYMENT_MODE`
-- `paperclipai run` and `paperclipai doctor` do not yet expose a direct `--mode` flag
+- `fidelios onboard` and `fidelios configure --section server` set deployment mode in config
+- runtime can override mode with `FIDELIOS_DEPLOYMENT_MODE`
+- `fidelios run` and `fidelios doctor` do not yet expose a direct `--mode` flag
 
 Target behavior (planned) is documented in `doc/DEPLOYMENT-MODES.md` section 5.
 
 Allow an authenticated/private hostname (for example custom Tailscale DNS):
 
 ```sh
-pnpm paperclipai allowed-hostname dotta-macbook-pro
+pnpm fidelios allowed-hostname dotta-macbook-pro
 ```
 
 All client commands support:
@@ -54,107 +54,107 @@ All client commands support:
 
 Company-scoped commands also support `--company-id <id>`.
 
-Use `--data-dir` on any CLI command to isolate all default local state (config/context/db/logs/storage/secrets) away from `~/.paperclip`:
+Use `--data-dir` on any CLI command to isolate all default local state (config/context/db/logs/storage/secrets) away from `~/.fidelios`:
 
 ```sh
-pnpm paperclipai run --data-dir ./tmp/paperclip-dev
-pnpm paperclipai issue list --data-dir ./tmp/paperclip-dev
+pnpm fidelios run --data-dir ./tmp/fidelios-dev
+pnpm fidelios issue list --data-dir ./tmp/fidelios-dev
 ```
 
 ## Context Profiles
 
-Store local defaults in `~/.paperclip/context.json`:
+Store local defaults in `~/.fidelios/context.json`:
 
 ```sh
-pnpm paperclipai context set --api-base http://localhost:3100 --company-id <company-id>
-pnpm paperclipai context show
-pnpm paperclipai context list
-pnpm paperclipai context use default
+pnpm fidelios context set --api-base http://localhost:3100 --company-id <company-id>
+pnpm fidelios context show
+pnpm fidelios context list
+pnpm fidelios context use default
 ```
 
 To avoid storing secrets in context, set `apiKeyEnvVarName` and keep the key in env:
 
 ```sh
-pnpm paperclipai context set --api-key-env-var-name PAPERCLIP_API_KEY
-export PAPERCLIP_API_KEY=...
+pnpm fidelios context set --api-key-env-var-name FIDELIOS_API_KEY
+export FIDELIOS_API_KEY=...
 ```
 
 ## Company Commands
 
 ```sh
-pnpm paperclipai company list
-pnpm paperclipai company get <company-id>
-pnpm paperclipai company delete <company-id-or-prefix> --yes --confirm <same-id-or-prefix>
+pnpm fidelios company list
+pnpm fidelios company get <company-id>
+pnpm fidelios company delete <company-id-or-prefix> --yes --confirm <same-id-or-prefix>
 ```
 
 Examples:
 
 ```sh
-pnpm paperclipai company delete PAP --yes --confirm PAP
-pnpm paperclipai company delete 5cbe79ee-acb3-4597-896e-7662742593cd --yes --confirm 5cbe79ee-acb3-4597-896e-7662742593cd
+pnpm fidelios company delete PAP --yes --confirm PAP
+pnpm fidelios company delete 5cbe79ee-acb3-4597-896e-7662742593cd --yes --confirm 5cbe79ee-acb3-4597-896e-7662742593cd
 ```
 
 Notes:
 
-- Deletion is server-gated by `PAPERCLIP_ENABLE_COMPANY_DELETION`.
-- With agent authentication, company deletion is company-scoped. Use the current company ID/prefix (for example via `--company-id` or `PAPERCLIP_COMPANY_ID`), not another company.
+- Deletion is server-gated by `FIDELIOS_ENABLE_COMPANY_DELETION`.
+- With agent authentication, company deletion is company-scoped. Use the current company ID/prefix (for example via `--company-id` or `FIDELIOS_COMPANY_ID`), not another company.
 
 ## Issue Commands
 
 ```sh
-pnpm paperclipai issue list --company-id <company-id> [--status todo,in_progress] [--assignee-agent-id <agent-id>] [--match text]
-pnpm paperclipai issue get <issue-id-or-identifier>
-pnpm paperclipai issue create --company-id <company-id> --title "..." [--description "..."] [--status todo] [--priority high]
-pnpm paperclipai issue update <issue-id> [--status in_progress] [--comment "..."]
-pnpm paperclipai issue comment <issue-id> --body "..." [--reopen]
-pnpm paperclipai issue checkout <issue-id> --agent-id <agent-id> [--expected-statuses todo,backlog,blocked]
-pnpm paperclipai issue release <issue-id>
+pnpm fidelios issue list --company-id <company-id> [--status todo,in_progress] [--assignee-agent-id <agent-id>] [--match text]
+pnpm fidelios issue get <issue-id-or-identifier>
+pnpm fidelios issue create --company-id <company-id> --title "..." [--description "..."] [--status todo] [--priority high]
+pnpm fidelios issue update <issue-id> [--status in_progress] [--comment "..."]
+pnpm fidelios issue comment <issue-id> --body "..." [--reopen]
+pnpm fidelios issue checkout <issue-id> --agent-id <agent-id> [--expected-statuses todo,backlog,blocked]
+pnpm fidelios issue release <issue-id>
 ```
 
 ## Agent Commands
 
 ```sh
-pnpm paperclipai agent list --company-id <company-id>
-pnpm paperclipai agent get <agent-id>
-pnpm paperclipai agent local-cli <agent-id-or-shortname> --company-id <company-id>
+pnpm fidelios agent list --company-id <company-id>
+pnpm fidelios agent get <agent-id>
+pnpm fidelios agent local-cli <agent-id-or-shortname> --company-id <company-id>
 ```
 
-`agent local-cli` is the quickest way to run local Claude/Codex manually as a Paperclip agent:
+`agent local-cli` is the quickest way to run local Claude/Codex manually as a FideliOS agent:
 
 - creates a new long-lived agent API key
-- installs missing Paperclip skills into `~/.codex/skills` and `~/.claude/skills`
-- prints `export ...` lines for `PAPERCLIP_API_URL`, `PAPERCLIP_COMPANY_ID`, `PAPERCLIP_AGENT_ID`, and `PAPERCLIP_API_KEY`
+- installs missing FideliOS skills into `~/.codex/skills` and `~/.claude/skills`
+- prints `export ...` lines for `FIDELIOS_API_URL`, `FIDELIOS_COMPANY_ID`, `FIDELIOS_AGENT_ID`, and `FIDELIOS_API_KEY`
 
 Example for shortname-based local setup:
 
 ```sh
-pnpm paperclipai agent local-cli codexcoder --company-id <company-id>
-pnpm paperclipai agent local-cli claudecoder --company-id <company-id>
+pnpm fidelios agent local-cli codexcoder --company-id <company-id>
+pnpm fidelios agent local-cli claudecoder --company-id <company-id>
 ```
 
 ## Approval Commands
 
 ```sh
-pnpm paperclipai approval list --company-id <company-id> [--status pending]
-pnpm paperclipai approval get <approval-id>
-pnpm paperclipai approval create --company-id <company-id> --type hire_agent --payload '{"name":"..."}' [--issue-ids <id1,id2>]
-pnpm paperclipai approval approve <approval-id> [--decision-note "..."]
-pnpm paperclipai approval reject <approval-id> [--decision-note "..."]
-pnpm paperclipai approval request-revision <approval-id> [--decision-note "..."]
-pnpm paperclipai approval resubmit <approval-id> [--payload '{"...":"..."}']
-pnpm paperclipai approval comment <approval-id> --body "..."
+pnpm fidelios approval list --company-id <company-id> [--status pending]
+pnpm fidelios approval get <approval-id>
+pnpm fidelios approval create --company-id <company-id> --type hire_agent --payload '{"name":"..."}' [--issue-ids <id1,id2>]
+pnpm fidelios approval approve <approval-id> [--decision-note "..."]
+pnpm fidelios approval reject <approval-id> [--decision-note "..."]
+pnpm fidelios approval request-revision <approval-id> [--decision-note "..."]
+pnpm fidelios approval resubmit <approval-id> [--payload '{"...":"..."}']
+pnpm fidelios approval comment <approval-id> --body "..."
 ```
 
 ## Activity Commands
 
 ```sh
-pnpm paperclipai activity list --company-id <company-id> [--agent-id <agent-id>] [--entity-type issue] [--entity-id <id>]
+pnpm fidelios activity list --company-id <company-id> [--agent-id <agent-id>] [--entity-type issue] [--entity-id <id>]
 ```
 
 ## Dashboard Commands
 
 ```sh
-pnpm paperclipai dashboard get --company-id <company-id>
+pnpm fidelios dashboard get --company-id <company-id>
 ```
 
 ## Heartbeat Command
@@ -162,23 +162,23 @@ pnpm paperclipai dashboard get --company-id <company-id>
 `heartbeat run` now also supports context/api-key options and uses the shared client stack:
 
 ```sh
-pnpm paperclipai heartbeat run --agent-id <agent-id> [--api-base http://localhost:3100] [--api-key <token>]
+pnpm fidelios heartbeat run --agent-id <agent-id> [--api-base http://localhost:3100] [--api-key <token>]
 ```
 
 ## Local Storage Defaults
 
-Default local instance root is `~/.paperclip/instances/default`:
+Default local instance root is `~/.fidelios/instances/default`:
 
-- config: `~/.paperclip/instances/default/config.json`
-- embedded db: `~/.paperclip/instances/default/db`
-- logs: `~/.paperclip/instances/default/logs`
-- storage: `~/.paperclip/instances/default/data/storage`
-- secrets key: `~/.paperclip/instances/default/secrets/master.key`
+- config: `~/.fidelios/instances/default/config.json`
+- embedded db: `~/.fidelios/instances/default/db`
+- logs: `~/.fidelios/instances/default/logs`
+- storage: `~/.fidelios/instances/default/data/storage`
+- secrets key: `~/.fidelios/instances/default/secrets/master.key`
 
 Override base home or instance with env vars:
 
 ```sh
-PAPERCLIP_HOME=/custom/home PAPERCLIP_INSTANCE_ID=dev pnpm paperclipai run
+FIDELIOS_HOME=/custom/home FIDELIOS_INSTANCE_ID=dev pnpm fidelios run
 ```
 
 ## Storage Configuration
@@ -186,7 +186,7 @@ PAPERCLIP_HOME=/custom/home PAPERCLIP_INSTANCE_ID=dev pnpm paperclipai run
 Configure storage provider and settings:
 
 ```sh
-pnpm paperclipai configure --section storage
+pnpm fidelios configure --section storage
 ```
 
 Supported providers:

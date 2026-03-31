@@ -1,14 +1,14 @@
 {
-  "name": "@paperclipai/server",
+  "name": "@fidelios/server",
   "version": "0.3.1",
   "license": "MIT",
-  "homepage": "https://github.com/paperclipai/paperclip",
+  "homepage": "https://github.com/maxzemtsov/fidelios",
   "bugs": {
-    "url": "https://github.com/paperclipai/paperclip/issues"
+    "url": "https://github.com/maxzemtsov/fidelios/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/paperclipai/paperclip",
+    "url": "https://github.com/maxzemtsov/fidelios",
     "directory": "server"
   },
   "type": "module",
@@ -33,28 +33,28 @@
   ],
   "scripts": {
     "dev": "tsx src/index.ts",
-    "dev:watch": "cross-env PAPERCLIP_MIGRATION_PROMPT=never PAPERCLIP_MIGRATION_AUTO_APPLY=true tsx ./scripts/dev-watch.ts",
+    "dev:watch": "cross-env FIDELIOS_MIGRATION_PROMPT=never FIDELIOS_MIGRATION_AUTO_APPLY=true tsx ./scripts/dev-watch.ts",
     "prepare:ui-dist": "bash ../scripts/prepare-server-ui-dist.sh",
     "build": "tsc && mkdir -p dist/onboarding-assets && cp -R src/onboarding-assets/. dist/onboarding-assets/",
     "prepack": "pnpm run prepare:ui-dist",
     "postpack": "rm -rf ui-dist",
     "clean": "rm -rf dist",
     "start": "node dist/index.js",
-    "typecheck": "pnpm --filter @paperclipai/plugin-sdk build && tsc --noEmit"
+    "typecheck": "pnpm --filter @fidelios/plugin-sdk build && tsc --noEmit"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.888.0",
-    "@paperclipai/adapter-claude-local": "workspace:*",
-    "@paperclipai/adapter-codex-local": "workspace:*",
-    "@paperclipai/adapter-cursor-local": "workspace:*",
-    "@paperclipai/adapter-gemini-local": "workspace:*",
-    "@paperclipai/adapter-openclaw-gateway": "workspace:*",
-    "@paperclipai/adapter-opencode-local": "workspace:*",
-    "@paperclipai/adapter-pi-local": "workspace:*",
-    "@paperclipai/adapter-utils": "workspace:*",
-    "@paperclipai/db": "workspace:*",
-    "@paperclipai/plugin-sdk": "workspace:*",
-    "@paperclipai/shared": "workspace:*",
+    "@fidelios/adapter-claude-local": "workspace:*",
+    "@fidelios/adapter-codex-local": "workspace:*",
+    "@fidelios/adapter-cursor-local": "workspace:*",
+    "@fidelios/adapter-gemini-local": "workspace:*",
+    "@fidelios/adapter-openclaw-gateway": "workspace:*",
+    "@fidelios/adapter-opencode-local": "workspace:*",
+    "@fidelios/adapter-pi-local": "workspace:*",
+    "@fidelios/adapter-utils": "workspace:*",
+    "@fidelios/db": "workspace:*",
+    "@fidelios/plugin-sdk": "workspace:*",
+    "@fidelios/shared": "workspace:*",
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
     "better-auth": "1.4.18",

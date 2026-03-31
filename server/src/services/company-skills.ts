@@ -3,10 +3,10 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { and, asc, eq } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { companySkills } from "@paperclipai/db";
-import { readPaperclipSkillSyncPreference, writePaperclipSkillSyncPreference } from "@paperclipai/adapter-utils/server-utils";
-import type { PaperclipSkillEntry } from "@paperclipai/adapter-utils/server-utils";
+import type { Db } from "@fidelios/db";
+import { companySkills } from "@fidelios/db";
+import { readFideliOSSkillSyncPreference, writeFideliOSSkillSyncPreference } from "@fidelios/adapter-utils/server-utils";
+import type { FideliOSSkillEntry } from "@fidelios/adapter-utils/server-utils";
 import type {
   CompanySkill,
   CompanySkillCreateRequest,
@@ -25,10 +25,10 @@ import type {
   CompanySkillTrustLevel,
   CompanySkillUpdateStatus,
   CompanySkillUsageAgent,
-} from "@paperclipai/shared";
-import { normalizeAgentUrlKey } from "@paperclipai/shared";
+} from "@fidelios/shared";
+import { normalizeAgentUrlKey } from "@fidelios/shared";
 import { findServerAdapter } from "../adapters/index.js";
-import { resolvePaperclipInstanceRoot } from "../home-paths.js";
+import { resolveFideliOSInstanceRoot } from "../home-paths.js";
 import { notFound, unprocessable } from "../errors.js";
 import { agentService } from "./agents.js";
 import { projectService } from "./projects.js";
@@ -230,7 +230,7 @@ function uniqueImportedSkillKey(companyId: string, baseSlug: string, usedKeys: S
 }
 
 function buildSkillRuntimeName(key: string, slug: string) {
-  if (key.startsWith("paperclipai/paperclip/")) return slug;
+  if (key.startsWith("maxzemtsov/fidelios/")) return slug;
   return `${slug}--${hashSkillValue(key)}`;
 }
 
@@ -240,13 +240,13 @@ function readCanonicalSkillKey(frontmatter: Record<string, unknown>, metadata: R
     ?? asString(frontmatter.skillKey)
     ?? asString(metadata?.skillKey)
     ?? asString(metadata?.canonicalKey)
-    ?? asString(metadata?.paperclipSkillKey),
+    ?? asString(metadata?.fideliosSkillKey),
   );
   if (direct) return direct;
-  const paperclip = isPlainRecord(metadata?.paperclip) ? metadata?.paperclip as Record<string, unknown> : null;
+  const fidelios = isPlainRecord(metadata?.fidelios) ? metadata?.fidelios as Record<string, unknown> : null;
   return normalizeSkillKey(
-    asString(paperclip?.skillKey)
-    ?? asString(paperclip?.key),
+    asString(fidelios?.skillKey)
+    ?? asString(fidelios?.key),
   );
 }
 
@@ -260,8 +260,8 @@ function deriveCanonicalSkillKey(
   if (explicitKey) return explicitKey;
 
   const sourceKind = asString(metadata?.sourceKind);
-  if (sourceKind === "paperclip_bundled") {
-    return `paperclipai/paperclip/${slug}`;
+  if (sourceKind === "fidelios_bundled") {
+    return `maxzemtsov/fidelios/${slug}`;
   }
 
   const owner = normalizeSkillSlug(asString(metadata?.owner));
@@ -1232,7 +1232,7 @@ function resolveDesiredSkillKeys(
   skills: CompanySkill[],
   config: Record<string, unknown>,
 ) {
-  const preference = readPaperclipSkillSyncPreference(config);
+  const preference = readFideliOSSkillSyncPreference(config);
   return Array.from(new Set(
     preference.desiredSkills
       .map((reference) => resolveSkillReference(skills, reference).skill?.key ?? normalizeSkillKey(reference))
@@ -1279,7 +1279,7 @@ export async function findMissingLocalSkillIds(
 }
 
 function resolveManagedSkillsRoot(companyId: string) {
-  return path.resolve(resolvePaperclipInstanceRoot(), "skills", companyId);
+  return path.resolve(resolveFideliOSInstanceRoot(), "skills", companyId);
 }
 
 function resolveLocalSkillFilePath(skill: CompanySkill, relativePath: string) {
@@ -1325,12 +1325,12 @@ function deriveSkillSourceInfo(skill: CompanySkill): {
 } {
   const metadata = getSkillMeta(skill);
   const localSkillDir = normalizeSkillDirectory(skill);
-  if (metadata.sourceKind === "paperclip_bundled") {
+  if (metadata.sourceKind === "fidelios_bundled") {
     return {
       editable: false,
-      editableReason: "Bundled Paperclip skills are read-only.",
-      sourceLabel: "Paperclip bundled",
-      sourceBadge: "paperclip",
+      editableReason: "Bundled FideliOS skills are read-only.",
+      sourceLabel: "FideliOS bundled",
+      sourceBadge: "fidelios",
       sourcePath: null,
     };
   }
@@ -1378,8 +1378,8 @@ function deriveSkillSourceInfo(skill: CompanySkill): {
       return {
         editable: true,
         editableReason: null,
-        sourceLabel: "Paperclip workspace",
-        sourceBadge: "paperclip",
+        sourceLabel: "FideliOS workspace",
+        sourceBadge: "fidelios",
         sourcePath: managedRoot,
       };
     }
@@ -1457,12 +1457,12 @@ export function companySkillService(db: Db) {
             ...skill,
             metadata: {
               ...(skill.metadata ?? {}),
-              sourceKind: "paperclip_bundled",
+              sourceKind: "fidelios_bundled",
             },
           }),
           metadata: {
             ...(skill.metadata ?? {}),
-            sourceKind: "paperclip_bundled",
+            sourceKind: "fidelios_bundled",
           },
         })))
         .catch(() => [] as ImportedSkill[]);
@@ -1580,7 +1580,7 @@ export function companySkillService(db: Db) {
               adapterType: agent.adapterType,
               config: {
                 ...runtimeConfig,
-                paperclipRuntimeSkills: runtimeSkillEntries,
+                fideliosRuntimeSkills: runtimeSkillEntries,
               },
             });
             actualState = snapshot.entries.find((entry) => entry.key === key)?.state
@@ -2040,10 +2040,10 @@ export function companySkillService(db: Db) {
   async function listRuntimeSkillEntries(
     companyId: string,
     options: RuntimeSkillEntryOptions = {},
-  ): Promise<PaperclipSkillEntry[]> {
+  ): Promise<FideliOSSkillEntry[]> {
     const skills = await listFull(companyId);
 
-    const out: PaperclipSkillEntry[] = [];
+    const out: FideliOSSkillEntry[] = [];
     for (const skill of skills) {
       const sourceKind = asString(getSkillMeta(skill).sourceKind);
       let source = normalizeSkillDirectory(skill);
@@ -2054,14 +2054,14 @@ export function companySkillService(db: Db) {
       }
       if (!source) continue;
 
-      const required = sourceKind === "paperclip_bundled";
+      const required = sourceKind === "fidelios_bundled";
       out.push({
         key: skill.key,
         runtimeName: buildSkillRuntimeName(skill.key, skill.slug),
         source,
         required,
         requiredReason: required
-          ? "Bundled Paperclip skills are always available for local adapters."
+          ? "Bundled FideliOS skills are always available for local adapters."
           : null,
       });
     }
@@ -2202,10 +2202,10 @@ export function companySkillService(db: Db) {
       const incomingKind = asString(incomingMeta.sourceKind);
       if (
         existing
-        && existingMeta.sourceKind === "paperclip_bundled"
+        && existingMeta.sourceKind === "fidelios_bundled"
         && incomingKind === "github"
-        && incomingOwner === "paperclipai"
-        && incomingRepo === "paperclip"
+        && incomingOwner === "fidelios"
+        && incomingRepo === "fidelios"
       ) {
         out.push(existing);
         continue;
@@ -2304,7 +2304,7 @@ export function companySkillService(db: Db) {
     const allSkills = await listFull(companyId);
     for (const agent of agentRows) {
       const config = agent.adapterConfig as Record<string, unknown>;
-      const preference = readPaperclipSkillSyncPreference(config);
+      const preference = readFideliOSSkillSyncPreference(config);
       const referencesSkill = preference.desiredSkills.some((ref) => {
         const resolved = resolveSkillReference(allSkills, ref);
         return resolved.skill?.id === skillId;
@@ -2315,7 +2315,7 @@ export function companySkillService(db: Db) {
           return resolved.skill?.id !== skillId;
         });
         await agents.update(agent.id, {
-          adapterConfig: writePaperclipSkillSyncPreference(config, filtered),
+          adapterConfig: writeFideliOSSkillSyncPreference(config, filtered),
         });
       }
     }

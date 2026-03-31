@@ -2,19 +2,19 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { execute } from "@paperclipai/adapter-codex-local/server";
+import { execute } from "@fidelios/adapter-codex-local/server";
 
 async function writeFakeCodexCommand(commandPath: string): Promise<void> {
   const script = `#!/usr/bin/env node
 const fs = require("node:fs");
 
-const capturePath = process.env.PAPERCLIP_TEST_CAPTURE_PATH;
+const capturePath = process.env.FIDELIOS_TEST_CAPTURE_PATH;
 const payload = {
   argv: process.argv.slice(2),
   prompt: fs.readFileSync(0, "utf8"),
   codexHome: process.env.CODEX_HOME || null,
-  paperclipEnvKeys: Object.keys(process.env)
-    .filter((key) => key.startsWith("PAPERCLIP_"))
+  fideliosEnvKeys: Object.keys(process.env)
+    .filter((key) => key.startsWith("FIDELIOS_"))
     .sort(),
 };
 if (capturePath) {
@@ -32,7 +32,7 @@ type CapturePayload = {
   argv: string[];
   prompt: string;
   codexHome: string | null;
-  paperclipEnvKeys: string[];
+  fideliosEnvKeys: string[];
 };
 
 type LogEntry = {
@@ -41,15 +41,15 @@ type LogEntry = {
 };
 
 describe("codex execute", () => {
-  it("uses a Paperclip-managed CODEX_HOME outside worktree mode while preserving shared auth and config", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-execute-default-"));
+  it("uses a FideliOS-managed CODEX_HOME outside worktree mode while preserving shared auth and config", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "fidelios-codex-execute-default-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "codex");
     const capturePath = path.join(root, "capture.json");
     const sharedCodexHome = path.join(root, "shared-codex-home");
-    const paperclipHome = path.join(root, "paperclip-home");
+    const fideliosHome = path.join(root, "fidelios-home");
     const managedCodexHome = path.join(
-      paperclipHome,
+      fideliosHome,
       "instances",
       "default",
       "companies",
@@ -63,14 +63,14 @@ describe("codex execute", () => {
     await writeFakeCodexCommand(commandPath);
 
     const previousHome = process.env.HOME;
-    const previousPaperclipHome = process.env.PAPERCLIP_HOME;
-    const previousPaperclipInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
-    const previousPaperclipInWorktree = process.env.PAPERCLIP_IN_WORKTREE;
+    const previousFideliOSHome = process.env.FIDELIOS_HOME;
+    const previousFideliOSInstanceId = process.env.FIDELIOS_INSTANCE_ID;
+    const previousFideliOSInWorktree = process.env.FIDELIOS_IN_WORKTREE;
     const previousCodexHome = process.env.CODEX_HOME;
     process.env.HOME = root;
-    process.env.PAPERCLIP_HOME = paperclipHome;
-    delete process.env.PAPERCLIP_INSTANCE_ID;
-    delete process.env.PAPERCLIP_IN_WORKTREE;
+    process.env.FIDELIOS_HOME = fideliosHome;
+    delete process.env.FIDELIOS_INSTANCE_ID;
+    delete process.env.FIDELIOS_IN_WORKTREE;
     process.env.CODEX_HOME = sharedCodexHome;
 
     try {
@@ -94,9 +94,9 @@ describe("codex execute", () => {
           command: commandPath,
           cwd: workspace,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
+            FIDELIOS_TEST_CAPTURE_PATH: capturePath,
           },
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the fidelios heartbeat.",
         },
         context: {},
         authToken: "run-jwt-token",
@@ -121,18 +121,18 @@ describe("codex execute", () => {
       expect(logs).toContainEqual(
         expect.objectContaining({
           stream: "stdout",
-          chunk: expect.stringContaining("Using Paperclip-managed Codex home"),
+          chunk: expect.stringContaining("Using FideliOS-managed Codex home"),
         }),
       );
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;
-      if (previousPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = previousPaperclipHome;
-      if (previousPaperclipInstanceId === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
-      else process.env.PAPERCLIP_INSTANCE_ID = previousPaperclipInstanceId;
-      if (previousPaperclipInWorktree === undefined) delete process.env.PAPERCLIP_IN_WORKTREE;
-      else process.env.PAPERCLIP_IN_WORKTREE = previousPaperclipInWorktree;
+      if (previousFideliOSHome === undefined) delete process.env.FIDELIOS_HOME;
+      else process.env.FIDELIOS_HOME = previousFideliOSHome;
+      if (previousFideliOSInstanceId === undefined) delete process.env.FIDELIOS_INSTANCE_ID;
+      else process.env.FIDELIOS_INSTANCE_ID = previousFideliOSInstanceId;
+      if (previousFideliOSInWorktree === undefined) delete process.env.FIDELIOS_IN_WORKTREE;
+      else process.env.FIDELIOS_IN_WORKTREE = previousFideliOSInWorktree;
       if (previousCodexHome === undefined) delete process.env.CODEX_HOME;
       else process.env.CODEX_HOME = previousCodexHome;
       await fs.rm(root, { recursive: true, force: true });
@@ -140,7 +140,7 @@ describe("codex execute", () => {
   });
 
   it("emits a command note that Codex auto-applies repo-scoped AGENTS.md files", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-execute-notes-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "fidelios-codex-execute-notes-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "codex");
     const capturePath = path.join(root, "capture.json");
@@ -171,9 +171,9 @@ describe("codex execute", () => {
           command: commandPath,
           cwd: workspace,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
+            FIDELIOS_TEST_CAPTURE_PATH: capturePath,
           },
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the fidelios heartbeat.",
         },
         context: {},
         authToken: "run-jwt-token",
@@ -186,7 +186,7 @@ describe("codex execute", () => {
       expect(result.exitCode).toBe(0);
       expect(result.errorMessage).toBeNull();
       expect(commandNotes).toContain(
-        "Codex exec automatically applies repo-scoped AGENTS.md instructions from the current workspace; Paperclip does not currently suppress that discovery.",
+        "Codex exec automatically applies repo-scoped AGENTS.md instructions from the current workspace; FideliOS does not currently suppress that discovery.",
       );
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
@@ -196,21 +196,21 @@ describe("codex execute", () => {
   });
 
   it("uses a worktree-isolated CODEX_HOME while preserving shared auth and config", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-execute-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "fidelios-codex-execute-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "codex");
     const capturePath = path.join(root, "capture.json");
     const sharedCodexHome = path.join(root, "shared-codex-home");
-    const paperclipHome = path.join(root, "paperclip-home");
+    const fideliosHome = path.join(root, "fidelios-home");
     const isolatedCodexHome = path.join(
-      paperclipHome,
+      fideliosHome,
       "instances",
       "worktree-1",
       "companies",
       "company-1",
       "codex-home",
     );
-    const homeSkill = path.join(isolatedCodexHome, "skills", "paperclip");
+    const homeSkill = path.join(isolatedCodexHome, "skills", "fidelios");
     await fs.mkdir(workspace, { recursive: true });
     await fs.mkdir(sharedCodexHome, { recursive: true });
     await fs.writeFile(path.join(sharedCodexHome, "auth.json"), '{"token":"shared"}\n', "utf8");
@@ -218,14 +218,14 @@ describe("codex execute", () => {
     await writeFakeCodexCommand(commandPath);
 
     const previousHome = process.env.HOME;
-    const previousPaperclipHome = process.env.PAPERCLIP_HOME;
-    const previousPaperclipInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
-    const previousPaperclipInWorktree = process.env.PAPERCLIP_IN_WORKTREE;
+    const previousFideliOSHome = process.env.FIDELIOS_HOME;
+    const previousFideliOSInstanceId = process.env.FIDELIOS_INSTANCE_ID;
+    const previousFideliOSInWorktree = process.env.FIDELIOS_IN_WORKTREE;
     const previousCodexHome = process.env.CODEX_HOME;
     process.env.HOME = root;
-    process.env.PAPERCLIP_HOME = paperclipHome;
-    process.env.PAPERCLIP_INSTANCE_ID = "worktree-1";
-    process.env.PAPERCLIP_IN_WORKTREE = "true";
+    process.env.FIDELIOS_HOME = fideliosHome;
+    process.env.FIDELIOS_INSTANCE_ID = "worktree-1";
+    process.env.FIDELIOS_IN_WORKTREE = "true";
     process.env.CODEX_HOME = sharedCodexHome;
 
     try {
@@ -249,9 +249,9 @@ describe("codex execute", () => {
           command: commandPath,
           cwd: workspace,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
+            FIDELIOS_TEST_CAPTURE_PATH: capturePath,
           },
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the fidelios heartbeat.",
         },
         context: {},
         authToken: "run-jwt-token",
@@ -266,14 +266,14 @@ describe("codex execute", () => {
       const capture = JSON.parse(await fs.readFile(capturePath, "utf8")) as CapturePayload;
       expect(capture.codexHome).toBe(isolatedCodexHome);
       expect(capture.argv).toEqual(expect.arrayContaining(["exec", "--json", "-"]));
-      expect(capture.prompt).toContain("Follow the paperclip heartbeat.");
-      expect(capture.paperclipEnvKeys).toEqual(
+      expect(capture.prompt).toContain("Follow the fidelios heartbeat.");
+      expect(capture.fideliosEnvKeys).toEqual(
         expect.arrayContaining([
-          "PAPERCLIP_AGENT_ID",
-          "PAPERCLIP_API_KEY",
-          "PAPERCLIP_API_URL",
-          "PAPERCLIP_COMPANY_ID",
-          "PAPERCLIP_RUN_ID",
+          "FIDELIOS_AGENT_ID",
+          "FIDELIOS_API_KEY",
+          "FIDELIOS_API_URL",
+          "FIDELIOS_COMPANY_ID",
+          "FIDELIOS_RUN_ID",
         ]),
       );
 
@@ -294,18 +294,18 @@ describe("codex execute", () => {
       expect(logs).toContainEqual(
         expect.objectContaining({
           stream: "stdout",
-          chunk: expect.stringContaining('Injected Codex skill "paperclip"'),
+          chunk: expect.stringContaining('Injected Codex skill "fidelios"'),
         }),
       );
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;
-      if (previousPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = previousPaperclipHome;
-      if (previousPaperclipInstanceId === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
-      else process.env.PAPERCLIP_INSTANCE_ID = previousPaperclipInstanceId;
-      if (previousPaperclipInWorktree === undefined) delete process.env.PAPERCLIP_IN_WORKTREE;
-      else process.env.PAPERCLIP_IN_WORKTREE = previousPaperclipInWorktree;
+      if (previousFideliOSHome === undefined) delete process.env.FIDELIOS_HOME;
+      else process.env.FIDELIOS_HOME = previousFideliOSHome;
+      if (previousFideliOSInstanceId === undefined) delete process.env.FIDELIOS_INSTANCE_ID;
+      else process.env.FIDELIOS_INSTANCE_ID = previousFideliOSInstanceId;
+      if (previousFideliOSInWorktree === undefined) delete process.env.FIDELIOS_IN_WORKTREE;
+      else process.env.FIDELIOS_IN_WORKTREE = previousFideliOSInWorktree;
       if (previousCodexHome === undefined) delete process.env.CODEX_HOME;
       else process.env.CODEX_HOME = previousCodexHome;
       await fs.rm(root, { recursive: true, force: true });
@@ -313,27 +313,27 @@ describe("codex execute", () => {
   });
 
   it("respects an explicit CODEX_HOME config override even in worktree mode", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-execute-explicit-"));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "fidelios-codex-execute-explicit-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "codex");
     const capturePath = path.join(root, "capture.json");
     const sharedCodexHome = path.join(root, "shared-codex-home");
     const explicitCodexHome = path.join(root, "explicit-codex-home");
-    const paperclipHome = path.join(root, "paperclip-home");
+    const fideliosHome = path.join(root, "fidelios-home");
     await fs.mkdir(workspace, { recursive: true });
     await fs.mkdir(sharedCodexHome, { recursive: true });
     await fs.writeFile(path.join(sharedCodexHome, "auth.json"), '{"token":"shared"}\n', "utf8");
     await writeFakeCodexCommand(commandPath);
 
     const previousHome = process.env.HOME;
-    const previousPaperclipHome = process.env.PAPERCLIP_HOME;
-    const previousPaperclipInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
-    const previousPaperclipInWorktree = process.env.PAPERCLIP_IN_WORKTREE;
+    const previousFideliOSHome = process.env.FIDELIOS_HOME;
+    const previousFideliOSInstanceId = process.env.FIDELIOS_INSTANCE_ID;
+    const previousFideliOSInWorktree = process.env.FIDELIOS_IN_WORKTREE;
     const previousCodexHome = process.env.CODEX_HOME;
     process.env.HOME = root;
-    process.env.PAPERCLIP_HOME = paperclipHome;
-    process.env.PAPERCLIP_INSTANCE_ID = "worktree-1";
-    process.env.PAPERCLIP_IN_WORKTREE = "true";
+    process.env.FIDELIOS_HOME = fideliosHome;
+    process.env.FIDELIOS_INSTANCE_ID = "worktree-1";
+    process.env.FIDELIOS_IN_WORKTREE = "true";
     process.env.CODEX_HOME = sharedCodexHome;
 
     try {
@@ -356,10 +356,10 @@ describe("codex execute", () => {
           command: commandPath,
           cwd: workspace,
           env: {
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
+            FIDELIOS_TEST_CAPTURE_PATH: capturePath,
             CODEX_HOME: explicitCodexHome,
           },
-          promptTemplate: "Follow the paperclip heartbeat.",
+          promptTemplate: "Follow the fidelios heartbeat.",
         },
         context: {},
         authToken: "run-jwt-token",
@@ -371,17 +371,17 @@ describe("codex execute", () => {
 
       const capture = JSON.parse(await fs.readFile(capturePath, "utf8")) as CapturePayload;
       expect(capture.codexHome).toBe(explicitCodexHome);
-      expect((await fs.lstat(path.join(explicitCodexHome, "skills", "paperclip"))).isSymbolicLink()).toBe(true);
-      await expect(fs.lstat(path.join(paperclipHome, "instances", "worktree-1", "codex-home"))).rejects.toThrow();
+      expect((await fs.lstat(path.join(explicitCodexHome, "skills", "fidelios"))).isSymbolicLink()).toBe(true);
+      await expect(fs.lstat(path.join(fideliosHome, "instances", "worktree-1", "codex-home"))).rejects.toThrow();
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;
-      if (previousPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = previousPaperclipHome;
-      if (previousPaperclipInstanceId === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
-      else process.env.PAPERCLIP_INSTANCE_ID = previousPaperclipInstanceId;
-      if (previousPaperclipInWorktree === undefined) delete process.env.PAPERCLIP_IN_WORKTREE;
-      else process.env.PAPERCLIP_IN_WORKTREE = previousPaperclipInWorktree;
+      if (previousFideliOSHome === undefined) delete process.env.FIDELIOS_HOME;
+      else process.env.FIDELIOS_HOME = previousFideliOSHome;
+      if (previousFideliOSInstanceId === undefined) delete process.env.FIDELIOS_INSTANCE_ID;
+      else process.env.FIDELIOS_INSTANCE_ID = previousFideliOSInstanceId;
+      if (previousFideliOSInWorktree === undefined) delete process.env.FIDELIOS_IN_WORKTREE;
+      else process.env.FIDELIOS_IN_WORKTREE = previousFideliOSInWorktree;
       if (previousCodexHome === undefined) delete process.env.CODEX_HOME;
       else process.env.CODEX_HOME = previousCodexHome;
       await fs.rm(root, { recursive: true, force: true });

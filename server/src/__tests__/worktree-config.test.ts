@@ -65,7 +65,7 @@ function buildLegacyConfig(sharedRoot: string) {
         baseDir: path.join(sharedRoot, "data", "storage"),
       },
       s3: {
-        bucket: "paperclip",
+        bucket: "fidelios",
         region: "us-east-1",
         prefix: "",
         forcePathStyle: false,
@@ -83,36 +83,36 @@ function buildLegacyConfig(sharedRoot: string) {
 
 describe("worktree config repair", () => {
   it("repairs legacy repo-local worktree config and env files into an isolated instance", async () => {
-    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-repair-"));
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "fidelios-worktree-repair-"));
     const worktreeRoot = path.join(tempRoot, "PAP-884-ai-commits-component");
-    const paperclipDir = path.join(worktreeRoot, ".paperclip");
-    const configPath = path.join(paperclipDir, "config.json");
-    const envPath = path.join(paperclipDir, ".env");
-    const sharedRoot = path.join(tempRoot, ".paperclip", "instances", "default");
-    const isolatedHome = path.join(tempRoot, ".paperclip-worktrees");
+    const fideliosDir = path.join(worktreeRoot, ".fidelios");
+    const configPath = path.join(fideliosDir, "config.json");
+    const envPath = path.join(fideliosDir, ".env");
+    const sharedRoot = path.join(tempRoot, ".fidelios", "instances", "default");
+    const isolatedHome = path.join(tempRoot, ".fidelios-worktrees");
 
-    await fs.mkdir(paperclipDir, { recursive: true });
+    await fs.mkdir(fideliosDir, { recursive: true });
     await fs.writeFile(configPath, JSON.stringify(buildLegacyConfig(sharedRoot), null, 2) + "\n", "utf8");
     await fs.writeFile(
       envPath,
       [
-        "# Paperclip environment variables",
-        "PAPERCLIP_IN_WORKTREE=true",
-        "PAPERCLIP_WORKTREE_NAME=PAP-884-ai-commits-component",
-        "PAPERCLIP_AGENT_JWT_SECRET=shared-secret",
+        "# FideliOS environment variables",
+        "FIDELIOS_IN_WORKTREE=true",
+        "FIDELIOS_WORKTREE_NAME=PAP-884-ai-commits-component",
+        "FIDELIOS_AGENT_JWT_SECRET=shared-secret",
         "",
       ].join("\n"),
       "utf8",
     );
 
     process.chdir(worktreeRoot);
-    process.env.PAPERCLIP_IN_WORKTREE = "true";
-    process.env.PAPERCLIP_WORKTREE_NAME = "PAP-884-ai-commits-component";
-    process.env.PAPERCLIP_WORKTREES_DIR = isolatedHome;
-    delete process.env.PAPERCLIP_HOME;
-    delete process.env.PAPERCLIP_INSTANCE_ID;
-    delete process.env.PAPERCLIP_CONFIG;
-    delete process.env.PAPERCLIP_CONTEXT;
+    process.env.FIDELIOS_IN_WORKTREE = "true";
+    process.env.FIDELIOS_WORKTREE_NAME = "PAP-884-ai-commits-component";
+    process.env.FIDELIOS_WORKTREES_DIR = isolatedHome;
+    delete process.env.FIDELIOS_HOME;
+    delete process.env.FIDELIOS_INSTANCE_ID;
+    delete process.env.FIDELIOS_CONFIG;
+    delete process.env.FIDELIOS_CONTEXT;
 
     const result = maybeRepairLegacyWorktreeConfigAndEnvFiles();
 
@@ -130,34 +130,34 @@ describe("worktree config repair", () => {
     expect(repairedConfig.logging.logDir).toBe(path.join(instanceRoot, "logs"));
     expect(repairedConfig.storage.localDisk.baseDir).toBe(path.join(instanceRoot, "data", "storage"));
     expect(repairedConfig.secrets.localEncrypted.keyFilePath).toBe(path.join(instanceRoot, "secrets", "master.key"));
-    expect(repairedEnv).toContain(`PAPERCLIP_HOME=${JSON.stringify(isolatedHome)}`);
-    expect(repairedEnv).toContain('PAPERCLIP_INSTANCE_ID="pap-884-ai-commits-component"');
-    expect(repairedEnv).toContain(`PAPERCLIP_CONFIG=${JSON.stringify(await fs.realpath(configPath))}`);
-    expect(repairedEnv).toContain(`PAPERCLIP_CONTEXT=${JSON.stringify(path.join(isolatedHome, "context.json"))}`);
-    expect(repairedEnv).toContain('PAPERCLIP_AGENT_JWT_SECRET="shared-secret"');
-    expect(process.env.PAPERCLIP_HOME).toBe(isolatedHome);
-    expect(process.env.PAPERCLIP_INSTANCE_ID).toBe("pap-884-ai-commits-component");
+    expect(repairedEnv).toContain(`FIDELIOS_HOME=${JSON.stringify(isolatedHome)}`);
+    expect(repairedEnv).toContain('FIDELIOS_INSTANCE_ID="pap-884-ai-commits-component"');
+    expect(repairedEnv).toContain(`FIDELIOS_CONFIG=${JSON.stringify(await fs.realpath(configPath))}`);
+    expect(repairedEnv).toContain(`FIDELIOS_CONTEXT=${JSON.stringify(path.join(isolatedHome, "context.json"))}`);
+    expect(repairedEnv).toContain('FIDELIOS_AGENT_JWT_SECRET="shared-secret"');
+    expect(process.env.FIDELIOS_HOME).toBe(isolatedHome);
+    expect(process.env.FIDELIOS_INSTANCE_ID).toBe("pap-884-ai-commits-component");
   });
 
   it("avoids sibling worktree ports when repairing legacy configs", async () => {
-    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-repair-ports-"));
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "fidelios-worktree-repair-ports-"));
     const worktreeRoot = path.join(tempRoot, "PAP-880-thumbs-capture-for-evals-feature");
-    const paperclipDir = path.join(worktreeRoot, ".paperclip");
-    const configPath = path.join(paperclipDir, "config.json");
-    const envPath = path.join(paperclipDir, ".env");
-    const sharedRoot = path.join(tempRoot, ".paperclip", "instances", "default");
-    const isolatedHome = path.join(tempRoot, ".paperclip-worktrees");
+    const fideliosDir = path.join(worktreeRoot, ".fidelios");
+    const configPath = path.join(fideliosDir, "config.json");
+    const envPath = path.join(fideliosDir, ".env");
+    const sharedRoot = path.join(tempRoot, ".fidelios", "instances", "default");
+    const isolatedHome = path.join(tempRoot, ".fidelios-worktrees");
     const siblingInstanceRoot = path.join(isolatedHome, "instances", "pap-878-create-a-mine-tab-in-inbox");
 
-    await fs.mkdir(paperclipDir, { recursive: true });
+    await fs.mkdir(fideliosDir, { recursive: true });
     await fs.mkdir(siblingInstanceRoot, { recursive: true });
     await fs.writeFile(configPath, JSON.stringify(buildLegacyConfig(sharedRoot), null, 2) + "\n", "utf8");
     await fs.writeFile(
       envPath,
       [
-        "# Paperclip environment variables",
-        "PAPERCLIP_IN_WORKTREE=true",
-        "PAPERCLIP_WORKTREE_NAME=PAP-880-thumbs-capture-for-evals-feature",
+        "# FideliOS environment variables",
+        "FIDELIOS_IN_WORKTREE=true",
+        "FIDELIOS_WORKTREE_NAME=PAP-880-thumbs-capture-for-evals-feature",
         "",
       ].join("\n"),
       "utf8",
@@ -194,9 +194,9 @@ describe("worktree config repair", () => {
     );
 
     process.chdir(worktreeRoot);
-    process.env.PAPERCLIP_IN_WORKTREE = "true";
-    process.env.PAPERCLIP_WORKTREE_NAME = "PAP-880-thumbs-capture-for-evals-feature";
-    process.env.PAPERCLIP_WORKTREES_DIR = isolatedHome;
+    process.env.FIDELIOS_IN_WORKTREE = "true";
+    process.env.FIDELIOS_WORKTREE_NAME = "PAP-880-thumbs-capture-for-evals-feature";
+    process.env.FIDELIOS_WORKTREES_DIR = isolatedHome;
 
     const result = maybeRepairLegacyWorktreeConfigAndEnvFiles();
     const repairedConfig = JSON.parse(await fs.readFile(configPath, "utf8"));
@@ -207,19 +207,19 @@ describe("worktree config repair", () => {
   });
 
   it("rebalances duplicate ports for already isolated worktree configs", async () => {
-    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-rebalance-"));
-    const isolatedHome = path.join(tempRoot, ".paperclip-worktrees");
-    const repoWorktreesRoot = path.join(tempRoot, "repo", ".paperclip", "worktrees");
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "fidelios-worktree-rebalance-"));
+    const isolatedHome = path.join(tempRoot, ".fidelios-worktrees");
+    const repoWorktreesRoot = path.join(tempRoot, "repo", ".fidelios", "worktrees");
     const siblingWorktreeRoot = path.join(repoWorktreesRoot, "PAP-878-create-a-mine-tab-in-inbox");
     const siblingInstanceRoot = path.join(isolatedHome, "instances", "pap-878-create-a-mine-tab-in-inbox");
     const currentWorktreeRoot = path.join(repoWorktreesRoot, "PAP-884-ai-commits-component");
-    const paperclipDir = path.join(currentWorktreeRoot, ".paperclip");
-    const configPath = path.join(paperclipDir, "config.json");
-    const envPath = path.join(paperclipDir, ".env");
+    const fideliosDir = path.join(currentWorktreeRoot, ".fidelios");
+    const configPath = path.join(fideliosDir, "config.json");
+    const envPath = path.join(fideliosDir, ".env");
     const currentInstanceRoot = path.join(isolatedHome, "instances", "pap-884-ai-commits-component");
-    const siblingConfigPath = path.join(siblingWorktreeRoot, ".paperclip", "config.json");
+    const siblingConfigPath = path.join(siblingWorktreeRoot, ".fidelios", "config.json");
 
-    await fs.mkdir(paperclipDir, { recursive: true });
+    await fs.mkdir(fideliosDir, { recursive: true });
     await fs.mkdir(path.dirname(siblingConfigPath), { recursive: true });
     await fs.writeFile(
       configPath,
@@ -255,7 +255,7 @@ describe("worktree config repair", () => {
               baseDir: path.join(currentInstanceRoot, "data", "storage"),
             },
             s3: {
-              bucket: "paperclip",
+              bucket: "fidelios",
               region: "us-east-1",
               prefix: "",
               forcePathStyle: false,
@@ -277,9 +277,9 @@ describe("worktree config repair", () => {
     await fs.writeFile(
       envPath,
       [
-        "# Paperclip environment variables",
-        "PAPERCLIP_IN_WORKTREE=true",
-        "PAPERCLIP_WORKTREE_NAME=PAP-884-ai-commits-component",
+        "# FideliOS environment variables",
+        "FIDELIOS_IN_WORKTREE=true",
+        "FIDELIOS_WORKTREE_NAME=PAP-884-ai-commits-component",
         "",
       ].join("\n"),
       "utf8",
@@ -316,9 +316,9 @@ describe("worktree config repair", () => {
     );
 
     process.chdir(currentWorktreeRoot);
-    process.env.PAPERCLIP_IN_WORKTREE = "true";
-    process.env.PAPERCLIP_WORKTREE_NAME = "PAP-884-ai-commits-component";
-    process.env.PAPERCLIP_WORKTREES_DIR = isolatedHome;
+    process.env.FIDELIOS_IN_WORKTREE = "true";
+    process.env.FIDELIOS_WORKTREE_NAME = "PAP-884-ai-commits-component";
+    process.env.FIDELIOS_WORKTREES_DIR = isolatedHome;
 
     const result = maybeRepairLegacyWorktreeConfigAndEnvFiles();
     const repairedConfig = JSON.parse(await fs.readFile(configPath, "utf8"));
@@ -329,14 +329,14 @@ describe("worktree config repair", () => {
   });
 
   it("persists runtime-selected worktree ports back into config", async () => {
-    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-ports-"));
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "fidelios-worktree-ports-"));
     const worktreeRoot = path.join(tempRoot, "PAP-878-create-a-mine-tab-in-inbox");
-    const paperclipDir = path.join(worktreeRoot, ".paperclip");
-    const configPath = path.join(paperclipDir, "config.json");
-    const isolatedHome = path.join(tempRoot, ".paperclip-worktrees");
+    const fideliosDir = path.join(worktreeRoot, ".fidelios");
+    const configPath = path.join(fideliosDir, "config.json");
+    const isolatedHome = path.join(tempRoot, ".fidelios-worktrees");
     const instanceRoot = path.join(isolatedHome, "instances", "pap-878-create-a-mine-tab-in-inbox");
 
-    await fs.mkdir(paperclipDir, { recursive: true });
+    await fs.mkdir(fideliosDir, { recursive: true });
     await fs.writeFile(
       configPath,
       JSON.stringify(
@@ -371,7 +371,7 @@ describe("worktree config repair", () => {
               baseDir: path.join(instanceRoot, "data", "storage"),
             },
             s3: {
-              bucket: "paperclip",
+              bucket: "fidelios",
               region: "us-east-1",
               prefix: "",
               forcePathStyle: false,
@@ -392,11 +392,11 @@ describe("worktree config repair", () => {
     );
 
     process.chdir(worktreeRoot);
-    process.env.PAPERCLIP_IN_WORKTREE = "true";
-    process.env.PAPERCLIP_WORKTREE_NAME = "PAP-878-create-a-mine-tab-in-inbox";
-    process.env.PAPERCLIP_HOME = isolatedHome;
-    process.env.PAPERCLIP_INSTANCE_ID = "pap-878-create-a-mine-tab-in-inbox";
-    process.env.PAPERCLIP_CONFIG = configPath;
+    process.env.FIDELIOS_IN_WORKTREE = "true";
+    process.env.FIDELIOS_WORKTREE_NAME = "PAP-878-create-a-mine-tab-in-inbox";
+    process.env.FIDELIOS_HOME = isolatedHome;
+    process.env.FIDELIOS_INSTANCE_ID = "pap-878-create-a-mine-tab-in-inbox";
+    process.env.FIDELIOS_CONFIG = configPath;
 
     maybePersistWorktreeRuntimePorts({
       serverPort: 3103,

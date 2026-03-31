@@ -182,7 +182,7 @@ export type {
   PluginLauncherDeclaration,
   PluginMinimumHostVersion,
   PluginUiDeclaration,
-  PaperclipPluginManifestV1,
+  FideliOSPluginManifestV1,
   PluginRecord,
   PluginStateRecord,
   PluginConfig,

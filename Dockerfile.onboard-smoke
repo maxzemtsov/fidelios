@@ -5,11 +5,11 @@ ARG PAPERCLIPAI_VERSION=latest
 ARG HOST_UID=10001
 
 ENV DEBIAN_FRONTEND=noninteractive \
-  PAPERCLIP_HOME=/paperclip \
-  PAPERCLIP_OPEN_ON_LISTEN=false \
+  FIDELIOS_HOME=/fidelios \
+  FIDELIOS_OPEN_ON_LISTEN=false \
   HOST=0.0.0.0 \
   PORT=3100 \
-  HOME=/home/paperclip \
+  HOME=/home/fidelios \
   LANG=en_US.UTF-8 \
   LC_ALL=en_US.UTF-8 \
   NPM_CONFIG_UPDATE_NOTIFIER=false \
@@ -26,15 +26,15 @@ RUN apt-get update \
   && apt-get update \
   && apt-get install -y --no-install-recommends nodejs \
   && locale-gen en_US.UTF-8 \
-  && groupadd --gid 10001 paperclip \
-  && useradd --create-home --shell /bin/bash --uid "${HOST_UID}" --gid 10001 paperclip \
-  && mkdir -p /paperclip /home/paperclip/workspace \
-  && chown -R paperclip:paperclip /paperclip /home/paperclip \
+  && groupadd --gid 10001 fidelios \
+  && useradd --create-home --shell /bin/bash --uid "${HOST_UID}" --gid 10001 fidelios \
+  && mkdir -p /fidelios /home/fidelios/workspace \
+  && chown -R fidelios:fidelios /fidelios /home/fidelios \
   && rm -rf /var/lib/apt/lists/*
 
-VOLUME ["/paperclip"]
-WORKDIR /home/paperclip/workspace
+VOLUME ["/fidelios"]
+WORKDIR /home/fidelios/workspace
 EXPOSE 3100
-USER paperclip
+USER fidelios
 
-CMD ["bash", "-lc", "set -euo pipefail; mkdir -p \"$PAPERCLIP_HOME\"; npx --yes \"paperclipai@${PAPERCLIPAI_VERSION}\" onboard --yes --data-dir \"$PAPERCLIP_HOME\""]
+CMD ["bash", "-lc", "set -euo pipefail; mkdir -p \"$FIDELIOS_HOME\"; npx --yes \"fidelios@${PAPERCLIPAI_VERSION}\" onboard --yes --data-dir \"$FIDELIOS_HOME\""]

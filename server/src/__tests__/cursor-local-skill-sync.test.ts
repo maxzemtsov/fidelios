@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   listCursorSkills,
   syncCursorSkills,
-} from "@paperclipai/adapter-cursor-local/server";
+} from "@fidelios/adapter-cursor-local/server";
 
 async function makeTempDir(prefix: string): Promise<string> {
   return fs.mkdtemp(path.join(os.tmpdir(), prefix));
@@ -19,7 +19,7 @@ async function createSkillDir(root: string, name: string) {
 }
 
 describe("cursor local skill sync", () => {
-  const paperclipKey = "paperclipai/paperclip/paperclip";
+  const fideliosKey = "maxzemtsov/fidelios/fidelios";
   const cleanupDirs = new Set<string>();
 
   afterEach(async () => {
@@ -27,8 +27,8 @@ describe("cursor local skill sync", () => {
     cleanupDirs.clear();
   });
 
-  it("reports configured Paperclip skills and installs them into the Cursor skills home", async () => {
-    const home = await makeTempDir("paperclip-cursor-skill-sync-");
+  it("reports configured FideliOS skills and installs them into the Cursor skills home", async () => {
+    const home = await makeTempDir("fidelios-cursor-skill-sync-");
     cleanupDirs.add(home);
 
     const ctx = {
@@ -39,30 +39,30 @@ describe("cursor local skill sync", () => {
         env: {
           HOME: home,
         },
-        paperclipSkillSync: {
-          desiredSkills: [paperclipKey],
+        fideliosSkillSync: {
+          desiredSkills: [fideliosKey],
         },
       },
     } as const;
 
     const before = await listCursorSkills(ctx);
     expect(before.mode).toBe("persistent");
-    expect(before.desiredSkills).toContain(paperclipKey);
-    expect(before.entries.find((entry) => entry.key === paperclipKey)?.required).toBe(true);
-    expect(before.entries.find((entry) => entry.key === paperclipKey)?.state).toBe("missing");
+    expect(before.desiredSkills).toContain(fideliosKey);
+    expect(before.entries.find((entry) => entry.key === fideliosKey)?.required).toBe(true);
+    expect(before.entries.find((entry) => entry.key === fideliosKey)?.state).toBe("missing");
 
-    const after = await syncCursorSkills(ctx, [paperclipKey]);
-    expect(after.entries.find((entry) => entry.key === paperclipKey)?.state).toBe("installed");
-    expect((await fs.lstat(path.join(home, ".cursor", "skills", "paperclip"))).isSymbolicLink()).toBe(true);
+    const after = await syncCursorSkills(ctx, [fideliosKey]);
+    expect(after.entries.find((entry) => entry.key === fideliosKey)?.state).toBe("installed");
+    expect((await fs.lstat(path.join(home, ".cursor", "skills", "fidelios"))).isSymbolicLink()).toBe(true);
   });
 
-  it("recognizes company-library runtime skills supplied outside the bundled Paperclip directory", async () => {
-    const home = await makeTempDir("paperclip-cursor-runtime-skills-home-");
-    const runtimeSkills = await makeTempDir("paperclip-cursor-runtime-skills-src-");
+  it("recognizes company-library runtime skills supplied outside the bundled FideliOS directory", async () => {
+    const home = await makeTempDir("fidelios-cursor-runtime-skills-home-");
+    const runtimeSkills = await makeTempDir("fidelios-cursor-runtime-skills-src-");
     cleanupDirs.add(home);
     cleanupDirs.add(runtimeSkills);
 
-    const paperclipDir = await createSkillDir(runtimeSkills, "paperclip");
+    const fideliosDir = await createSkillDir(runtimeSkills, "fidelios");
     const asciiHeartDir = await createSkillDir(runtimeSkills, "ascii-heart");
 
     const ctx = {
@@ -73,13 +73,13 @@ describe("cursor local skill sync", () => {
         env: {
           HOME: home,
         },
-        paperclipRuntimeSkills: [
+        fideliosRuntimeSkills: [
           {
-            key: "paperclip",
-            runtimeName: "paperclip",
-            source: paperclipDir,
+            key: "fidelios",
+            runtimeName: "fidelios",
+            source: fideliosDir,
             required: true,
-            requiredReason: "Bundled Paperclip skills are always available for local adapters.",
+            requiredReason: "Bundled FideliOS skills are always available for local adapters.",
           },
           {
             key: "ascii-heart",
@@ -87,7 +87,7 @@ describe("cursor local skill sync", () => {
             source: asciiHeartDir,
           },
         ],
-        paperclipSkillSync: {
+        fideliosSkillSync: {
           desiredSkills: ["ascii-heart"],
         },
       },
@@ -95,7 +95,7 @@ describe("cursor local skill sync", () => {
 
     const before = await listCursorSkills(ctx);
     expect(before.warnings).toEqual([]);
-    expect(before.desiredSkills).toEqual(["paperclip", "ascii-heart"]);
+    expect(before.desiredSkills).toEqual(["fidelios", "ascii-heart"]);
     expect(before.entries.find((entry) => entry.key === "ascii-heart")?.state).toBe("missing");
 
     const after = await syncCursorSkills(ctx, ["ascii-heart"]);
@@ -104,8 +104,8 @@ describe("cursor local skill sync", () => {
     expect((await fs.lstat(path.join(home, ".cursor", "skills", "ascii-heart"))).isSymbolicLink()).toBe(true);
   });
 
-  it("keeps required bundled Paperclip skills installed even when the desired set is emptied", async () => {
-    const home = await makeTempDir("paperclip-cursor-skill-prune-");
+  it("keeps required bundled FideliOS skills installed even when the desired set is emptied", async () => {
+    const home = await makeTempDir("fidelios-cursor-skill-prune-");
     cleanupDirs.add(home);
 
     const configuredCtx = {
@@ -116,13 +116,13 @@ describe("cursor local skill sync", () => {
         env: {
           HOME: home,
         },
-        paperclipSkillSync: {
-          desiredSkills: [paperclipKey],
+        fideliosSkillSync: {
+          desiredSkills: [fideliosKey],
         },
       },
     } as const;
 
-    await syncCursorSkills(configuredCtx, [paperclipKey]);
+    await syncCursorSkills(configuredCtx, [fideliosKey]);
 
     const clearedCtx = {
       ...configuredCtx,
@@ -130,15 +130,15 @@ describe("cursor local skill sync", () => {
         env: {
           HOME: home,
         },
-        paperclipSkillSync: {
+        fideliosSkillSync: {
           desiredSkills: [],
         },
       },
     } as const;
 
     const after = await syncCursorSkills(clearedCtx, []);
-    expect(after.desiredSkills).toContain(paperclipKey);
-    expect(after.entries.find((entry) => entry.key === paperclipKey)?.state).toBe("installed");
-    expect((await fs.lstat(path.join(home, ".cursor", "skills", "paperclip"))).isSymbolicLink()).toBe(true);
+    expect(after.desiredSkills).toContain(fideliosKey);
+    expect(after.entries.find((entry) => entry.key === fideliosKey)?.state).toBe("installed");
+    expect((await fs.lstat(path.join(home, ".cursor", "skills", "fidelios"))).isSymbolicLink()).toBe(true);
   });
 });

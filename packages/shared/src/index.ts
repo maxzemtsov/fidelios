@@ -301,7 +301,7 @@ export type {
   PluginLauncherDeclaration,
   PluginMinimumHostVersion,
   PluginUiDeclaration,
-  PaperclipPluginManifestV1,
+  FideliOSPluginManifestV1,
   PluginRecord,
   PluginStateRecord,
   PluginConfig,
@@ -553,7 +553,7 @@ export {
 } from "./project-mentions.js";
 
 export {
-  paperclipConfigSchema,
+  fideliosConfigSchema,
   configMetaSchema,
   llmConfigSchema,
   databaseBackupConfigSchema,
@@ -566,7 +566,7 @@ export {
   storageLocalDiskConfigSchema,
   storageS3ConfigSchema,
   secretsLocalEncryptedConfigSchema,
-  type PaperclipConfig,
+  type FideliOSConfig,
   type LlmConfig,
   type DatabaseBackupConfig,
   type DatabaseConfig,

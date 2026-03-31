@@ -2,8 +2,8 @@ import type {
   AdapterExecutionContext,
   AdapterExecutionResult,
   AdapterRuntimeServiceReport,
-} from "@paperclipai/adapter-utils";
-import { asNumber, asString, buildPaperclipEnv, parseObject } from "@paperclipai/adapter-utils/server-utils";
+} from "@fidelios/adapter-utils";
+import { asNumber, asString, buildFideliOSEnv, parseObject } from "@fidelios/adapter-utils/server-utils";
 import crypto, { randomUUID } from "node:crypto";
 import { WebSocket } from "ws";
 
@@ -82,7 +82,7 @@ const PROTOCOL_VERSION = 3;
 const DEFAULT_SCOPES = ["operator.admin"];
 const DEFAULT_CLIENT_ID = "gateway-client";
 const DEFAULT_CLIENT_MODE = "backend";
-const DEFAULT_CLIENT_VERSION = "paperclip";
+const DEFAULT_CLIENT_VERSION = "fidelios";
 const DEFAULT_ROLE = "operator";
 
 const SENSITIVE_LOG_KEY_PATTERN =
@@ -132,9 +132,9 @@ function resolveSessionKey(input: {
   runId: string;
   issueId: string | null;
 }): string {
-  const fallback = input.configuredSessionKey ?? "paperclip";
-  if (input.strategy === "run") return `paperclip:run:${input.runId}`;
-  if (input.strategy === "issue" && input.issueId) return `paperclip:issue:${input.issueId}`;
+  const fallback = input.configuredSessionKey ?? "fidelios";
+  if (input.strategy === "run") return `fidelios:run:${input.runId}`;
+  if (input.strategy === "issue" && input.issueId) return `fidelios:issue:${input.issueId}`;
   return fallback;
 }
 
@@ -301,7 +301,7 @@ function buildWakePayload(ctx: AdapterExecutionContext): WakePayload {
   };
 }
 
-function resolvePaperclipApiUrlOverride(value: unknown): string | null {
+function resolveFideliOSApiUrlOverride(value: unknown): string | null {
   const raw = nonEmpty(value);
   if (!raw) return null;
   try {
@@ -313,63 +313,63 @@ function resolvePaperclipApiUrlOverride(value: unknown): string | null {
   }
 }
 
-function buildPaperclipEnvForWake(ctx: AdapterExecutionContext, wakePayload: WakePayload): Record<string, string> {
-  const paperclipApiUrlOverride = resolvePaperclipApiUrlOverride(ctx.config.paperclipApiUrl);
-  const paperclipEnv: Record<string, string> = {
-    ...buildPaperclipEnv(ctx.agent),
-    PAPERCLIP_RUN_ID: ctx.runId,
+function buildFideliOSEnvForWake(ctx: AdapterExecutionContext, wakePayload: WakePayload): Record<string, string> {
+  const fideliosApiUrlOverride = resolveFideliOSApiUrlOverride(ctx.config.fideliosApiUrl);
+  const fideliosEnv: Record<string, string> = {
+    ...buildFideliOSEnv(ctx.agent),
+    FIDELIOS_RUN_ID: ctx.runId,
   };
 
-  if (paperclipApiUrlOverride) {
-    paperclipEnv.PAPERCLIP_API_URL = paperclipApiUrlOverride;
+  if (fideliosApiUrlOverride) {
+    fideliosEnv.FIDELIOS_API_URL = fideliosApiUrlOverride;
   }
-  if (wakePayload.taskId) paperclipEnv.PAPERCLIP_TASK_ID = wakePayload.taskId;
-  if (wakePayload.wakeReason) paperclipEnv.PAPERCLIP_WAKE_REASON = wakePayload.wakeReason;
-  if (wakePayload.wakeCommentId) paperclipEnv.PAPERCLIP_WAKE_COMMENT_ID = wakePayload.wakeCommentId;
-  if (wakePayload.approvalId) paperclipEnv.PAPERCLIP_APPROVAL_ID = wakePayload.approvalId;
-  if (wakePayload.approvalStatus) paperclipEnv.PAPERCLIP_APPROVAL_STATUS = wakePayload.approvalStatus;
+  if (wakePayload.taskId) fideliosEnv.FIDELIOS_TASK_ID = wakePayload.taskId;
+  if (wakePayload.wakeReason) fideliosEnv.FIDELIOS_WAKE_REASON = wakePayload.wakeReason;
+  if (wakePayload.wakeCommentId) fideliosEnv.FIDELIOS_WAKE_COMMENT_ID = wakePayload.wakeCommentId;
+  if (wakePayload.approvalId) fideliosEnv.FIDELIOS_APPROVAL_ID = wakePayload.approvalId;
+  if (wakePayload.approvalStatus) fideliosEnv.FIDELIOS_APPROVAL_STATUS = wakePayload.approvalStatus;
   if (wakePayload.issueIds.length > 0) {
-    paperclipEnv.PAPERCLIP_LINKED_ISSUE_IDS = wakePayload.issueIds.join(",");
+    fideliosEnv.FIDELIOS_LINKED_ISSUE_IDS = wakePayload.issueIds.join(",");
   }
 
-  return paperclipEnv;
+  return fideliosEnv;
 }
 
-function buildWakeText(payload: WakePayload, paperclipEnv: Record<string, string>): string {
-  const claimedApiKeyPath = "~/.openclaw/workspace/paperclip-claimed-api-key.json";
+function buildWakeText(payload: WakePayload, fideliosEnv: Record<string, string>): string {
+  const claimedApiKeyPath = "~/.openclaw/workspace/fidelios-claimed-api-key.json";
   const orderedKeys = [
-    "PAPERCLIP_RUN_ID",
-    "PAPERCLIP_AGENT_ID",
-    "PAPERCLIP_COMPANY_ID",
-    "PAPERCLIP_API_URL",
-    "PAPERCLIP_TASK_ID",
-    "PAPERCLIP_WAKE_REASON",
-    "PAPERCLIP_WAKE_COMMENT_ID",
-    "PAPERCLIP_APPROVAL_ID",
-    "PAPERCLIP_APPROVAL_STATUS",
-    "PAPERCLIP_LINKED_ISSUE_IDS",
+    "FIDELIOS_RUN_ID",
+    "FIDELIOS_AGENT_ID",
+    "FIDELIOS_COMPANY_ID",
+    "FIDELIOS_API_URL",
+    "FIDELIOS_TASK_ID",
+    "FIDELIOS_WAKE_REASON",
+    "FIDELIOS_WAKE_COMMENT_ID",
+    "FIDELIOS_APPROVAL_ID",
+    "FIDELIOS_APPROVAL_STATUS",
+    "FIDELIOS_LINKED_ISSUE_IDS",
   ];
 
   const envLines: string[] = [];
   for (const key of orderedKeys) {
-    const value = paperclipEnv[key];
+    const value = fideliosEnv[key];
     if (!value) continue;
     envLines.push(`${key}=${value}`);
   }
 
   const issueIdHint = payload.taskId ?? payload.issueId ?? "";
-  const apiBaseHint = paperclipEnv.PAPERCLIP_API_URL ?? "<set PAPERCLIP_API_URL>";
+  const apiBaseHint = fideliosEnv.FIDELIOS_API_URL ?? "<set FIDELIOS_API_URL>";
 
   const lines = [
-    "Paperclip wake event for a cloud adapter.",
+    "FideliOS wake event for a cloud adapter.",
     "",
     "Run this procedure now. Do not guess undocumented endpoints and do not ask for additional heartbeat docs.",
     "",
     "Set these values in your run context:",
     ...envLines,
-    `PAPERCLIP_API_KEY=<token from ${claimedApiKeyPath}>`,
+    `FIDELIOS_API_KEY=<token from ${claimedApiKeyPath}>`,
     "",
-    `Load PAPERCLIP_API_KEY from ${claimedApiKeyPath} (the token you saved after claim-api-key).`,
+    `Load FIDELIOS_API_KEY from ${claimedApiKeyPath} (the token you saved after claim-api-key).`,
     "",
     `api_base=${apiBaseHint}`,
     `task_id=${payload.taskId ?? ""}`,
@@ -381,23 +381,23 @@ function buildWakeText(payload: WakePayload, paperclipEnv: Record<string, string
     `linked_issue_ids=${payload.issueIds.join(",")}`,
     "",
     "HTTP rules:",
-    "- Use Authorization: Bearer $PAPERCLIP_API_KEY on every API call.",
-    "- Use X-Paperclip-Run-Id: $PAPERCLIP_RUN_ID on every mutating API call.",
+    "- Use Authorization: Bearer $FIDELIOS_API_KEY on every API call.",
+    "- Use X-FideliOS-Run-Id: $FIDELIOS_RUN_ID on every mutating API call.",
     "- Use only /api endpoints listed below.",
     "- Do NOT call guessed endpoints like /api/cloud-adapter/*, /api/cloud-adapters/*, /api/adapters/cloud/*, or /api/heartbeat.",
     "",
     "Workflow:",
     "1) GET /api/agents/me",
-    `2) Determine issueId: PAPERCLIP_TASK_ID if present, otherwise issue_id (${issueIdHint}).`,
+    `2) Determine issueId: FIDELIOS_TASK_ID if present, otherwise issue_id (${issueIdHint}).`,
     "3) If issueId exists:",
-    "   - POST /api/issues/{issueId}/checkout with {\"agentId\":\"$PAPERCLIP_AGENT_ID\",\"expectedStatuses\":[\"todo\",\"backlog\",\"blocked\"]}",
+    "   - POST /api/issues/{issueId}/checkout with {\"agentId\":\"$FIDELIOS_AGENT_ID\",\"expectedStatuses\":[\"todo\",\"backlog\",\"blocked\"]}",
     "   - GET /api/issues/{issueId}",
     "   - GET /api/issues/{issueId}/comments",
     "   - Execute the issue instructions exactly.",
     "   - If instructions require a comment, POST /api/issues/{issueId}/comments with {\"body\":\"...\"}.",
     "   - PATCH /api/issues/{issueId} with {\"status\":\"done\",\"comment\":\"what changed and why\"}.",
     "4) If issueId does not exist:",
-    "   - GET /api/companies/$PAPERCLIP_COMPANY_ID/issues?assigneeAgentId=$PAPERCLIP_AGENT_ID&status=todo,in_progress,blocked",
+    "   - GET /api/companies/$FIDELIOS_COMPANY_ID/issues?assigneeAgentId=$FIDELIOS_AGENT_ID&status=todo,in_progress,blocked",
     "   - Pick in_progress first, then todo, then blocked, then execute step 3.",
     "",
     "Useful endpoints for issue work:",
@@ -415,25 +415,25 @@ function appendWakeText(baseText: string, wakeText: string): string {
   return trimmedBase.length > 0 ? `${trimmedBase}\n\n${wakeText}` : wakeText;
 }
 
-function buildStandardPaperclipPayload(
+function buildStandardFideliOSPayload(
   ctx: AdapterExecutionContext,
   wakePayload: WakePayload,
-  paperclipEnv: Record<string, string>,
+  fideliosEnv: Record<string, string>,
   payloadTemplate: Record<string, unknown>,
 ): Record<string, unknown> {
-  const templatePaperclip = parseObject(payloadTemplate.paperclip);
-  const workspace = asRecord(ctx.context.paperclipWorkspace);
-  const workspaces = Array.isArray(ctx.context.paperclipWorkspaces)
-    ? ctx.context.paperclipWorkspaces.filter((entry): entry is Record<string, unknown> => Boolean(asRecord(entry)))
+  const templateFideliOS = parseObject(payloadTemplate.fidelios);
+  const workspace = asRecord(ctx.context.fideliosWorkspace);
+  const workspaces = Array.isArray(ctx.context.fideliosWorkspaces)
+    ? ctx.context.fideliosWorkspaces.filter((entry): entry is Record<string, unknown> => Boolean(asRecord(entry)))
     : [];
   const configuredWorkspaceRuntime = parseObject(ctx.config.workspaceRuntime);
-  const runtimeServiceIntents = Array.isArray(ctx.context.paperclipRuntimeServiceIntents)
-    ? ctx.context.paperclipRuntimeServiceIntents.filter(
+  const runtimeServiceIntents = Array.isArray(ctx.context.fideliosRuntimeServiceIntents)
+    ? ctx.context.fideliosRuntimeServiceIntents.filter(
         (entry): entry is Record<string, unknown> => Boolean(asRecord(entry)),
       )
     : [];
 
-  const standardPaperclip: Record<string, unknown> = {
+  const standardFideliOS: Record<string, unknown> = {
     runId: ctx.runId,
     companyId: ctx.agent.companyId,
     agentId: ctx.agent.id,
@@ -445,25 +445,25 @@ function buildStandardPaperclipPayload(
     wakeCommentId: wakePayload.wakeCommentId,
     approvalId: wakePayload.approvalId,
     approvalStatus: wakePayload.approvalStatus,
-    apiUrl: paperclipEnv.PAPERCLIP_API_URL ?? null,
+    apiUrl: fideliosEnv.FIDELIOS_API_URL ?? null,
   };
 
   if (workspace) {
-    standardPaperclip.workspace = workspace;
+    standardFideliOS.workspace = workspace;
   }
   if (workspaces.length > 0) {
-    standardPaperclip.workspaces = workspaces;
+    standardFideliOS.workspaces = workspaces;
   }
   if (runtimeServiceIntents.length > 0 || Object.keys(configuredWorkspaceRuntime).length > 0) {
-    standardPaperclip.workspaceRuntime = {
+    standardFideliOS.workspaceRuntime = {
       ...configuredWorkspaceRuntime,
       ...(runtimeServiceIntents.length > 0 ? { services: runtimeServiceIntents } : {}),
     };
   }
 
   return {
-    ...templatePaperclip,
-    ...standardPaperclip,
+    ...templateFideliOS,
+    ...standardFideliOS,
   };
 }
 
@@ -713,7 +713,7 @@ class GatewayWsClient {
 
   close() {
     if (!this.ws) return;
-    this.ws.close(1000, "paperclip-complete");
+    this.ws.close(1000, "fidelios-complete");
     this.ws = null;
   }
 
@@ -1052,8 +1052,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const disableDeviceAuth = parseBoolean(ctx.config.disableDeviceAuth, false);
 
   const wakePayload = buildWakePayload(ctx);
-  const paperclipEnv = buildPaperclipEnvForWake(ctx, wakePayload);
-  const wakeText = buildWakeText(wakePayload, paperclipEnv);
+  const fideliosEnv = buildFideliOSEnvForWake(ctx, wakePayload);
+  const wakeText = buildWakeText(wakePayload, fideliosEnv);
 
   const sessionKeyStrategy = normalizeSessionKeyStrategy(ctx.config.sessionKeyStrategy);
   const configuredSessionKey = nonEmpty(ctx.config.sessionKey);
@@ -1066,7 +1066,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
   const templateMessage = nonEmpty(payloadTemplate.message) ?? nonEmpty(payloadTemplate.text);
   const message = templateMessage ? appendWakeText(templateMessage, wakeText) : wakeText;
-  const paperclipPayload = buildStandardPaperclipPayload(ctx, wakePayload, paperclipEnv, payloadTemplate);
+  const fideliosPayload = buildStandardFideliOSPayload(ctx, wakePayload, fideliosEnv, payloadTemplate);
 
   const agentParams: Record<string, unknown> = {
     ...payloadTemplate,

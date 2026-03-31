@@ -29,30 +29,30 @@ FROM base AS build
 WORKDIR /app
 COPY --from=deps /app /app
 COPY . .
-RUN pnpm --filter @paperclipai/ui build
-RUN pnpm --filter @paperclipai/plugin-sdk build
-RUN pnpm --filter @paperclipai/server build
+RUN pnpm --filter @fidelios/ui build
+RUN pnpm --filter @fidelios/plugin-sdk build
+RUN pnpm --filter @fidelios/server build
 RUN test -f server/dist/index.js || (echo "ERROR: server build output missing" && exit 1)
 
 FROM base AS production
 WORKDIR /app
 COPY --chown=node:node --from=build /app /app
 RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai \
-  && mkdir -p /paperclip \
-  && chown node:node /paperclip
+  && mkdir -p /fidelios \
+  && chown node:node /fidelios
 
 ENV NODE_ENV=production \
-  HOME=/paperclip \
+  HOME=/fidelios \
   HOST=0.0.0.0 \
   PORT=3100 \
   SERVE_UI=true \
-  PAPERCLIP_HOME=/paperclip \
-  PAPERCLIP_INSTANCE_ID=default \
-  PAPERCLIP_CONFIG=/paperclip/instances/default/config.json \
-  PAPERCLIP_DEPLOYMENT_MODE=authenticated \
-  PAPERCLIP_DEPLOYMENT_EXPOSURE=private
+  FIDELIOS_HOME=/fidelios \
+  FIDELIOS_INSTANCE_ID=default \
+  FIDELIOS_CONFIG=/fidelios/instances/default/config.json \
+  FIDELIOS_DEPLOYMENT_MODE=authenticated \
+  FIDELIOS_DEPLOYMENT_EXPOSURE=private
 
-VOLUME ["/paperclip"]
+VOLUME ["/fidelios"]
 EXPOSE 3100
 
 USER node

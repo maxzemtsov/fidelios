@@ -6,14 +6,14 @@ import pc from "picocolors";
 import { bootstrapCeoInvite } from "./auth-bootstrap-ceo.js";
 import { onboard } from "./onboard.js";
 import { doctor } from "./doctor.js";
-import { loadPaperclipEnvFile } from "../config/env.js";
+import { loadFideliOSEnvFile } from "../config/env.js";
 import { configExists, resolveConfigPath } from "../config/store.js";
-import type { PaperclipConfig } from "../config/schema.js";
+import type { FideliOSConfig } from "../config/schema.js";
 import { readConfig } from "../config/store.js";
 import {
   describeLocalInstancePaths,
-  resolvePaperclipHomeDir,
-  resolvePaperclipInstanceId,
+  resolveFideliOSHomeDir,
+  resolveFideliOSInstanceId,
 } from "../config/home.js";
 
 interface RunOptions {
@@ -31,20 +31,20 @@ interface StartedServer {
 }
 
 export async function runCommand(opts: RunOptions): Promise<void> {
-  const instanceId = resolvePaperclipInstanceId(opts.instance);
-  process.env.PAPERCLIP_INSTANCE_ID = instanceId;
+  const instanceId = resolveFideliOSInstanceId(opts.instance);
+  process.env.FIDELIOS_INSTANCE_ID = instanceId;
 
-  const homeDir = resolvePaperclipHomeDir();
+  const homeDir = resolveFideliOSHomeDir();
   fs.mkdirSync(homeDir, { recursive: true });
 
   const paths = describeLocalInstancePaths(instanceId);
   fs.mkdirSync(paths.instanceRoot, { recursive: true });
 
   const configPath = resolveConfigPath(opts.config);
-  process.env.PAPERCLIP_CONFIG = configPath;
-  loadPaperclipEnvFile(configPath);
+  process.env.FIDELIOS_CONFIG = configPath;
+  loadFideliOSEnvFile(configPath);
 
-  p.intro(pc.bgCyan(pc.black(" paperclipai run ")));
+  p.intro(pc.bgCyan(pc.black(" fidelios run ")));
   p.log.message(pc.dim(`Home: ${paths.homeDir}`));
   p.log.message(pc.dim(`Instance: ${paths.instanceId}`));
   p.log.message(pc.dim(`Config: ${configPath}`));
@@ -52,7 +52,7 @@ export async function runCommand(opts: RunOptions): Promise<void> {
   if (!configExists(configPath)) {
     if (!process.stdin.isTTY || !process.stdout.isTTY) {
       p.log.error("No config found and terminal is non-interactive.");
-      p.log.message(`Run ${pc.cyan("paperclipai onboard")} once, then retry ${pc.cyan("paperclipai run")}.`);
+      p.log.message(`Run ${pc.cyan("fidelios onboard")} once, then retry ${pc.cyan("fidelios run")}.`);
       process.exit(1);
     }
 
@@ -78,7 +78,7 @@ export async function runCommand(opts: RunOptions): Promise<void> {
     process.exit(1);
   }
 
-  p.log.step("Starting Paperclip server...");
+  p.log.step("Starting FideliOS server...");
   const startedServer = await importServerEntry();
 
   if (shouldGenerateBootstrapInviteAfterStart(config)) {
@@ -92,12 +92,12 @@ export async function runCommand(opts: RunOptions): Promise<void> {
 }
 
 function resolveBootstrapInviteBaseUrl(
-  config: PaperclipConfig,
+  config: FideliOSConfig,
   startedServer: StartedServer,
 ): string {
   const explicitBaseUrl =
-    process.env.PAPERCLIP_PUBLIC_URL ??
-    process.env.PAPERCLIP_AUTH_PUBLIC_BASE_URL ??
+    process.env.FIDELIOS_PUBLIC_URL ??
+    process.env.FIDELIOS_AUTH_PUBLIC_BASE_URL ??
     process.env.BETTER_AUTH_URL ??
     process.env.BETTER_AUTH_BASE_URL ??
     (config.auth.baseUrlMode === "explicit" ? config.auth.publicBaseUrl : undefined);
@@ -139,10 +139,10 @@ function getMissingModuleSpecifier(err: unknown): string | null {
 }
 
 function maybeEnableUiDevMiddleware(entrypoint: string): void {
-  if (process.env.PAPERCLIP_UI_DEV_MIDDLEWARE !== undefined) return;
+  if (process.env.FIDELIOS_UI_DEV_MIDDLEWARE !== undefined) return;
   const normalized = entrypoint.replaceAll("\\", "/");
-  if (normalized.endsWith("/server/src/index.ts") || normalized.endsWith("@paperclipai/server/src/index.ts")) {
-    process.env.PAPERCLIP_UI_DEV_MIDDLEWARE = "true";
+  if (normalized.endsWith("/server/src/index.ts") || normalized.endsWith("@fidelios/server/src/index.ts")) {
+    process.env.FIDELIOS_UI_DEV_MIDDLEWARE = "true";
   }
 }
 
@@ -156,35 +156,35 @@ async function importServerEntry(): Promise<StartedServer> {
     return await startServerFromModule(mod, devEntry);
   }
 
-  // Production mode: import the published @paperclipai/server package
+  // Production mode: import the published @fidelios/server package
   try {
-    const mod = await import("@paperclipai/server");
-    return await startServerFromModule(mod, "@paperclipai/server");
+    const mod = await import("@fidelios/server");
+    return await startServerFromModule(mod, "@fidelios/server");
   } catch (err) {
     const missingSpecifier = getMissingModuleSpecifier(err);
-    const missingServerEntrypoint = !missingSpecifier || missingSpecifier === "@paperclipai/server";
+    const missingServerEntrypoint = !missingSpecifier || missingSpecifier === "@fidelios/server";
     if (isModuleNotFoundError(err) && missingServerEntrypoint) {
       throw new Error(
-        `Could not locate a Paperclip server entrypoint.\n` +
-          `Tried: ${devEntry}, @paperclipai/server\n` +
+        `Could not locate a FideliOS server entrypoint.\n` +
+          `Tried: ${devEntry}, @fidelios/server\n` +
           `${formatError(err)}`,
       );
     }
     throw new Error(
-      `Paperclip server failed to start.\n` +
+      `FideliOS server failed to start.\n` +
         `${formatError(err)}`,
     );
   }
 }
 
-function shouldGenerateBootstrapInviteAfterStart(config: PaperclipConfig): boolean {
+function shouldGenerateBootstrapInviteAfterStart(config: FideliOSConfig): boolean {
   return config.server.deploymentMode === "authenticated" && config.database.mode === "embedded-postgres";
 }
 
 async function startServerFromModule(mod: unknown, label: string): Promise<StartedServer> {
   const startServer = (mod as { startServer?: () => Promise<StartedServer> }).startServer;
   if (typeof startServer !== "function") {
-    throw new Error(`Paperclip server entrypoint did not export startServer(): ${label}`);
+    throw new Error(`FideliOS server entrypoint did not export startServer(): ${label}`);
   }
   return await startServer();
 }

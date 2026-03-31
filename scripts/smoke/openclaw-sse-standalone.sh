@@ -24,18 +24,18 @@ OPENCLAW_METHOD="${OPENCLAW_METHOD:-POST}"
 OPENCLAW_AUTH_HEADER="${OPENCLAW_AUTH_HEADER:-}"
 OPENCLAW_TIMEOUT_SEC="${OPENCLAW_TIMEOUT_SEC:-180}"
 OPENCLAW_MODEL="${OPENCLAW_MODEL:-openclaw}"
-OPENCLAW_USER="${OPENCLAW_USER:-paperclip-smoke}"
+OPENCLAW_USER="${OPENCLAW_USER:-fidelios-smoke}"
 
-PAPERCLIP_RUN_ID="${PAPERCLIP_RUN_ID:-smoke-run-$(date +%s)}"
-PAPERCLIP_AGENT_ID="${PAPERCLIP_AGENT_ID:-openclaw-smoke-agent}"
-PAPERCLIP_COMPANY_ID="${PAPERCLIP_COMPANY_ID:-openclaw-smoke-company}"
-PAPERCLIP_API_URL="${PAPERCLIP_API_URL:-http://localhost:3100}"
-PAPERCLIP_TASK_ID="${PAPERCLIP_TASK_ID:-openclaw-smoke-task}"
-PAPERCLIP_WAKE_REASON="${PAPERCLIP_WAKE_REASON:-openclaw_smoke_test}"
-PAPERCLIP_WAKE_COMMENT_ID="${PAPERCLIP_WAKE_COMMENT_ID:-}"
-PAPERCLIP_APPROVAL_ID="${PAPERCLIP_APPROVAL_ID:-}"
-PAPERCLIP_APPROVAL_STATUS="${PAPERCLIP_APPROVAL_STATUS:-}"
-PAPERCLIP_LINKED_ISSUE_IDS="${PAPERCLIP_LINKED_ISSUE_IDS:-}"
+FIDELIOS_RUN_ID="${FIDELIOS_RUN_ID:-smoke-run-$(date +%s)}"
+FIDELIOS_AGENT_ID="${FIDELIOS_AGENT_ID:-openclaw-smoke-agent}"
+FIDELIOS_COMPANY_ID="${FIDELIOS_COMPANY_ID:-openclaw-smoke-company}"
+FIDELIOS_API_URL="${FIDELIOS_API_URL:-http://localhost:3100}"
+FIDELIOS_TASK_ID="${FIDELIOS_TASK_ID:-openclaw-smoke-task}"
+FIDELIOS_WAKE_REASON="${FIDELIOS_WAKE_REASON:-openclaw_smoke_test}"
+FIDELIOS_WAKE_COMMENT_ID="${FIDELIOS_WAKE_COMMENT_ID:-}"
+FIDELIOS_APPROVAL_ID="${FIDELIOS_APPROVAL_ID:-}"
+FIDELIOS_APPROVAL_STATUS="${FIDELIOS_APPROVAL_STATUS:-}"
+FIDELIOS_LINKED_ISSUE_IDS="${FIDELIOS_LINKED_ISSUE_IDS:-}"
 OPENCLAW_TEXT_PREFIX="${OPENCLAW_TEXT_PREFIX:-Standalone OpenClaw SSE smoke test.}"
 
 [[ -n "$OPENCLAW_URL" ]] || fail "OPENCLAW_URL is required"
@@ -43,51 +43,51 @@ OPENCLAW_TEXT_PREFIX="${OPENCLAW_TEXT_PREFIX:-Standalone OpenClaw SSE smoke test
 read -r -d '' TEXT_BODY <<EOF || true
 ${OPENCLAW_TEXT_PREFIX}
 
-PAPERCLIP_RUN_ID=${PAPERCLIP_RUN_ID}
-PAPERCLIP_AGENT_ID=${PAPERCLIP_AGENT_ID}
-PAPERCLIP_COMPANY_ID=${PAPERCLIP_COMPANY_ID}
-PAPERCLIP_API_URL=${PAPERCLIP_API_URL}
-PAPERCLIP_TASK_ID=${PAPERCLIP_TASK_ID}
-PAPERCLIP_WAKE_REASON=${PAPERCLIP_WAKE_REASON}
-PAPERCLIP_WAKE_COMMENT_ID=${PAPERCLIP_WAKE_COMMENT_ID}
-PAPERCLIP_APPROVAL_ID=${PAPERCLIP_APPROVAL_ID}
-PAPERCLIP_APPROVAL_STATUS=${PAPERCLIP_APPROVAL_STATUS}
-PAPERCLIP_LINKED_ISSUE_IDS=${PAPERCLIP_LINKED_ISSUE_IDS}
+FIDELIOS_RUN_ID=${FIDELIOS_RUN_ID}
+FIDELIOS_AGENT_ID=${FIDELIOS_AGENT_ID}
+FIDELIOS_COMPANY_ID=${FIDELIOS_COMPANY_ID}
+FIDELIOS_API_URL=${FIDELIOS_API_URL}
+FIDELIOS_TASK_ID=${FIDELIOS_TASK_ID}
+FIDELIOS_WAKE_REASON=${FIDELIOS_WAKE_REASON}
+FIDELIOS_WAKE_COMMENT_ID=${FIDELIOS_WAKE_COMMENT_ID}
+FIDELIOS_APPROVAL_ID=${FIDELIOS_APPROVAL_ID}
+FIDELIOS_APPROVAL_STATUS=${FIDELIOS_APPROVAL_STATUS}
+FIDELIOS_LINKED_ISSUE_IDS=${FIDELIOS_LINKED_ISSUE_IDS}
 
-Run your Paperclip heartbeat procedure now.
+Run your FideliOS heartbeat procedure now.
 EOF
 
 PAYLOAD="$(jq -nc \
   --arg text "$TEXT_BODY" \
   --arg model "$OPENCLAW_MODEL" \
   --arg user "$OPENCLAW_USER" \
-  --arg runId "$PAPERCLIP_RUN_ID" \
-  --arg agentId "$PAPERCLIP_AGENT_ID" \
-  --arg companyId "$PAPERCLIP_COMPANY_ID" \
-  --arg apiUrl "$PAPERCLIP_API_URL" \
-  --arg taskId "$PAPERCLIP_TASK_ID" \
-  --arg wakeReason "$PAPERCLIP_WAKE_REASON" \
-  --arg wakeCommentId "$PAPERCLIP_WAKE_COMMENT_ID" \
-  --arg approvalId "$PAPERCLIP_APPROVAL_ID" \
-  --arg approvalStatus "$PAPERCLIP_APPROVAL_STATUS" \
-  --arg linkedIssueIds "$PAPERCLIP_LINKED_ISSUE_IDS" \
+  --arg runId "$FIDELIOS_RUN_ID" \
+  --arg agentId "$FIDELIOS_AGENT_ID" \
+  --arg companyId "$FIDELIOS_COMPANY_ID" \
+  --arg apiUrl "$FIDELIOS_API_URL" \
+  --arg taskId "$FIDELIOS_TASK_ID" \
+  --arg wakeReason "$FIDELIOS_WAKE_REASON" \
+  --arg wakeCommentId "$FIDELIOS_WAKE_COMMENT_ID" \
+  --arg approvalId "$FIDELIOS_APPROVAL_ID" \
+  --arg approvalStatus "$FIDELIOS_APPROVAL_STATUS" \
+  --arg linkedIssueIds "$FIDELIOS_LINKED_ISSUE_IDS" \
   '{
     model: $model,
     user: $user,
     input: $text,
     stream: true,
     metadata: {
-      PAPERCLIP_RUN_ID: $runId,
-      PAPERCLIP_AGENT_ID: $agentId,
-      PAPERCLIP_COMPANY_ID: $companyId,
-      PAPERCLIP_API_URL: $apiUrl,
-      PAPERCLIP_TASK_ID: $taskId,
-      PAPERCLIP_WAKE_REASON: $wakeReason,
-      PAPERCLIP_WAKE_COMMENT_ID: $wakeCommentId,
-      PAPERCLIP_APPROVAL_ID: $approvalId,
-      PAPERCLIP_APPROVAL_STATUS: $approvalStatus,
-      PAPERCLIP_LINKED_ISSUE_IDS: $linkedIssueIds,
-      paperclip_session_key: ("paperclip:run:" + $runId)
+      FIDELIOS_RUN_ID: $runId,
+      FIDELIOS_AGENT_ID: $agentId,
+      FIDELIOS_COMPANY_ID: $companyId,
+      FIDELIOS_API_URL: $apiUrl,
+      FIDELIOS_TASK_ID: $taskId,
+      FIDELIOS_WAKE_REASON: $wakeReason,
+      FIDELIOS_WAKE_COMMENT_ID: $wakeCommentId,
+      FIDELIOS_APPROVAL_ID: $approvalId,
+      FIDELIOS_APPROVAL_STATUS: $approvalStatus,
+      FIDELIOS_LINKED_ISSUE_IDS: $linkedIssueIds,
+      fidelios_session_key: ("fidelios:run:" + $runId)
     }
   }')"
 
@@ -105,7 +105,7 @@ args=(
   -X "$OPENCLAW_METHOD"
   -H "content-type: application/json"
   -H "accept: text/event-stream"
-  -H "x-openclaw-session-key: paperclip:run:${PAPERCLIP_RUN_ID}"
+  -H "x-openclaw-session-key: fidelios:run:${FIDELIOS_RUN_ID}"
   -D "$headers_file"
   -o "$body_file"
   --data "$PAYLOAD"

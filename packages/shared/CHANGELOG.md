@@ -1,4 +1,4 @@
-# @paperclipai/shared
+# @fidelios/shared
 
 ## 0.3.1
 

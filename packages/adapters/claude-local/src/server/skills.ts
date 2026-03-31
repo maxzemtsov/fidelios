@@ -5,12 +5,12 @@ import type {
   AdapterSkillContext,
   AdapterSkillEntry,
   AdapterSkillSnapshot,
-} from "@paperclipai/adapter-utils";
+} from "@fidelios/adapter-utils";
 import {
-  readPaperclipRuntimeSkillEntries,
+  readFideliOSRuntimeSkillEntries,
   readInstalledSkillTargets,
-  resolvePaperclipDesiredSkillNames,
-} from "@paperclipai/adapter-utils/server-utils";
+  resolveFideliOSDesiredSkillNames,
+} from "@fidelios/adapter-utils/server-utils";
 
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -29,9 +29,9 @@ function resolveClaudeSkillsHome(config: Record<string, unknown>) {
 }
 
 async function buildClaudeSkillSnapshot(config: Record<string, unknown>): Promise<AdapterSkillSnapshot> {
-  const availableEntries = await readPaperclipRuntimeSkillEntries(config, __moduleDir);
+  const availableEntries = await readFideliOSRuntimeSkillEntries(config, __moduleDir);
   const availableByKey = new Map(availableEntries.map((entry) => [entry.key, entry]));
-  const desiredSkills = resolvePaperclipDesiredSkillNames(config, availableEntries);
+  const desiredSkills = resolveFideliOSDesiredSkillNames(config, availableEntries);
   const desiredSet = new Set(desiredSkills);
   const skillsHome = resolveClaudeSkillsHome(config);
   const installed = await readInstalledSkillTargets(skillsHome);
@@ -42,7 +42,7 @@ async function buildClaudeSkillSnapshot(config: Record<string, unknown>): Promis
     managed: true,
     state: desiredSet.has(entry.key) ? "configured" : "available",
     origin: entry.required ? "paperclip_required" : "company_managed",
-    originLabel: entry.required ? "Required by Paperclip" : "Managed by Paperclip",
+    originLabel: entry.required ? "Required by FideliOS" : "Managed by FideliOS",
     readOnly: false,
     sourcePath: entry.source,
     targetPath: null,
@@ -56,7 +56,7 @@ async function buildClaudeSkillSnapshot(config: Record<string, unknown>): Promis
 
   for (const desiredSkill of desiredSkills) {
     if (availableByKey.has(desiredSkill)) continue;
-    warnings.push(`Desired skill "${desiredSkill}" is not available from the Paperclip skills directory.`);
+    warnings.push(`Desired skill "${desiredSkill}" is not available from the FideliOS skills directory.`);
     entries.push({
       key: desiredSkill,
       runtimeName: null,
@@ -68,7 +68,7 @@ async function buildClaudeSkillSnapshot(config: Record<string, unknown>): Promis
       readOnly: false,
       sourcePath: undefined,
       targetPath: undefined,
-      detail: "Paperclip cannot find this skill in the local runtime skills directory.",
+      detail: "FideliOS cannot find this skill in the local runtime skills directory.",
     });
   }
 
@@ -86,7 +86,7 @@ async function buildClaudeSkillSnapshot(config: Record<string, unknown>): Promis
       readOnly: true,
       sourcePath: null,
       targetPath: installedEntry.targetPath ?? path.join(skillsHome, name),
-      detail: "Installed outside Paperclip management in the Claude skills home.",
+      detail: "Installed outside FideliOS management in the Claude skills home.",
     });
   }
 
@@ -117,5 +117,5 @@ export function resolveClaudeDesiredSkillNames(
   config: Record<string, unknown>,
   availableEntries: Array<{ key: string; required?: boolean }>,
 ) {
-  return resolvePaperclipDesiredSkillNames(config, availableEntries);
+  return resolveFideliOSDesiredSkillNames(config, availableEntries);
 }

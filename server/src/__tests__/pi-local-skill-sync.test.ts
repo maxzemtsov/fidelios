@@ -5,14 +5,14 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   listPiSkills,
   syncPiSkills,
-} from "@paperclipai/adapter-pi-local/server";
+} from "@fidelios/adapter-pi-local/server";
 
 async function makeTempDir(prefix: string): Promise<string> {
   return fs.mkdtemp(path.join(os.tmpdir(), prefix));
 }
 
 describe("pi local skill sync", () => {
-  const paperclipKey = "paperclipai/paperclip/paperclip";
+  const fideliosKey = "maxzemtsov/fidelios/fidelios";
   const cleanupDirs = new Set<string>();
 
   afterEach(async () => {
@@ -20,8 +20,8 @@ describe("pi local skill sync", () => {
     cleanupDirs.clear();
   });
 
-  it("reports configured Paperclip skills and installs them into the Pi skills home", async () => {
-    const home = await makeTempDir("paperclip-pi-skill-sync-");
+  it("reports configured FideliOS skills and installs them into the Pi skills home", async () => {
+    const home = await makeTempDir("fidelios-pi-skill-sync-");
     cleanupDirs.add(home);
 
     const ctx = {
@@ -32,25 +32,25 @@ describe("pi local skill sync", () => {
         env: {
           HOME: home,
         },
-        paperclipSkillSync: {
-          desiredSkills: [paperclipKey],
+        fideliosSkillSync: {
+          desiredSkills: [fideliosKey],
         },
       },
     } as const;
 
     const before = await listPiSkills(ctx);
     expect(before.mode).toBe("persistent");
-    expect(before.desiredSkills).toContain(paperclipKey);
-    expect(before.entries.find((entry) => entry.key === paperclipKey)?.required).toBe(true);
-    expect(before.entries.find((entry) => entry.key === paperclipKey)?.state).toBe("missing");
+    expect(before.desiredSkills).toContain(fideliosKey);
+    expect(before.entries.find((entry) => entry.key === fideliosKey)?.required).toBe(true);
+    expect(before.entries.find((entry) => entry.key === fideliosKey)?.state).toBe("missing");
 
-    const after = await syncPiSkills(ctx, [paperclipKey]);
-    expect(after.entries.find((entry) => entry.key === paperclipKey)?.state).toBe("installed");
-    expect((await fs.lstat(path.join(home, ".pi", "agent", "skills", "paperclip"))).isSymbolicLink()).toBe(true);
+    const after = await syncPiSkills(ctx, [fideliosKey]);
+    expect(after.entries.find((entry) => entry.key === fideliosKey)?.state).toBe("installed");
+    expect((await fs.lstat(path.join(home, ".pi", "agent", "skills", "fidelios"))).isSymbolicLink()).toBe(true);
   });
 
-  it("keeps required bundled Paperclip skills installed even when the desired set is emptied", async () => {
-    const home = await makeTempDir("paperclip-pi-skill-prune-");
+  it("keeps required bundled FideliOS skills installed even when the desired set is emptied", async () => {
+    const home = await makeTempDir("fidelios-pi-skill-prune-");
     cleanupDirs.add(home);
 
     const configuredCtx = {
@@ -61,13 +61,13 @@ describe("pi local skill sync", () => {
         env: {
           HOME: home,
         },
-        paperclipSkillSync: {
-          desiredSkills: [paperclipKey],
+        fideliosSkillSync: {
+          desiredSkills: [fideliosKey],
         },
       },
     } as const;
 
-    await syncPiSkills(configuredCtx, [paperclipKey]);
+    await syncPiSkills(configuredCtx, [fideliosKey]);
 
     const clearedCtx = {
       ...configuredCtx,
@@ -75,15 +75,15 @@ describe("pi local skill sync", () => {
         env: {
           HOME: home,
         },
-        paperclipSkillSync: {
+        fideliosSkillSync: {
           desiredSkills: [],
         },
       },
     } as const;
 
     const after = await syncPiSkills(clearedCtx, []);
-    expect(after.desiredSkills).toContain(paperclipKey);
-    expect(after.entries.find((entry) => entry.key === paperclipKey)?.state).toBe("installed");
-    expect((await fs.lstat(path.join(home, ".pi", "agent", "skills", "paperclip"))).isSymbolicLink()).toBe(true);
+    expect(after.desiredSkills).toContain(fideliosKey);
+    expect(after.entries.find((entry) => entry.key === fideliosKey)?.state).toBe("installed");
+    expect((await fs.lstat(path.join(home, ".pi", "agent", "skills", "fidelios"))).isSymbolicLink()).toBe(true);
   });
 });

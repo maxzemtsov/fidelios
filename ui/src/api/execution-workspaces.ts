@@ -1,4 +1,4 @@
-import type { ExecutionWorkspace } from "@paperclipai/shared";
+import type { ExecutionWorkspace } from "@fidelios/shared";
 import { api } from "./client";
 
 export const executionWorkspacesApi = {

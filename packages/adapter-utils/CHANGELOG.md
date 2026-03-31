@@ -1,4 +1,4 @@
-# @paperclipai/adapter-utils
+# @fidelios/adapter-utils
 
 ## 0.3.1
 

@@ -2,11 +2,11 @@ services:
   db:
     image: postgres:17-alpine
     environment:
-      POSTGRES_USER: paperclip
-      POSTGRES_PASSWORD: paperclip
-      POSTGRES_DB: paperclip
+      POSTGRES_USER: fidelios
+      POSTGRES_PASSWORD: fidelios
+      POSTGRES_DB: fidelios
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U paperclip -d paperclip"]
+      test: ["CMD-SHELL", "pg_isready -U fidelios -d fidelios"]
       interval: 2s
       timeout: 5s
       retries: 30
@@ -20,19 +20,19 @@ services:
     ports:
       - "3100:3100"
     environment:
-      DATABASE_URL: postgres://paperclip:paperclip@db:5432/paperclip
+      DATABASE_URL: postgres://fidelios:fidelios@db:5432/fidelios
       PORT: "3100"
       SERVE_UI: "true"
-      PAPERCLIP_DEPLOYMENT_MODE: "authenticated"
-      PAPERCLIP_DEPLOYMENT_EXPOSURE: "private"
-      PAPERCLIP_PUBLIC_URL: "${PAPERCLIP_PUBLIC_URL:-http://localhost:3100}"
+      FIDELIOS_DEPLOYMENT_MODE: "authenticated"
+      FIDELIOS_DEPLOYMENT_EXPOSURE: "private"
+      FIDELIOS_PUBLIC_URL: "${FIDELIOS_PUBLIC_URL:-http://localhost:3100}"
       BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set}"
     volumes:
-      - paperclip-data:/paperclip
+      - fidelios-data:/fidelios
     depends_on:
       db:
         condition: service_healthy
 
 volumes:
   pgdata:
-  paperclip-data:
+  fidelios-data:
