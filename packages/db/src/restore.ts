@@ -22,13 +22,13 @@ function expandHomePrefix(value: string): string {
 }
 
 function resolveFideliOSHomeDir(): string {
-  const envHome = (process.env.FIDELIOS_HOME ?? process.env.PAPERCLIP_HOME)?.trim();
+  const envHome = (process.env.FIDELIOS_HOME)?.trim();
   if (envHome) return path.resolve(expandHomePrefix(envHome));
   return path.resolve(os.homedir(), ".fidelios");
 }
 
 function resolveFideliOSInstanceId(): string {
-  const raw = (process.env.FIDELIOS_INSTANCE_ID ?? process.env.PAPERCLIP_INSTANCE_ID)?.trim() || "default";
+  const raw = (process.env.FIDELIOS_INSTANCE_ID)?.trim() || "default";
   if (!/^[a-zA-Z0-9_-]+$/.test(raw)) {
     throw new Error(`Invalid instance ID '${raw}'.`);
   }
@@ -63,7 +63,7 @@ function resolveConnectionString(config: PartialConfig | null): string {
     if (trimmed) return trimmed;
   }
   const port = resolveEmbeddedPort(config);
-  return `postgres://paperclip:paperclip@127.0.0.1:${port}/fidelios`;
+  return `postgres://fidelios:fidelios@127.0.0.1:${port}/fidelios`;
 }
 
 function resolveBackupDir(config: PartialConfig | null): string {

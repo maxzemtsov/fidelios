@@ -25,7 +25,7 @@ async function buildCodexSkillSnapshot(
     desired: desiredSet.has(entry.key),
     managed: true,
     state: desiredSet.has(entry.key) ? "configured" : "available",
-    origin: entry.required ? "paperclip_required" : "company_managed",
+    origin: entry.required ? "fidelios_required" : "company_managed",
     originLabel: entry.required ? "Required by FideliOS" : "Managed by FideliOS",
     readOnly: false,
     sourcePath: entry.source,

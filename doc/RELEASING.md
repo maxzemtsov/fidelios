@@ -160,20 +160,20 @@ The repo intentionally does not run this through GitHub Actions because:
 For a canary:
 
 ```bash
-PAPERCLIPAI_VERSION=canary ./scripts/docker-onboard-smoke.sh
+FIDELIOS_VERSION=canary ./scripts/docker-onboard-smoke.sh
 ```
 
 For the current stable:
 
 ```bash
-PAPERCLIPAI_VERSION=latest ./scripts/docker-onboard-smoke.sh
+FIDELIOS_VERSION=latest ./scripts/docker-onboard-smoke.sh
 ```
 
 Useful isolated variants:
 
 ```bash
-HOST_PORT=3232 DATA_DIR=./data/release-smoke-canary PAPERCLIPAI_VERSION=canary ./scripts/docker-onboard-smoke.sh
-HOST_PORT=3233 DATA_DIR=./data/release-smoke-stable PAPERCLIPAI_VERSION=latest ./scripts/docker-onboard-smoke.sh
+HOST_PORT=3232 DATA_DIR=./data/release-smoke-canary FIDELIOS_VERSION=canary ./scripts/docker-onboard-smoke.sh
+HOST_PORT=3233 DATA_DIR=./data/release-smoke-stable FIDELIOS_VERSION=latest ./scripts/docker-onboard-smoke.sh
 ```
 
 Automated browser smoke is also available:

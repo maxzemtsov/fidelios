@@ -90,7 +90,7 @@ function buildManagedSkillOrigin(entry: { required?: boolean }): Pick<
 > {
   if (entry.required) {
     return {
-      origin: "paperclip_required",
+      origin: "fidelios_required",
       originLabel: "Required by FideliOS",
       readOnly: false,
     };

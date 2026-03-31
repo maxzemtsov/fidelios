@@ -144,13 +144,13 @@ git tag --list 'canary/v*' --sort=-version:refname | head -5
 Run:
 
 ```bash
-PAPERCLIPAI_VERSION=canary ./scripts/docker-onboard-smoke.sh
+FIDELIOS_VERSION=canary ./scripts/docker-onboard-smoke.sh
 ```
 
 Useful isolated variant:
 
 ```bash
-HOST_PORT=3232 DATA_DIR=./data/release-smoke-canary PAPERCLIPAI_VERSION=canary ./scripts/docker-onboard-smoke.sh
+HOST_PORT=3232 DATA_DIR=./data/release-smoke-canary FIDELIOS_VERSION=canary ./scripts/docker-onboard-smoke.sh
 ```
 
 Confirm:

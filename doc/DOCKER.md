@@ -118,9 +118,9 @@ Open: `http://localhost:3131` (default smoke host port)
 Useful overrides:
 
 ```sh
-HOST_PORT=3200 PAPERCLIPAI_VERSION=latest ./scripts/docker-onboard-smoke.sh
+HOST_PORT=3200 FIDELIOS_VERSION=latest ./scripts/docker-onboard-smoke.sh
 FIDELIOS_DEPLOYMENT_MODE=authenticated FIDELIOS_DEPLOYMENT_EXPOSURE=private ./scripts/docker-onboard-smoke.sh
-SMOKE_DETACH=true SMOKE_METADATA_FILE=/tmp/fidelios-smoke.env PAPERCLIPAI_VERSION=latest ./scripts/docker-onboard-smoke.sh
+SMOKE_DETACH=true SMOKE_METADATA_FILE=/tmp/fidelios-smoke.env FIDELIOS_VERSION=latest ./scripts/docker-onboard-smoke.sh
 ```
 
 Notes:

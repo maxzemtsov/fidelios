@@ -1,6 +1,6 @@
 {
   "name": "@fidelios/plugin-file-browser-example",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Example plugin: project sidebar Files link + project detail tab with workspace selector and file browser",
   "type": "module",
   "private": true,

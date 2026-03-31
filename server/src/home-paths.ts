@@ -13,13 +13,13 @@ function expandHomePrefix(value: string): string {
 }
 
 export function resolveFideliOSHomeDir(): string {
-  const envHome = (process.env.FIDELIOS_HOME ?? process.env.PAPERCLIP_HOME)?.trim();
+  const envHome = (process.env.FIDELIOS_HOME)?.trim();
   if (envHome) return path.resolve(expandHomePrefix(envHome));
   return path.resolve(os.homedir(), ".fidelios");
 }
 
 export function resolveFideliOSInstanceId(): string {
-  const raw = (process.env.FIDELIOS_INSTANCE_ID ?? process.env.PAPERCLIP_INSTANCE_ID)?.trim() || DEFAULT_INSTANCE_ID;
+  const raw = (process.env.FIDELIOS_INSTANCE_ID)?.trim() || DEFAULT_INSTANCE_ID;
   if (!INSTANCE_ID_RE.test(raw)) {
     throw new Error(`Invalid FIDELIOS_INSTANCE_ID '${raw}'.`);
   }

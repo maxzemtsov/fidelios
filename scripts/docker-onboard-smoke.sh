@@ -4,7 +4,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 IMAGE_NAME="${IMAGE_NAME:-fidelios-onboard-smoke}"
 HOST_PORT="${HOST_PORT:-3131}"
-PAPERCLIPAI_VERSION="${PAPERCLIPAI_VERSION:-latest}"
+FIDELIOS_VERSION="${FIDELIOS_VERSION:-latest}"
 DATA_DIR="${DATA_DIR:-$REPO_ROOT/data/docker-onboard-smoke}"
 HOST_UID="${HOST_UID:-$(id -u)}"
 SMOKE_DETACH="${SMOKE_DETACH:-false}"
@@ -79,7 +79,7 @@ write_metadata_file() {
     printf 'SMOKE_CONTAINER_NAME=%q\n' "$CONTAINER_NAME"
     printf 'SMOKE_DATA_DIR=%q\n' "$DATA_DIR"
     printf 'SMOKE_IMAGE_NAME=%q\n' "$IMAGE_NAME"
-    printf 'SMOKE_PAPERCLIPAI_VERSION=%q\n' "$PAPERCLIPAI_VERSION"
+    printf 'SMOKE_FIDELIOS_VERSION=%q\n' "$FIDELIOS_VERSION"
   } >"$SMOKE_METADATA_FILE"
 }
 
@@ -93,7 +93,7 @@ generate_bootstrap_invite_url() {
       -e FIDELIOS_PUBLIC_URL="$FIDELIOS_PUBLIC_URL" \
       -e FIDELIOS_HOME="/fidelios" \
       "$CONTAINER_NAME" bash -lc \
-      'timeout 20s npx --yes "fidelios@${PAPERCLIPAI_VERSION}" auth bootstrap-ceo --data-dir "$FIDELIOS_HOME" --base-url "$FIDELIOS_PUBLIC_URL"' \
+      'timeout 20s npx --yes "fidelios@${FIDELIOS_VERSION}" auth bootstrap-ceo --data-dir "$FIDELIOS_HOME" --base-url "$FIDELIOS_PUBLIC_URL"' \
       2>&1
   )"; then
     bootstrap_status=0
@@ -240,7 +240,7 @@ auto_bootstrap_authenticated_smoke() {
 
 echo "==> Building onboard smoke image"
 docker build \
-  --build-arg PAPERCLIPAI_VERSION="$PAPERCLIPAI_VERSION" \
+  --build-arg FIDELIOS_VERSION="$FIDELIOS_VERSION" \
   --build-arg HOST_UID="$HOST_UID" \
   -f "$REPO_ROOT/Dockerfile.onboard-smoke" \
   -t "$IMAGE_NAME" \
