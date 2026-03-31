@@ -58,26 +58,43 @@ Works with **Claude Code, Codex, Cursor, Gemini, OpenClaw**, and any agent that 
 
 ## Quick Start
 
-> **Requirements:** Node.js ≥ 20, pnpm 9.x, Git
+> **Requirements:** Node.js ≥ 20
+
+### Install
+
+```bash
+npm install -g fidelios
+```
+
+### Run
+
+```bash
+fidelios run
+```
+
+That's it. Open **http://127.0.0.1:3100** — the setup wizard will guide you through creating your first company and hiring your first agent.
+
+No cloud account needed. An embedded PostgreSQL database starts automatically.
+
+### Useful commands
+
+```bash
+fidelios run           # Start the server
+fidelios onboard       # Re-run the setup wizard
+fidelios doctor        # Check your environment
+fidelios db:restore    # Restore from a backup
+fidelios --help        # See all commands
+```
+
+### Development (from source)
+
+If you want to contribute or run from source:
 
 ```bash
 git clone https://github.com/fideliosai/fidelios.git
 cd fidelios
 pnpm install
 pnpm dev:watch
-```
-
-Open **http://127.0.0.1:3100** — the setup wizard will guide you through creating your first company and hiring your first agent.
-
-No cloud account needed. An embedded PostgreSQL database starts automatically.
-
-### Global CLI (optional)
-
-Install the `fidelios` command to your terminal so you can start from anywhere:
-
-```bash
-pnpm dev:link          # installs /opt/homebrew/bin/fidelios (macOS)
-fidelios run           # next time — just this
 ```
 
 ---
@@ -88,13 +105,10 @@ FideliOS backs up your database automatically every 60 minutes.
 
 ```bash
 # Restore from the latest backup (creates a safety snapshot first)
-pnpm fidelios db:restore --latest
+fidelios db:restore --latest
 
 # Interactive restore — pick from a list
-pnpm fidelios db:restore
-
-# Manual backup right now
-pnpm db:backup
+fidelios db:restore
 ```
 
 ### S3 Cloud Sync (optional)
