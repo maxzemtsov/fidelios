@@ -78,6 +78,7 @@ export async function runCommand(opts: RunOptions): Promise<void> {
     process.exit(1);
   }
 
+  process.env.FIDELIOS_OPEN_ON_LISTEN = "true";
   p.log.step("Starting FideliOS server...");
   const startedServer = await importServerEntry();
 
