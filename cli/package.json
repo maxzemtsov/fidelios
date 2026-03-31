@@ -1,6 +1,6 @@
 {
   "name": "fidelios",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "FideliOS CLI \u2014 orchestrate AI agent teams to run a business",
   "type": "module",
   "bin": {

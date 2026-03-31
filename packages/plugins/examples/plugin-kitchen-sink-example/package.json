@@ -1,6 +1,6 @@
 {
   "name": "@fidelios/plugin-kitchen-sink-example",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Reference plugin that demonstrates the full FideliOS plugin surface area in one package",
   "type": "module",
   "private": true,
