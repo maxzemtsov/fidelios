@@ -555,10 +555,11 @@ function treeBounds(ln: LayoutNode): { minX: number; minY: number; maxX: number;
   return { minX, minY, maxX, maxY };
 }
 
-// FideliOS logo: scaled icon (~16px) + wordmark (13px), vertically centered
+// FideliOS logo: planet icon (~16px) + wordmark (13px), vertically centered
 const FIDELIOS_LOGO_SVG = `<g>
   <g transform="scale(0.72)" transform-origin="0 0">
-    <path stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" d="m18 4-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"/>
+    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"/>
+    <ellipse cx="12" cy="12" rx="16" ry="5" stroke="currentColor" stroke-width="1.5" fill="none" transform="rotate(-25 12 12)"/>
   </g>
   <text x="22" y="11.5" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="currentColor">FideliOS</text>
 </g>`;
