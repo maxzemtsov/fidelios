@@ -683,6 +683,10 @@ export async function startServer(): Promise<StartedServer> {
       },
       "Automatic database backups enabled",
     );
+
+    // Run backup immediately on startup — don't wait for first interval
+    void runScheduledBackup();
+
     setInterval(() => {
       void runScheduledBackup();
     }, backupIntervalMs);
