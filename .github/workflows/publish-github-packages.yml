@@ -89,14 +89,19 @@ jobs:
               continue
             fi
             echo "→ Publishing $pkg_name@$pkg_version"
-            (
+            if (
               cd "$pkg_dir"
               pnpm publish \
                 --no-git-checks \
                 --tag latest \
                 --access public \
-                --registry https://npm.pkg.github.com
-            )
+                --registry https://npm.pkg.github.com 2>&1
+            ); then
+              echo "  ✓ Published"
+            else
+              # Version already exists — not an error
+              echo "  ⏭ Already published, skipping"
+            fi
           done < <(node scripts/release-package-map.mjs list)
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
