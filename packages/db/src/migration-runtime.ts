@@ -97,7 +97,7 @@ async function ensureEmbeddedPostgresConnection(
   const pgVersionFile = path.resolve(dataDir, "PG_VERSION");
   const runningPid = readRunningPostmasterPid(postmasterPidFile);
   const runningPort = readPidFilePort(postmasterPidFile);
-  const preferredAdminConnectionString = `postgres://fidelios:fidelios@127.0.0.1:${preferredPort}/postgres`;
+  const preferredAdminConnectionString = `postgres://paperclip:paperclip@127.0.0.1:${preferredPort}/postgres`;
   const logBuffer = createEmbeddedPostgresLogBuffer();
 
   if (!runningPid && existsSync(pgVersionFile)) {
@@ -114,7 +114,7 @@ async function ensureEmbeddedPostgresConnection(
         `Adopting an existing PostgreSQL instance on port ${preferredPort} for embedded data dir ${dataDir} because postmaster.pid is missing.`,
       );
       return {
-        connectionString: `postgres://fidelios:fidelios@127.0.0.1:${preferredPort}/fidelios`,
+        connectionString: `postgres://paperclip:paperclip@127.0.0.1:${preferredPort}/fidelios`,
         source: `embedded-postgres@${preferredPort}`,
         stop: async () => {},
       };
@@ -125,10 +125,10 @@ async function ensureEmbeddedPostgresConnection(
 
   if (runningPid) {
     const port = runningPort ?? preferredPort;
-    const adminConnectionString = `postgres://fidelios:fidelios@127.0.0.1:${port}/postgres`;
+    const adminConnectionString = `postgres://paperclip:paperclip@127.0.0.1:${port}/postgres`;
     await ensurePostgresDatabase(adminConnectionString, "fidelios");
     return {
-      connectionString: `postgres://fidelios:fidelios@127.0.0.1:${port}/fidelios`,
+      connectionString: `postgres://paperclip:paperclip@127.0.0.1:${port}/fidelios`,
       source: `embedded-postgres@${port}`,
       stop: async () => {},
     };
@@ -136,8 +136,8 @@ async function ensureEmbeddedPostgresConnection(
 
   const instance = new EmbeddedPostgres({
     databaseDir: dataDir,
-    user: "fidelios",
-    password: "fidelios",
+    user: "paperclip",
+    password: "paperclip",
     port: selectedPort,
     persistent: true,
     initdbFlags: ["--encoding=UTF8", "--locale=C", "--lc-messages=C"],
@@ -168,11 +168,11 @@ async function ensureEmbeddedPostgresConnection(
     });
   }
 
-  const adminConnectionString = `postgres://fidelios:fidelios@127.0.0.1:${selectedPort}/postgres`;
+  const adminConnectionString = `postgres://paperclip:paperclip@127.0.0.1:${selectedPort}/postgres`;
   await ensurePostgresDatabase(adminConnectionString, "fidelios");
 
   return {
-    connectionString: `postgres://fidelios:fidelios@127.0.0.1:${selectedPort}/fidelios`,
+    connectionString: `postgres://paperclip:paperclip@127.0.0.1:${selectedPort}/fidelios`,
     source: `embedded-postgres@${selectedPort}`,
     stop: async () => {
       await instance.stop();

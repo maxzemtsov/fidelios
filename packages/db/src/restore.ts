@@ -63,7 +63,7 @@ function resolveConnectionString(config: PartialConfig | null): string {
     if (trimmed) return trimmed;
   }
   const port = resolveEmbeddedPort(config);
-  return `postgres://fidelios:fidelios@127.0.0.1:${port}/fidelios`;
+  return `postgres://paperclip:paperclip@127.0.0.1:${port}/fidelios`;
 }
 
 function resolveBackupDir(config: PartialConfig | null): string {

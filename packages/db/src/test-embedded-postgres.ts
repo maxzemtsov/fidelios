@@ -70,8 +70,8 @@ async function probeEmbeddedPostgresSupport(): Promise<EmbeddedPostgresTestSuppo
   const EmbeddedPostgres = await getEmbeddedPostgresCtor();
   const instance = new EmbeddedPostgres({
     databaseDir: dataDir,
-    user: "fidelios",
-    password: "fidelios",
+    user: "paperclip",
+    password: "paperclip",
     port,
     persistent: true,
     initdbFlags: ["--encoding=UTF8", "--locale=C", "--lc-messages=C"],
@@ -109,8 +109,8 @@ export async function startEmbeddedPostgresTestDatabase(
   const EmbeddedPostgres = await getEmbeddedPostgresCtor();
   const instance = new EmbeddedPostgres({
     databaseDir: dataDir,
-    user: "fidelios",
-    password: "fidelios",
+    user: "paperclip",
+    password: "paperclip",
     port,
     persistent: true,
     initdbFlags: ["--encoding=UTF8", "--locale=C", "--lc-messages=C"],
@@ -122,9 +122,9 @@ export async function startEmbeddedPostgresTestDatabase(
     await instance.initialise();
     await instance.start();
 
-    const adminConnectionString = `postgres://fidelios:fidelios@127.0.0.1:${port}/postgres`;
+    const adminConnectionString = `postgres://paperclip:paperclip@127.0.0.1:${port}/postgres`;
     await ensurePostgresDatabase(adminConnectionString, "fidelios");
-    const connectionString = `postgres://fidelios:fidelios@127.0.0.1:${port}/fidelios`;
+    const connectionString = `postgres://paperclip:paperclip@127.0.0.1:${port}/fidelios`;
     await applyPendingMigrations(connectionString);
 
     return {
