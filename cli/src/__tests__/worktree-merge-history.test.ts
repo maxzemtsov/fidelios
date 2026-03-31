@@ -292,7 +292,7 @@ describe("worktree merge history planner", () => {
       id: "source-workspace-1",
       projectId: "source-project-1",
       cwd: "/Users/dotta/fidelios-evals",
-      repoUrl: "https://github.com/maxzemtsov/fidelios-evals.git",
+      repoUrl: "https://github.com/fideliosai/fidelios-evals.git",
     });
 
     const plan = buildWorktreeMergePlan({

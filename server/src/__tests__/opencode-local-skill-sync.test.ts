@@ -12,7 +12,7 @@ async function makeTempDir(prefix: string): Promise<string> {
 }
 
 describe("opencode local skill sync", () => {
-  const fideliosKey = "maxzemtsov/fidelios/fidelios";
+  const fideliosKey = "fideliosai/fidelios/fidelios";
   const cleanupDirs = new Set<string>();
 
   afterEach(async () => {

@@ -158,7 +158,7 @@ describe("project workspace skill discovery", () => {
         "metadata:",
         "  sources:",
         "    - kind: github-dir",
-        "      repo: maxzemtsov/fidelios",
+        "      repo: fideliosai/fidelios",
         "      path: skills/fidelios",
         "---",
         "",
@@ -179,7 +179,7 @@ describe("project workspace skill discovery", () => {
       sources: [
         {
           kind: "github-dir",
-          repo: "maxzemtsov/fidelios",
+          repo: "fideliosai/fidelios",
           path: "skills/fidelios",
         },
       ],

@@ -139,7 +139,7 @@ describe("agent skill routes", () => {
     mockSecretService.resolveAdapterConfigForRuntime.mockResolvedValue({ config: { env: {} } });
     mockCompanySkillService.listRuntimeSkillEntries.mockResolvedValue([
       {
-        key: "maxzemtsov/fidelios/fidelios",
+        key: "fideliosai/fidelios/fidelios",
         runtimeName: "fidelios",
         source: "/tmp/fidelios",
         required: true,
@@ -150,7 +150,7 @@ describe("agent skill routes", () => {
       async (_companyId: string, requested: string[]) =>
         requested.map((value) =>
           value === "fidelios"
-            ? "maxzemtsov/fidelios/fidelios"
+            ? "fideliosai/fidelios/fidelios"
             : value,
         ),
     );
@@ -158,7 +158,7 @@ describe("agent skill routes", () => {
       adapterType: "claude_local",
       supported: true,
       mode: "ephemeral",
-      desiredSkills: ["maxzemtsov/fidelios/fidelios"],
+      desiredSkills: ["fideliosai/fidelios/fidelios"],
       entries: [],
       warnings: [],
     });
@@ -166,7 +166,7 @@ describe("agent skill routes", () => {
       adapterType: "claude_local",
       supported: true,
       mode: "ephemeral",
-      desiredSkills: ["maxzemtsov/fidelios/fidelios"],
+      desiredSkills: ["fideliosai/fidelios/fidelios"],
       entries: [],
       warnings: [],
     });
@@ -237,7 +237,7 @@ describe("agent skill routes", () => {
       adapterType: "codex_local",
       supported: true,
       mode: "persistent",
-      desiredSkills: ["maxzemtsov/fidelios/fidelios"],
+      desiredSkills: ["fideliosai/fidelios/fidelios"],
       entries: [],
       warnings: [],
     });
@@ -256,7 +256,7 @@ describe("agent skill routes", () => {
 
     const res = await request(createApp())
       .post("/api/agents/11111111-1111-4111-8111-111111111111/skills/sync?companyId=company-1")
-      .send({ desiredSkills: ["maxzemtsov/fidelios/fidelios"] });
+      .send({ desiredSkills: ["fideliosai/fidelios/fidelios"] });
 
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     expect(mockCompanySkillService.listRuntimeSkillEntries).toHaveBeenCalledWith("company-1", {
@@ -279,7 +279,7 @@ describe("agent skill routes", () => {
       expect.objectContaining({
         adapterConfig: expect.objectContaining({
           fideliosSkillSync: expect.objectContaining({
-            desiredSkills: ["maxzemtsov/fidelios/fidelios"],
+            desiredSkills: ["fideliosai/fidelios/fidelios"],
           }),
         }),
       }),
@@ -305,7 +305,7 @@ describe("agent skill routes", () => {
       expect.objectContaining({
         adapterConfig: expect.objectContaining({
           fideliosSkillSync: expect.objectContaining({
-            desiredSkills: ["maxzemtsov/fidelios/fidelios"],
+            desiredSkills: ["fideliosai/fidelios/fidelios"],
           }),
         }),
       }),
@@ -420,9 +420,9 @@ describe("agent skill routes", () => {
       "company-1",
       expect.objectContaining({
         payload: expect.objectContaining({
-          desiredSkills: ["maxzemtsov/fidelios/fidelios"],
+          desiredSkills: ["fideliosai/fidelios/fidelios"],
           requestedConfigurationSnapshot: expect.objectContaining({
-            desiredSkills: ["maxzemtsov/fidelios/fidelios"],
+            desiredSkills: ["fideliosai/fidelios/fidelios"],
           }),
         }),
       }),

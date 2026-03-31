@@ -230,7 +230,7 @@ function uniqueImportedSkillKey(companyId: string, baseSlug: string, usedKeys: S
 }
 
 function buildSkillRuntimeName(key: string, slug: string) {
-  if (key.startsWith("maxzemtsov/fidelios/")) return slug;
+  if (key.startsWith("fideliosai/fidelios/")) return slug;
   return `${slug}--${hashSkillValue(key)}`;
 }
 
@@ -261,7 +261,7 @@ function deriveCanonicalSkillKey(
 
   const sourceKind = asString(metadata?.sourceKind);
   if (sourceKind === "fidelios_bundled") {
-    return `maxzemtsov/fidelios/${slug}`;
+    return `fideliosai/fidelios/${slug}`;
   }
 
   const owner = normalizeSkillSlug(asString(metadata?.owner));

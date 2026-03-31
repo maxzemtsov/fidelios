@@ -31,7 +31,7 @@ async function createCustomSkill(root: string, skillName: string) {
 }
 
 describe("codex local adapter skill injection", () => {
-  const fideliosKey = "maxzemtsov/fidelios/fidelios";
+  const fideliosKey = "fideliosai/fidelios/fidelios";
   const cleanupDirs = new Set<string>();
 
   afterEach(async () => {

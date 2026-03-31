@@ -19,8 +19,8 @@ async function createSkillDir(root: string, name: string) {
 }
 
 describe("claude local skill sync", () => {
-  const fideliosKey = "maxzemtsov/fidelios/fidelios";
-  const createAgentKey = "maxzemtsov/fidelios/fidelios-create-agent";
+  const fideliosKey = "fideliosai/fidelios/fidelios";
+  const createAgentKey = "fideliosai/fidelios/fidelios-create-agent";
   const cleanupDirs = new Set<string>();
 
   afterEach(async () => {

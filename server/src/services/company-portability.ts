@@ -181,7 +181,7 @@ function deriveManifestSkillKey(
     return `${owner}/${repo}/${slug}`;
   }
   if (sourceKind === "fidelios_bundled") {
-    return `maxzemtsov/fidelios/${slug}`;
+    return `fideliosai/fidelios/${slug}`;
   }
   if (sourceType === "url" || sourceKind === "url") {
     try {
@@ -1865,11 +1865,11 @@ async function buildSkillSourceEntry(skill: CompanySkill) {
     const commit = await resolveBundledSkillsCommit();
     return {
       kind: "github-dir",
-      repo: "maxzemtsov/fidelios",
+      repo: "fideliosai/fidelios",
       path: `skills/${skill.slug}`,
       commit,
       trackingRef: "master",
-      url: `https://github.com/maxzemtsov/fidelios/tree/master/skills/${skill.slug}`,
+      url: `https://github.com/fideliosai/fidelios/tree/master/skills/${skill.slug}`,
     };
   }
 

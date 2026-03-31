@@ -44,7 +44,7 @@ For each package:
 
 1. open npm as an owner of the package
 2. go to the package settings / publishing access area
-3. add a trusted publisher for the GitHub repository `maxzemtsov/fidelios`
+3. add a trusted publisher for the GitHub repository `fideliosai/fidelios`
 
 ### 2.2. Add one trusted publisher entry per package
 
@@ -56,7 +56,7 @@ Configure:
 
 Repository:
 
-- `maxzemtsov/fidelios`
+- `fideliosai/fidelios`
 
 Environment name:
 

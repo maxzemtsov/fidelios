@@ -55,7 +55,7 @@ OPENAI_API_KEY=... ANTHROPIC_API_KEY=... docker compose -f docker-compose.untrus
 Inside the container:
 
 ```sh
-review-checkout-pr maxzemtsov/fidelios 432
+review-checkout-pr fideliosai/fidelios 432
 cd /work/checkouts/fidelios-fidelios/pr-432
 ```
 

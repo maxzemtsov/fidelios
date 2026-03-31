@@ -3,10 +3,10 @@
   "version": "0.0.3",
   "license": "MIT",
   "description": "Hermes AI agent adapter for FideliOS (forked from hermes adapter by NousResearch)",
-  "homepage": "https://github.com/maxzemtsov/fidelios",
+  "homepage": "https://github.com/fideliosai/fidelios",
   "repository": {
     "type": "git",
-    "url": "https://github.com/maxzemtsov/fidelios",
+    "url": "https://github.com/fideliosai/fidelios",
     "directory": "packages/adapters/hermes-local"
   },
   "type": "module",

@@ -77,7 +77,7 @@ npx fidelios@canary onboard --data-dir "$(mktemp -d /tmp/fidelios-canary.XXXXXX)
 
 Use [`.github/workflows/release.yml`](../.github/workflows/release.yml) from the Actions tab with the manual `workflow_dispatch` inputs.
 
-[Run the action here](https://github.com/maxzemtsov/fidelios/actions/workflows/release.yml)
+[Run the action here](https://github.com/fideliosai/fidelios/actions/workflows/release.yml)
 
 Inputs:
 

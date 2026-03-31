@@ -31,7 +31,7 @@ describe("agent skill contract", () => {
       mode: "ephemeral",
       desiredSkills: [],
       entries: [{
-        key: "maxzemtsov/fidelios/fidelios",
+        key: "fideliosai/fidelios/fidelios",
         runtimeName: "fidelios",
         desired: true,
         managed: true,
@@ -41,7 +41,7 @@ describe("agent skill contract", () => {
     })).toMatchObject({
       adapterType: "claude_local",
       entries: [{
-        key: "maxzemtsov/fidelios/fidelios",
+        key: "fideliosai/fidelios/fidelios",
         state: "configured",
       }],
     });

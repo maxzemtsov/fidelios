@@ -375,7 +375,7 @@ export async function listFideliOSSkillEntries(
     return entries
       .filter((entry) => entry.isDirectory())
       .map((entry) => ({
-        key: `maxzemtsov/fidelios/${entry.name}`,
+        key: `fideliosai/fidelios/${entry.name}`,
         runtimeName: entry.name,
         source: path.join(root, entry.name),
         required: true,

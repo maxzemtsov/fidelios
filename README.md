@@ -15,7 +15,7 @@
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Node 20+](https://img.shields.io/badge/node-20%2B-brightgreen)](https://nodejs.org)
-[![Stars](https://img.shields.io/github/stars/maxzemtsov/fidelios?style=flat)](https://github.com/maxzemtsov/fidelios/stargazers)
+[![Stars](https://img.shields.io/github/stars/fideliosai/fidelios?style=flat)](https://github.com/fideliosai/fidelios/stargazers)
 
 [**Quick Start**](#quick-start) · [**Features**](#features) · [**Architecture**](#architecture) · [**fidelios.nl**](https://fidelios.nl)
 
@@ -61,7 +61,7 @@ Works with **Claude Code, Codex, Cursor, Gemini, OpenClaw**, and any agent that 
 > **Requirements:** Node.js ≥ 20, pnpm 9.x, Git
 
 ```bash
-git clone https://github.com/maxzemtsov/fidelios.git
+git clone https://github.com/fideliosai/fidelios.git
 cd fidelios
 pnpm install
 pnpm dev:watch

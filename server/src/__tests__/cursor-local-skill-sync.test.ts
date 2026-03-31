@@ -19,7 +19,7 @@ async function createSkillDir(root: string, name: string) {
 }
 
 describe("cursor local skill sync", () => {
-  const fideliosKey = "maxzemtsov/fidelios/fidelios";
+  const fideliosKey = "fideliosai/fidelios/fidelios";
   const cleanupDirs = new Set<string>();
 
   afterEach(async () => {

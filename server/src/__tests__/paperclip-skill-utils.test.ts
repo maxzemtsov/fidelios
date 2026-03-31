@@ -30,7 +30,7 @@ describe("fidelios skill utils", () => {
 
     const entries = await listFideliOSSkillEntries(moduleDir);
 
-    expect(entries.map((entry) => entry.key)).toEqual(["maxzemtsov/fidelios/fidelios"]);
+    expect(entries.map((entry) => entry.key)).toEqual(["fideliosai/fidelios/fidelios"]);
     expect(entries.map((entry) => entry.runtimeName)).toEqual(["fidelios"]);
     expect(entries[0]?.source).toBe(path.join(root, "skills", "fidelios"));
   });

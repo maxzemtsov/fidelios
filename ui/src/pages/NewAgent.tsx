@@ -199,7 +199,7 @@ export function NewAgent() {
     });
   }
 
-  const availableSkills = (companySkills ?? []).filter((skill) => !skill.key.startsWith("maxzemtsov/fidelios/"));
+  const availableSkills = (companySkills ?? []).filter((skill) => !skill.key.startsWith("fideliosai/fidelios/"));
 
   function toggleSkill(key: string, checked: boolean) {
     setSelectedSkillKeys((prev) => {

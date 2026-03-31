@@ -112,7 +112,7 @@ function asTextFile(entry: CompanyPortabilityFileEntry | undefined) {
 }
 
 describe("company portability", () => {
-  const fideliosKey = "maxzemtsov/fidelios/fidelios";
+  const fideliosKey = "fideliosai/fidelios/fidelios";
   const companyPlaybookKey = "company/company-1/company-playbook";
 
   beforeEach(() => {
@@ -267,7 +267,7 @@ describe("company portability", () => {
         description: "FideliOS coordination skill",
         markdown: "---\nname: fidelios\ndescription: FideliOS coordination skill\n---\n\n# FideliOS\n",
         sourceType: "github",
-        sourceLocator: "https://github.com/maxzemtsov/fidelios/tree/master/skills/fidelios",
+        sourceLocator: "https://github.com/fideliosai/fidelios/tree/master/skills/fidelios",
         sourceRef: "0123456789abcdef0123456789abcdef01234567",
         trustLevel: "markdown_only",
         compatibility: "compatible",
@@ -415,9 +415,9 @@ describe("company portability", () => {
     expect(asTextFile(exported.files["agents/claudecoder/AGENTS.md"])).toContain("skills:");
     expect(asTextFile(exported.files["agents/claudecoder/AGENTS.md"])).toContain(`- "${fideliosKey}"`);
     expect(asTextFile(exported.files["agents/cmo/AGENTS.md"])).not.toContain("skills:");
-    expect(asTextFile(exported.files["skills/maxzemtsov/fidelios/fidelios/SKILL.md"])).toContain("metadata:");
-    expect(asTextFile(exported.files["skills/maxzemtsov/fidelios/fidelios/SKILL.md"])).toContain('kind: "github-dir"');
-    expect(exported.files["skills/maxzemtsov/fidelios/fidelios/references/api.md"]).toBeUndefined();
+    expect(asTextFile(exported.files["skills/fideliosai/fidelios/fidelios/SKILL.md"])).toContain("metadata:");
+    expect(asTextFile(exported.files["skills/fideliosai/fidelios/fidelios/SKILL.md"])).toContain('kind: "github-dir"');
+    expect(exported.files["skills/fideliosai/fidelios/fidelios/references/api.md"]).toBeUndefined();
     expect(asTextFile(exported.files["skills/company/PAP/company-playbook/SKILL.md"])).toContain("# Company Playbook");
     expect(asTextFile(exported.files["skills/company/PAP/company-playbook/references/checklist.md"])).toContain("# Checklist");
 
@@ -511,9 +511,9 @@ describe("company portability", () => {
       expandReferencedSkills: true,
     });
 
-    expect(asTextFile(exported.files["skills/maxzemtsov/fidelios/fidelios/SKILL.md"])).toContain("# FideliOS");
-    expect(asTextFile(exported.files["skills/maxzemtsov/fidelios/fidelios/SKILL.md"])).toContain("metadata:");
-    expect(asTextFile(exported.files["skills/maxzemtsov/fidelios/fidelios/references/api.md"])).toContain("# API");
+    expect(asTextFile(exported.files["skills/fideliosai/fidelios/fidelios/SKILL.md"])).toContain("# FideliOS");
+    expect(asTextFile(exported.files["skills/fideliosai/fidelios/fidelios/SKILL.md"])).toContain("metadata:");
+    expect(asTextFile(exported.files["skills/fideliosai/fidelios/fidelios/references/api.md"])).toContain("# API");
   });
 
   it("exports only selected skills when skills filter is provided", async () => {
@@ -531,7 +531,7 @@ describe("company portability", () => {
 
     expect(exported.files["skills/company/PAP/company-playbook/SKILL.md"]).toBeDefined();
     expect(asTextFile(exported.files["skills/company/PAP/company-playbook/SKILL.md"])).toContain("# Company Playbook");
-    expect(exported.files["skills/maxzemtsov/fidelios/fidelios/SKILL.md"]).toBeUndefined();
+    expect(exported.files["skills/fideliosai/fidelios/fidelios/SKILL.md"]).toBeUndefined();
   });
 
   it("warns and exports all skills when skills filter matches nothing", async () => {
@@ -549,7 +549,7 @@ describe("company portability", () => {
 
     expect(exported.warnings).toContainEqual(expect.stringContaining("nonexistent-skill"));
     expect(exported.files["skills/company/PAP/company-playbook/SKILL.md"]).toBeDefined();
-    expect(exported.files["skills/maxzemtsov/fidelios/fidelios/SKILL.md"]).toBeDefined();
+    expect(exported.files["skills/fideliosai/fidelios/fidelios/SKILL.md"]).toBeDefined();
   });
 
   it("exports the company logo into images/ and references it from .fidelios.yaml", async () => {
@@ -645,13 +645,13 @@ describe("company portability", () => {
       {
         id: "skill-fidelios",
         companyId: "company-1",
-        key: "maxzemtsov/fidelios/release-changelog",
+        key: "fideliosai/fidelios/release-changelog",
         slug: "release-changelog",
         name: "release-changelog",
         description: "Bundled release changelog skill",
         markdown: "---\nname: release-changelog\n---\n\n# Bundled Release Changelog\n",
         sourceType: "github",
-        sourceLocator: "https://github.com/maxzemtsov/fidelios/tree/master/skills/release-changelog",
+        sourceLocator: "https://github.com/fideliosai/fidelios/tree/master/skills/release-changelog",
         sourceRef: "0123456789abcdef0123456789abcdef01234567",
         trustLevel: "markdown_only",
         compatibility: "compatible",
@@ -677,8 +677,8 @@ describe("company portability", () => {
     });
 
     expect(asTextFile(exported.files["skills/local/release-changelog/SKILL.md"])).toContain("# Local Release Changelog");
-    expect(asTextFile(exported.files["skills/maxzemtsov/fidelios/release-changelog/SKILL.md"])).toContain("metadata:");
-    expect(asTextFile(exported.files["skills/maxzemtsov/fidelios/release-changelog/SKILL.md"])).toContain("maxzemtsov/fidelios/release-changelog");
+    expect(asTextFile(exported.files["skills/fideliosai/fidelios/release-changelog/SKILL.md"])).toContain("metadata:");
+    expect(asTextFile(exported.files["skills/fideliosai/fidelios/release-changelog/SKILL.md"])).toContain("fideliosai/fidelios/release-changelog");
   });
 
   it("builds export previews without tasks by default", async () => {
@@ -756,7 +756,7 @@ describe("company portability", () => {
             name: "Main Repo",
             sourceType: "git_repo",
             cwd: "/Users/dotta/fidelios",
-            repoUrl: "https://github.com/maxzemtsov/fidelios.git",
+            repoUrl: "https://github.com/fideliosai/fidelios.git",
             repoRef: "main",
             defaultRef: "main",
             visibility: "default",
@@ -829,7 +829,7 @@ describe("company portability", () => {
     const extension = asTextFile(exported.files[".fidelios.yaml"]);
     expect(extension).toContain("workspaces:");
     expect(extension).toContain("main-repo:");
-    expect(extension).toContain('repoUrl: "https://github.com/maxzemtsov/fidelios.git"');
+    expect(extension).toContain('repoUrl: "https://github.com/fideliosai/fidelios.git"');
     expect(extension).toContain('defaultProjectWorkspaceKey: "main-repo"');
     expect(extension).toContain('projectWorkspaceKey: "main-repo"');
     expect(extension).not.toContain("/Users/dotta/fidelios");
@@ -902,7 +902,7 @@ describe("company portability", () => {
     expect(projectSvc.createWorkspace).toHaveBeenCalledWith("project-imported", expect.objectContaining({
       name: "Main Repo",
       sourceType: "git_repo",
-      repoUrl: "https://github.com/maxzemtsov/fidelios.git",
+      repoUrl: "https://github.com/fideliosai/fidelios.git",
       repoRef: "main",
       defaultRef: "main",
       visibility: "default",
@@ -926,7 +926,7 @@ describe("company portability", () => {
     const repoDir = await fs.mkdtemp(path.join(os.tmpdir(), "fidelios-portability-git-"));
     execFileSync("git", ["init"], { cwd: repoDir, stdio: "ignore" });
     execFileSync("git", ["checkout", "-b", "main"], { cwd: repoDir, stdio: "ignore" });
-    execFileSync("git", ["remote", "add", "origin", "https://github.com/maxzemtsov/fidelios.git"], {
+    execFileSync("git", ["remote", "add", "origin", "https://github.com/fideliosai/fidelios.git"], {
       cwd: repoDir,
       stdio: "ignore",
     });
@@ -1000,7 +1000,7 @@ describe("company portability", () => {
     });
 
     const extension = asTextFile(exported.files[".fidelios.yaml"]);
-    expect(extension).toContain('repoUrl: "https://github.com/maxzemtsov/fidelios.git"');
+    expect(extension).toContain('repoUrl: "https://github.com/fideliosai/fidelios.git"');
     expect(extension).toContain('projectWorkspaceKey: "fidelios"');
     expect(exported.warnings).not.toContainEqual(expect.stringContaining("does not have a portable repoUrl"));
     expect(exported.warnings).not.toContainEqual(expect.stringContaining("reference workspace workspace-1"));

@@ -36,8 +36,8 @@ sedi() {
 # Phase 1: GitHub URLs (most specific)
 echo "[1/10] GitHub URLs..."
 find . "${FIND_ARGS[@]}" -exec grep -l 'paperclipai/paperclip' {} \; 2>/dev/null | while read -r f; do
-  sedi 's|github\.com/paperclipai/paperclip|github.com/maxzemtsov/fidelios|g' "$f"
-  sedi 's|paperclipai/paperclip|maxzemtsov/fidelios|g' "$f"
+  sedi 's|github\.com/paperclipai/paperclip|github.com/fideliosai/fidelios|g' "$f"
+  sedi 's|paperclipai/paperclip|fideliosai/fidelios|g' "$f"
 done
 
 # Phase 2: NPM scope

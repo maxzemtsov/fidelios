@@ -1,7 +1,7 @@
 # Token Optimization Plan
 
 Date: 2026-03-13  
-Related discussion: https://github.com/maxzemtsov/fidelios/discussions/449
+Related discussion: https://github.com/fideliosai/fidelios/discussions/449
 
 ## Goal
 

@@ -3,13 +3,13 @@
   "version": "0.0.3",
   "description": "Prebuilt FideliOS board UI assets.",
   "license": "MIT",
-  "homepage": "https://github.com/maxzemtsov/fidelios",
+  "homepage": "https://github.com/fideliosai/fidelios",
   "bugs": {
-    "url": "https://github.com/maxzemtsov/fidelios/issues"
+    "url": "https://github.com/fideliosai/fidelios/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/maxzemtsov/fidelios",
+    "url": "https://github.com/fideliosai/fidelios",
     "directory": "ui"
   },
   "type": "module",
