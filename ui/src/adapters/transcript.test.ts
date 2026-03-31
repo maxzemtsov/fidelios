@@ -23,8 +23,8 @@ describe("buildTranscript", () => {
     });
 
     expect(entries).toEqual([
-      { kind: "stdout", ts, text: "opened /Users/d****/project" },
-      { kind: "stderr", ts, text: "stderr /Users/d****/project" },
+      { kind: "stdout", ts, text: "opened /Users/d**/project" },
+      { kind: "stderr", ts, text: "stderr /Users/d**/project" },
     ]);
   });
 });
