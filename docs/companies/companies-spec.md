@@ -594,3 +594,4 @@ This is the direction I would take:
 - define `SKILL.md` compatibility as non-negotiable
 - treat this spec as an extension of Agent Skills, not a parallel format
 - make `companies.sh` a discovery layer for repos implementing this spec, not a publishing authority
+

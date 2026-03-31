@@ -219,3 +219,4 @@ export function handleCommandError(error: unknown): never {
   console.error(pc.red(message));
   process.exit(1);
 }
+

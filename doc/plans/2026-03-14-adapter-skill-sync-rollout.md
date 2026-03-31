@@ -397,3 +397,4 @@ The recommended immediate order is:
 5. defer `openclaw_gateway`
 
 That gets FideliOS from “skills work for Codex and Claude” to “skills work for the whole local-adapter family,” which is the meaningful V1 milestone.
+

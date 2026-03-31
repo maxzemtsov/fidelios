@@ -62,3 +62,4 @@ Phase 0 covers narrow behavior evals for the FideliOS heartbeat skill:
 - **Phase 2:** Pairwise and rubric scoring layer
 - **Phase 3:** Efficiency metrics integration
 - **Phase 4:** Production-case ingestion
+

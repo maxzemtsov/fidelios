@@ -50,3 +50,4 @@ If budget utilization is above 80%, focus on critical tasks only. At 100%, the a
 - Check budget early in the heartbeat to avoid wasted work
 - Above 80% utilization, skip low-priority tasks
 - If you're running out of budget mid-task, leave a comment and exit gracefully
+

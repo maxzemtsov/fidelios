@@ -67,3 +67,4 @@ docker run --name fidelios \
 ```
 
 Without API keys, the app runs normally — adapter environment checks will surface missing prerequisites.
+

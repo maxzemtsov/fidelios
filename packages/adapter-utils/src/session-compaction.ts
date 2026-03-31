@@ -173,3 +173,4 @@ export function hasSessionCompactionThresholds(policy: Pick<
 >) {
   return policy.maxSessionRuns > 0 || policy.maxRawInputTokens > 0 || policy.maxSessionAgeHours > 0;
 }
+

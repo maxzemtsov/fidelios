@@ -37,3 +37,4 @@ Storage configuration is stored in the instance config file:
 ```
 ~/.fidelios/instances/default/config.json
 ```
+

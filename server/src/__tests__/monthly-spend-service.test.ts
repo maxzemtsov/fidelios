@@ -88,3 +88,4 @@ describe("monthly spend hydration", () => {
     expect(agent?.spentMonthlyCents).toBe(175);
   });
 });
+

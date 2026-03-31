@@ -349,3 +349,4 @@ All components use `cn()` from `@/lib/utils` for className merging. All componen
 - Using `shadow-md` or heavier — keep shadows minimal (xs, sm only)
 - Using `rounded-2xl` or larger — max is `rounded-xl` (except `rounded-full` for pills)
 - Forgetting dark mode — always use semantic tokens, never hardcode light/dark values
+

@@ -642,3 +642,4 @@ This keeps FideliOS aligned with:
 - GitHub-native distribution
 - Agent Skills compatibility
 - a registry-optional ecosystem model
+

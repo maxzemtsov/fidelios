@@ -307,3 +307,4 @@ export interface CompanyPortabilityExportRequest {
   expandReferencedSkills?: boolean;
   sidebarOrder?: Partial<CompanyPortabilitySidebarOrder>;
 }
+

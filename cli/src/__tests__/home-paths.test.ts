@@ -42,3 +42,4 @@ describe("home path resolution", () => {
     expect(expandHomePrefix("~/x/y")).toBe(path.resolve(os.homedir(), "x/y"));
   });
 });
+

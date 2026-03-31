@@ -28,3 +28,4 @@ export function logCheck(config: FideliOSConfig, configPath?: string): CheckResu
     };
   }
 }
+

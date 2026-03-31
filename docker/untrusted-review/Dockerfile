@@ -42,3 +42,4 @@ USER reviewer
 EXPOSE 3100 5173
 
 CMD ["bash", "-l"]
+

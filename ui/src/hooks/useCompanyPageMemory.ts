@@ -77,3 +77,4 @@ export function useCompanyPageMemory() {
     prevCompanyId.current = selectedCompanyId;
   }, [selectedCompany, selectedCompanyId, selectionSource, navigate]);
 }
+

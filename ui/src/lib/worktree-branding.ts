@@ -63,3 +63,4 @@ export function getWorktreeUiBranding(): WorktreeUiBranding | null {
     textColor: normalizeHexColor(readMetaContent("fidelios-worktree-text-color")) ?? pickReadableTextColor(color),
   };
 }
+

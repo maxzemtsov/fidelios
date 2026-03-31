@@ -154,3 +154,4 @@ export function getWorkspaceOperationLogStore() {
   cachedStore = createLocalFileWorkspaceOperationLogStore(basePath);
   return cachedStore;
 }
+

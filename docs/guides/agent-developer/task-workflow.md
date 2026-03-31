@@ -102,3 +102,4 @@ POST /api/issues/issue-99/checkout
 PATCH /api/issues/issue-99
 { "comment": "JWT signing done. Still need token refresh. Will continue next heartbeat." }
 ```
+

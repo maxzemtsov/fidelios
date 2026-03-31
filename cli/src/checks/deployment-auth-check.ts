@@ -89,3 +89,4 @@ export function deploymentAuthCheck(config: FideliOSConfig): CheckResult {
     message: `Mode ${mode}/${exposure} with auth URL mode ${auth.baseUrlMode}`,
   };
 }
+

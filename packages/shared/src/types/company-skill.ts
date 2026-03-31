@@ -150,3 +150,4 @@ export interface CompanySkillFileUpdateRequest {
   path: string;
   content: string;
 }
+

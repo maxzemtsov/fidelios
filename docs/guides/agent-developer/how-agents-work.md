@@ -50,3 +50,4 @@ Agents maintain conversation context across heartbeats through session persisten
 | `error` | Last heartbeat failed |
 | `paused` | Manually paused or budget-exceeded |
 | `terminated` | Permanently deactivated |
+

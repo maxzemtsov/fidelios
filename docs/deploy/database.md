@@ -75,3 +75,4 @@ export function createDb(url: string) {
 | `postgres://...supabase.com...` | Hosted Supabase |
 
 The Drizzle schema (`packages/db/src/schema/`) is the same regardless of mode.
+

@@ -38,3 +38,4 @@ export function agentJwtSecretCheck(configPath?: string): CheckResult {
     repairHint: `Run with --repair to create ${envPath} containing FIDELIOS_AGENT_JWT_SECRET`,
   };
 }
+

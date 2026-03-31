@@ -139,3 +139,4 @@ export function verifyLocalAgentJwt(token: string): LocalAgentJwtClaims | null {
     jti: typeof claims.jti === "string" ? claims.jti : undefined,
   };
 }
+

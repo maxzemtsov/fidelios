@@ -75,3 +75,4 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     },
   };
 }
+

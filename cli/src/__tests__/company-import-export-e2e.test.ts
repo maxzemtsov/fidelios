@@ -500,3 +500,4 @@ describeEmbeddedPostgres("fidelios company import/export e2e", () => {
     expect(importedFromZip.agents.some((agent) => agent.action === "created")).toBe(true);
   }, 60_000);
 });
+

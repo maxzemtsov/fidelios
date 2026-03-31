@@ -68,3 +68,4 @@ GET /api/companies/{companyId}/costs/by-project   # Per-project breakdown
 - Monitor the dashboard regularly for unexpected cost spikes
 - Use per-agent budgets to limit exposure from any single agent
 - Critical agents (CEO, CTO) may need higher budgets than ICs
+

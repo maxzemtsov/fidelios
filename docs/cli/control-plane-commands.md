@@ -108,3 +108,4 @@ pnpm fidelios dashboard get
 ```sh
 pnpm fidelios heartbeat run --agent-id <agent-id> [--api-base http://localhost:3100]
 ```
+

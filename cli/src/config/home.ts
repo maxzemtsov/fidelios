@@ -78,3 +78,4 @@ export function describeLocalInstancePaths(instanceId?: string) {
     storageDir: resolveDefaultStorageDir(resolvedInstanceId),
   };
 }
+

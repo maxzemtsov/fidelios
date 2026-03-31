@@ -96,3 +96,4 @@ Built-in adapters: `claude_local`, `codex_local`, `process`, `http`. You can cre
 - **Single-assignee tasks** — atomic checkout prevents concurrent work on the same task
 - **Adapter-agnostic** — any runtime that can call an HTTP API works as an agent
 - **Embedded by default** — zero-config local mode with embedded PostgreSQL
+

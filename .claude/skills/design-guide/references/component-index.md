@@ -321,3 +321,4 @@ import { cn } from "@/lib/utils";
 
 **File:** `ui/src/lib/groupBy.ts`
 **Usage:** Generic array grouping utility.
+

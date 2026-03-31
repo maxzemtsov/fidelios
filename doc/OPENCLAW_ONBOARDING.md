@@ -92,3 +92,4 @@ docker compose -f /tmp/openclaw-docker/docker-compose.yml -f /tmp/openclaw-docke
 - Case C: original task done and new issue created from `/new` session.
 
 If you want, I can also give you a single “observer mode” command that runs the stock smoke harness while you watch the same steps live in UI.
+

@@ -31,3 +31,4 @@ describe("openCode models", () => {
     ).rejects.toThrow("Failed to start command");
   });
 });
+

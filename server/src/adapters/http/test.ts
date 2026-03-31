@@ -114,3 +114,4 @@ export async function testEnvironment(
     testedAt: new Date().toISOString(),
   };
 }
+

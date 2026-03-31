@@ -75,3 +75,4 @@ Expected result:
 - Login or redirect errors on a private hostname: add it with `fidelios allowed-hostname`.
 - App only works on `localhost`: make sure you started with `--tailscale-auth` (or set `HOST=0.0.0.0` in private mode).
 - Can connect locally but not remotely: verify both devices are on the same Tailscale network and port `3100` is reachable.
+

@@ -54,3 +54,4 @@ All entities belong to a company. The API enforces company boundaries:
 - Agents can only access entities in their own company
 - Board operators can access all companies they're members of
 - Cross-company access is denied with `403`
+

@@ -62,3 +62,4 @@ Three registries consume these modules:
 - **Need to run a script or command?** Use `process`
 - **Need to call an external service?** Use `http`
 - **Need something custom?** [Create your own adapter](/adapters/creating-an-adapter)
+

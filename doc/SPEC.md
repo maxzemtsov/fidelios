@@ -529,3 +529,4 @@ Things FideliOS explicitly does **not** do:
 7. **Atomic ownership.** Single assignee per task. Atomic checkout prevents conflicts.
 8. **Progressive deployment.** Trivial to start local, straightforward to scale to hosted.
 9. **Extensible core.** Clean boundaries so plugins can add capabilities (Adapters, knowledge base, revenue tracking) without modifying core.
+

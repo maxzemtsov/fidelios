@@ -16,3 +16,4 @@ services:
       BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set}"
     volumes:
       - "${FIDELIOS_DATA_DIR:-./data/docker-fidelios}:/fidelios"
+

@@ -35,3 +35,4 @@ Operational fields:
 Notes:
 - When FideliOS realizes a workspace/runtime for a run, it injects FIDELIOS_WORKSPACE_* and FIDELIOS_RUNTIME_* env vars for agent-side tooling.
 `;
+

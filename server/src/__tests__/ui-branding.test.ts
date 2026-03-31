@@ -80,3 +80,4 @@ describe("ui branding", () => {
     expect(defaultHtml).not.toContain('name="fidelios-worktree-name"');
   });
 });
+

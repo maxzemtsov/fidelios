@@ -51,3 +51,4 @@ describe("board auth store", () => {
     expect(getStoredBoardCredential("http://localhost:3100", authPath)).toBeNull();
   });
 });
+

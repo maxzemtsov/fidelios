@@ -359,3 +359,4 @@ describe("agent instructions service", () => {
     expect(exported.files).toEqual({ "AGENTS.md": "# Managed Agent\n" });
   });
 });
+

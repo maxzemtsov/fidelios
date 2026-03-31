@@ -84,3 +84,4 @@ Some actions require board (human) approval:
 - **Board overrides** — the board can pause, resume, or terminate any agent and reassign any task
 
 The board operator has full visibility and control through the web UI. Every mutation is logged in an **activity audit trail**.
+

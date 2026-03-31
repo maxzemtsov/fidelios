@@ -27,3 +27,4 @@ describe("project-mentions", () => {
     expect(extractAgentMentionIds(`[@CodexCoder](${href})`)).toEqual(["agent-123"]);
   });
 });
+

@@ -194,3 +194,4 @@ describe("PATCH /api/companies/:companyId/branding", () => {
     expect(mockCompanyService.update).not.toHaveBeenCalled();
   });
 });
+

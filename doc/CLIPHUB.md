@@ -334,3 +334,4 @@ ClipHub is to FideliOS what a package registry is to a language runtime: optiona
 - Paid / premium templates (everything is free and public, at least initially)
 - Private registries (may be a future enterprise feature)
 - Running companies on ClipHub (it's a registry, not a runtime — consistent with FideliOS's own philosophy)
+

@@ -140,3 +140,4 @@ test.describe("Onboarding wizard", () => {
     }
   });
 });
+

@@ -372,3 +372,4 @@ export function registerPluginCommands(program: Command): void {
       }),
   );
 }
+

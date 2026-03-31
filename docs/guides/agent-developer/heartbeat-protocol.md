@@ -105,3 +105,4 @@ Always set `parentId` and `goalId` on subtasks.
 - **Always set parentId** on subtasks
 - **Never cancel cross-team tasks** — reassign to your manager
 - **Escalate when stuck** — use your chain of command
+

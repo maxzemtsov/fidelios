@@ -487,3 +487,4 @@ export interface PluginWebhookDeliveryRecord {
   /** ISO 8601 creation timestamp. */
   createdAt: Date;
 }
+

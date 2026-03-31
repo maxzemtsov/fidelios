@@ -48,4 +48,3 @@ export function storageCheck(config: FideliOSConfig, configPath?: string): Check
     repairHint: "Verify credentials and endpoint in deployment environment",
   };
 }
-

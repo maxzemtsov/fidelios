@@ -118,3 +118,4 @@ export function writeConfig(
 export function configExists(configPath?: string): boolean {
   return fs.existsSync(resolveConfigPath(configPath));
 }
+

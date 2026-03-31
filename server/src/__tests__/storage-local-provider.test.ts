@@ -76,3 +76,4 @@ describe("local disk storage provider", () => {
     await expect(service.getObject("company-1", stored.objectKey)).rejects.toMatchObject({ status: 404 });
   });
 });
+

@@ -72,3 +72,4 @@ describe("log redaction", () => {
     expect(redactCurrentUserText(input, { enabled: false })).toBe(input);
   });
 });
+

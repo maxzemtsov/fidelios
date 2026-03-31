@@ -115,3 +115,4 @@ Or pass `--data-dir` directly on any command:
 pnpm fidelios run --data-dir ./tmp/fidelios-dev
 pnpm fidelios doctor --data-dir ./tmp/fidelios-dev
 ```
+

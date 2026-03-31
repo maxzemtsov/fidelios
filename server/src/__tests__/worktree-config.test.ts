@@ -424,3 +424,4 @@ describe("worktree config repair", () => {
     expect(config.auth.publicBaseUrl).toBe("http://127.0.0.1:3104/");
   });
 });
+

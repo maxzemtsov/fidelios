@@ -123,3 +123,4 @@ export function registerContextCommands(program: Command): void {
       printOutput(payload, { json: opts.json });
     });
 }
+

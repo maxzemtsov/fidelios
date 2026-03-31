@@ -72,3 +72,4 @@ export function isAllowedContentType(contentType: string): boolean {
 
 export const MAX_ATTACHMENT_BYTES =
   Number(process.env.FIDELIOS_ATTACHMENT_MAX_BYTES) || 10 * 1024 * 1024;
+

@@ -424,3 +424,4 @@ The right abstraction is:
 - Providers own extraction, ranking, storage, and provider-native memory semantics.
 
 That gives FideliOS a stable "memory service" without locking the product to one memory philosophy or one vendor.
+

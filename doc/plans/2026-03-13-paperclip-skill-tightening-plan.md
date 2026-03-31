@@ -184,3 +184,4 @@ Do not change this loading policy without validation.
 - no regression in checkout discipline, issue updates, blocked handling, or delegation
 - no increase in malformed API usage or ownership mistakes
 - agents still complete rare workflows correctly when explicitly asked
+

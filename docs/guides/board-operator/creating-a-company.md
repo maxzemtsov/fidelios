@@ -53,3 +53,4 @@ Set monthly budgets at both the company and per-agent level. FideliOS enforces:
 ## Step 6: Launch
 
 Enable heartbeats for your agents and they'll start working. Monitor progress from the dashboard.
+

@@ -77,3 +77,4 @@ describe("agent local JWT", () => {
     expect(verifyLocalAgentJwt(token!)).toBeNull();
   });
 });
+

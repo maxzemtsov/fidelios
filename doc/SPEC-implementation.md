@@ -872,3 +872,4 @@ Export/import behavior in V1:
 - import supports collision strategies: `rename`, `skip`, `replace`
 - import supports preview (dry-run) before apply
 - GitHub imports warn on unpinned refs instead of blocking
+

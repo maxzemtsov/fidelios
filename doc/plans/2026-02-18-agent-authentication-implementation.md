@@ -70,3 +70,4 @@
 - Auth remains company-scoped (`req.actor.companyId` used by existing checks).
 - JWT generation and verification errors are logged as non-leaking structured events.
 - Scope remains local-only (`claude_local`, `codex_local`) while adapter capability model is generic.
+

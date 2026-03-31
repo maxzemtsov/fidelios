@@ -224,3 +224,4 @@ describe("cost routes", () => {
     expect(mockAgentService.update).not.toHaveBeenCalled();
   });
 });
+

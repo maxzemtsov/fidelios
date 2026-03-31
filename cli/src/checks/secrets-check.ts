@@ -144,3 +144,4 @@ export function secretsCheck(config: FideliOSConfig, configPath?: string): Check
     config,
   );
 }
+

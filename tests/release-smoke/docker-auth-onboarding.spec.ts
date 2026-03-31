@@ -139,3 +139,4 @@ test.describe("Docker authenticated onboarding smoke", () => {
     );
   });
 });
+

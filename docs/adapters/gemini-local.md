@@ -43,3 +43,4 @@ Use the "Test Environment" button in the UI to validate the adapter config. It c
 - Working directory is absolute and available (auto-created if missing and permitted)
 - API key/auth hints (`GEMINI_API_KEY` or `GOOGLE_API_KEY`)
 - A live hello probe (`gemini --output-format json "Respond with hello."`) to verify CLI readiness
+

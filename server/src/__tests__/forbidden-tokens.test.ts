@@ -75,3 +75,4 @@ describe("forbidden token check", () => {
     expect(error).toHaveBeenCalledWith("\nBuild blocked. Remove the forbidden token(s) before publishing.");
   });
 });
+

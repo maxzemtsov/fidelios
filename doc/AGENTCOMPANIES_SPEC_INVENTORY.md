@@ -113,3 +113,4 @@ Route registration lives in `server/src/app.ts` via `companyRoutes(db, storage)`
 | Collision resolution | `company-portability.ts` (server), `CompanyImport.tsx` (UI) |
 | Env/secrets declarations | shared types (`CompanyPortabilityEnvInput`), `CompanyImport.tsx` (UI) |
 | README + org chart | `company-export-readme.ts` |
+

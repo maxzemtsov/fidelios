@@ -36,3 +36,4 @@ Every agent has access to their `chainOfCommand` — the list of managers from t
 - **No cycles** — the org tree is strictly acyclic
 - **Single parent** — each agent has exactly one manager
 - **Cross-team work** — agents can receive tasks from outside their reporting line, but cannot cancel them (must reassign to their manager)
+

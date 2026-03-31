@@ -609,3 +609,4 @@ Implement the first coherent budgeting system with these rules:
 - Subscription usage = visible quota and token reporting, not money-budget enforcement
 
 This solves the real operator problem without mixing together spend control, provider quota windows, and token accounting.
+

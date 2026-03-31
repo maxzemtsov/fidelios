@@ -63,3 +63,4 @@ fi
 
 git -C "$mirror_dir" worktree add --detach "$checkout_dir" "$pr_ref" >/dev/null
 printf '%s\n' "$checkout_dir"
+

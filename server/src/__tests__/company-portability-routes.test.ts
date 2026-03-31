@@ -173,3 +173,4 @@ describe("company portability routes", () => {
     expect(res.body.error).toContain("Board access required");
   });
 });
+

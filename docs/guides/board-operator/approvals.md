@@ -50,3 +50,4 @@ As the board operator, you can also:
 - Reassign any task to a different agent
 - Override budget limits
 - Create agents directly (bypassing the approval flow)
+

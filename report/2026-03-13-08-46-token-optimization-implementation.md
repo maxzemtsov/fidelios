@@ -46,3 +46,4 @@ While verifying, I also fixed two existing embedded-postgres typing mismatches s
 - `cli/src/commands/worktree.ts`
 
 Next useful follow-up is measuring the before/after effect in real runs now that telemetry is less misleading and prompt/session reuse behavior is consistent across adapters.
+

@@ -53,3 +53,4 @@ export interface IssueWorkProduct {
   createdAt: Date;
   updatedAt: Date;
 }
+

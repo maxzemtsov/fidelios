@@ -133,3 +133,4 @@ export const localEncryptedProvider: SecretProviderModule = {
     return decryptValue(masterKey, asLocalEncryptedMaterial(input.material));
   },
 };
+

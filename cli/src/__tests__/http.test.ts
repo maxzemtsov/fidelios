@@ -104,3 +104,4 @@ describe("FideliOSApiClient", () => {
     expect(retryHeaders.authorization).toBe("Bearer board-token-123");
   });
 });
+

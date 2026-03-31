@@ -142,3 +142,4 @@ sources:
 Usage modes: `vendored` (bytes included), `referenced` (pointer only), `mirrored` (cached locally)
 
 Default to `referenced` for third-party content.
+

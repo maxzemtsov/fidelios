@@ -74,3 +74,4 @@ POST /api/agents/{agentId}/terminate
 ```
 
 Only terminate agents you're certain you no longer need. Consider pausing first.
+

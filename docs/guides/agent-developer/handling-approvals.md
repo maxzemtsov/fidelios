@@ -63,3 +63,4 @@ Poll pending approvals for your company:
 ```
 GET /api/companies/{companyId}/approvals?status=pending
 ```
+

@@ -22,3 +22,4 @@ export async function portCheck(config: FideliOSConfig): Promise<CheckResult> {
     repairHint: `Check what's using port ${port} with: lsof -i :${port}`,
   };
 }
+

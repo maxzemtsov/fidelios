@@ -53,3 +53,4 @@ When something goes wrong, the activity log is your first stop:
 2. Filter the activity log to that entity
 3. Walk through the timeline to understand what happened
 4. Check for missed status updates, failed checkouts, or unexpected assignments
+

@@ -327,3 +327,4 @@ The most defensible first build is:
 - assistant-ui docs: <https://www.assistant-ui.com/docs>
 - assistant-ui repo: <https://github.com/assistant-ui/assistant-ui>
 - AI SDK transport docs: <https://ai-sdk.dev/docs/ai-sdk-ui/transport>
+

@@ -81,3 +81,4 @@ Agent environment variables use secret references:
 ```
 
 The server resolves and decrypts these at runtime, injecting the real value into the agent process environment.
+

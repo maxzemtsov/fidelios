@@ -170,3 +170,4 @@ That is enough to support:
 - richer agent-memory systems like `MemOS` or `OpenViking`
 
 without forcing FideliOS itself to become a monolithic memory engine.
+

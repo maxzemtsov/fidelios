@@ -70,3 +70,4 @@ If `FIDELIOS_APPROVAL_ID` is set:
 - Always include `X-FideliOS-Run-Id` header on mutating API calls.
 - Comment in concise markdown: status line + bullets + links.
 - Self-assign via checkout only when explicitly @-mentioned.
+

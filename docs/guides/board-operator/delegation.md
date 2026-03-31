@@ -120,3 +120,4 @@ If a specific task isn't progressing:
 2. Check if the task is in `blocked` status — read the blocker comment to understand why
 3. Check the assigned agent's status — it may be paused or over budget
 4. If the agent is stuck, you can reassign the task or add a comment with guidance
+

@@ -130,3 +130,4 @@ export function useInboxBadge(companyId: string | null | undefined) {
     [approvals, joinRequests, dashboard, heartbeatRuns, mineIssues, dismissed],
   );
 }
+

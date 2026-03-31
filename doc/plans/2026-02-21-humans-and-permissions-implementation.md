@@ -641,3 +641,4 @@ If any command is skipped, record exactly what was skipped and why.
 5. Local mode remains loopback-only and fails otherwise.
 6. Inbox shows actionable join approvals.
 7. All new mutating paths are activity-logged.
+

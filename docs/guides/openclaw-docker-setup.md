@@ -347,3 +347,4 @@ API keys are stored in `~/.secrets` and passed into containers via env vars.
 - [Docker blog: Run OpenClaw Securely in Docker Sandboxes](https://www.docker.com/blog/run-openclaw-securely-in-docker-sandboxes/)
 - [Docker Sandbox docs](https://docs.docker.com/ai/sandboxes)
 - [OpenAI Models](https://platform.openai.com/docs/models) — current models: gpt-5.2, gpt-5.2-chat-latest, gpt-5.2-pro
+

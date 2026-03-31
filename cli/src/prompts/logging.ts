@@ -35,3 +35,4 @@ export async function promptLogging(): Promise<LoggingConfig> {
   p.note("Cloud logging is coming soon. Using file-based logging for now.");
   return { mode: "file", logDir: defaultLogDir };
 }
+

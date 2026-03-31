@@ -77,3 +77,4 @@ describe("agent jwt env helpers", () => {
     expect(readFideliOSEnvEntries(envPath).FIDELIOS_WORKTREE_COLOR).toBe("#439edb");
   });
 });
+

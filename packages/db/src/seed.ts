@@ -97,3 +97,4 @@ await db.insert(issues).values([
 
 console.log("Seed complete");
 process.exit(0);
+

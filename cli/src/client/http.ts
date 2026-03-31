@@ -253,3 +253,4 @@ function toStringRecord(headers: HeadersInit | undefined): Record<string, string
     Object.entries(headers).map(([key, value]) => [key, String(value)]),
   );
 }
+

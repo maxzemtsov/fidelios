@@ -727,3 +727,4 @@ The next product step should be:
 5. keep agent-to-skill associations shortname-based in `AGENTS.md`
 
 That gives FideliOS one coherent skill story instead of forcing package management, adapter sync, and agent configuration into the same screen.
+

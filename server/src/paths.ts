@@ -32,3 +32,4 @@ export function resolveFideliOSConfigPath(overridePath?: string): string {
 export function resolveFideliOSEnvPath(overrideConfigPath?: string): string {
   return path.resolve(path.dirname(resolveFideliOSConfigPath(overrideConfigPath)), FIDELIOS_ENV_FILENAME);
 }
+

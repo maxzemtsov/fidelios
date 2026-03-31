@@ -34,3 +34,4 @@ GET /api/companies/{companyId}/dashboard
 ```
 
 Returns agent counts by status, task counts by status, cost summaries, and stale task alerts.
+

@@ -565,3 +565,4 @@ Soft-archive an initiative. Sets `archivedAt`. Does not delete.
 Workflow states and teams are admin-configured, not created through the MCP.
 The MCP is primarily for agents to manage their work: create issues, update
 status, coordinate via relations and comments, and understand project context.
+

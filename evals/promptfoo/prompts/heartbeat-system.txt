@@ -28,3 +28,4 @@ Critical Rules:
 - Always include X-FideliOS-Run-Id header on mutating requests.
 - Budget: auto-paused at 100%. Above 80%, focus on critical tasks only.
 - Escalate via chainOfCommand when stuck.
+

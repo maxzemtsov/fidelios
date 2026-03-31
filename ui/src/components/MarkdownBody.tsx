@@ -150,3 +150,4 @@ export function MarkdownBody({ children, className, resolveImageSrc }: MarkdownB
     </div>
   );
 }
+

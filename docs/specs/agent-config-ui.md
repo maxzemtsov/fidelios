@@ -284,3 +284,4 @@ All endpoints already exist. No new server work needed for V1.
 9. **Properties panel updates** -- session ID, last error
 
 Steps 1-5 are the core. Steps 6-9 are polish.
+

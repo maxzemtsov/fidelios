@@ -52,3 +52,4 @@ Standard result metadata supported:
 - meta.previewUrl (string, optional): shorthand single preview URL
 - meta.previewUrls (string[], optional): shorthand multiple preview URLs
 `;
+

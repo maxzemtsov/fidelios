@@ -201,3 +201,4 @@ function printSummary(results: CheckResult[]): { passed: number; warned: number;
 
   return { passed, warned, failed };
 }
+

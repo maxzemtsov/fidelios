@@ -86,3 +86,4 @@ Archives a company. Archived companies are hidden from default listings.
 | `budgetMonthlyCents` | number | Monthly budget limit |
 | `createdAt` | string | ISO timestamp |
 | `updatedAt` | string | ISO timestamp |
+

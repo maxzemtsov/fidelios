@@ -81,3 +81,4 @@ Notes:
 - FideliOS auto-injects local skills into "~/.cursor/skills" when missing, so Cursor can discover "$fidelios" and related skills on local runs.
 - FideliOS auto-adds --yolo unless one of --trust/--yolo/-f is already present in extraArgs.
 `;
+

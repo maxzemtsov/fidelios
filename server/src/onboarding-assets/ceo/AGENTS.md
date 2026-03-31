@@ -52,3 +52,4 @@ These files are essential. Read them.
 - `$AGENT_HOME/HEARTBEAT.md` -- execution and extraction checklist. Run every heartbeat.
 - `$AGENT_HOME/SOUL.md` -- who you are and how you should act.
 - `$AGENT_HOME/TOOLS.md` -- tools you have access to
+

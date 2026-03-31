@@ -144,3 +144,4 @@ FideliOS’s core identity is a **control plane for autonomous AI companies**, c
 
 8. **Thin core, rich edges**
    Put optional chat, knowledge, and special surfaces into plugins/extensions rather than bloating the control plane.
+

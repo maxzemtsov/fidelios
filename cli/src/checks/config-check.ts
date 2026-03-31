@@ -31,3 +31,4 @@ export function configCheck(configPath?: string): CheckResult {
     };
   }
 }
+

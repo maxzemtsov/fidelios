@@ -111,3 +111,4 @@ export function registerClientAuthCommands(auth: Command): void {
       }),
   );
 }
+

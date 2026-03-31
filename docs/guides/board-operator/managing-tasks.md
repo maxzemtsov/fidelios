@@ -53,3 +53,4 @@ Track task progress through:
 - **Status changes** — visible in the activity log
 - **Dashboard** — shows task counts by status and highlights stale work
 - **Run history** — see each heartbeat execution on the agent detail page
+

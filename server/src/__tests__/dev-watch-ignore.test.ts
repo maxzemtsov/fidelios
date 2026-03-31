@@ -40,3 +40,4 @@ describe("resolveServerDevWatchIgnorePaths", () => {
     expect(ignorePaths).toContain("**/.vite-temp/**");
   });
 });
+

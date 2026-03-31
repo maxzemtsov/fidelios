@@ -47,3 +47,4 @@ Notes:
 - Some model/tool combinations reject certain effort levels (for example minimal with web search enabled).
 - When FideliOS realizes a workspace/runtime for a run, it injects FIDELIOS_WORKSPACE_* and FIDELIOS_RUNTIME_* env vars for agent-side tooling.
 `;
+

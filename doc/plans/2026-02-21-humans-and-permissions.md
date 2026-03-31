@@ -419,3 +419,4 @@ V1 approach:
 6. Agent API-key lifetime is indefinite by default in V1, with explicit revoke/regenerate controls.
 7. Local mode keeps full admin/settings/invite capabilities through the implicit local instance-admin actor.
 8. Public/untrusted ingress for local mode is out of scope for V1; no `--dangerous-agent-ingress` in V1.
+

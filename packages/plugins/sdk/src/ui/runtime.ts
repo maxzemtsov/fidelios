@@ -49,3 +49,4 @@ export function renderSdkUiComponent<TProps>(
 
   throw new Error(`FideliOS plugin UI component "${name}" is not callable`);
 }
+

@@ -1,7 +1,7 @@
 # Storage System Implementation Plan (V1)
 
-Status: Draft  
-Owner: Backend + UI  
+Status: Draft
+Owner: Backend + UI
 Date: 2026-02-20
 
 ## Goal
