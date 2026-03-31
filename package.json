@@ -52,5 +52,6 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.888.0"
-  }
+  },
+  "version": "0.0.1"
 }

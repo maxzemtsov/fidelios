@@ -1,7 +1,7 @@
 {
   "name": "fidelios",
-  "version": "0.3.1",
-  "description": "FideliOS CLI — orchestrate AI agent teams to run a business",
+  "version": "0.0.1",
+  "description": "FideliOS CLI \u2014 orchestrate AI agent teams to run a business",
   "type": "module",
   "bin": {
     "fidelios": "./dist/index.js"
