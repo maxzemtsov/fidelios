@@ -162,6 +162,7 @@ pnpm typecheck      # TypeScript type-check across all packages
 pnpm test:run       # Run test suite
 pnpm db:generate    # Generate a new database migration
 pnpm db:migrate     # Apply pending migrations
+pnpm db:restore     # Restore database from a backup
 ```
 
 See [doc/DEVELOPING.md](doc/DEVELOPING.md) for the full development guide.
