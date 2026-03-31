@@ -2272,7 +2272,15 @@ export function heartbeatService(db: Db) {
       worktreePath: executionWorkspace.worktreePath,
       agentHome: await (async () => {
         const home = resolveDefaultAgentWorkspaceDir(agent.id);
-        await fs.mkdir(home, { recursive: true });
+        // Pre-create PARA directory structure so agents don't fail on first glob/read
+        await Promise.all([
+          fs.mkdir(home, { recursive: true }),
+          fs.mkdir(path.join(home, "memory"), { recursive: true }),
+          fs.mkdir(path.join(home, "life", "projects"), { recursive: true }),
+          fs.mkdir(path.join(home, "life", "areas"), { recursive: true }),
+          fs.mkdir(path.join(home, "life", "resources"), { recursive: true }),
+          fs.mkdir(path.join(home, "life", "archives"), { recursive: true }),
+        ]);
         return home;
       })(),
     };
