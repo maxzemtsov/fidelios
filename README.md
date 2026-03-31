@@ -138,8 +138,8 @@ S3 sync happens after every local backup. If S3 is unreachable, local backups co
 
 | Guide | Description |
 |-------|-------------|
-| [Tailscale Remote Access](doc/TAILSCALE.md) | Access FideliOS from your phone or any device over a secure private network |
-| [Telegram Gateway Plugin](doc/TELEGRAM-PLUGIN.md) | Connect FideliOS to Telegram — agent updates, approvals, two-way messaging |
+| [Tailscale Remote Access](doc/TAILSCALE.md) | Remote Access to the FideliOS from your phone or any device over a secure private network |
+| [Telegram Gateway Plugin](doc/TELEGRAM-PLUGIN.md) | Manage FideliOS via Telegram — agent updates, approvals, two-way messaging gateway |
 | [Developing](doc/DEVELOPING.md) | Full development guide for contributors |
 | [CLI Reference](doc/CLI.md) | All CLI commands and options |
 
