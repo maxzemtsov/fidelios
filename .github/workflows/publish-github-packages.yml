@@ -8,7 +8,6 @@ on:
   push:
     tags:
       - 'v*'
-      - 'canary/v*'
 
 concurrency:
   group: github-packages-${{ github.ref }}
@@ -60,19 +59,12 @@ jobs:
             cp -r skills "$pkg_dir/skills"
           done
 
-      - name: Resolve version and dist-tag from git tag
+      - name: Resolve version from git tag
         id: meta
         run: |
           tag="${GITHUB_REF#refs/tags/}"
-          if [[ "$tag" == canary/* ]]; then
-            version="${tag#canary/v}"
-            dist_tag="canary"
-          else
-            version="${tag#v}"
-            dist_tag="latest"
-          fi
-          echo "version=$version"   >> "$GITHUB_OUTPUT"
-          echo "dist_tag=$dist_tag" >> "$GITHUB_OUTPUT"
+          version="${tag#v}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Set workspace versions
         run: node scripts/release-package-map.mjs set-version "${{ steps.meta.outputs.version }}"
@@ -101,7 +93,7 @@ jobs:
               cd "$pkg_dir"
               pnpm publish \
                 --no-git-checks \
-                --tag "${{ steps.meta.outputs.dist_tag }}" \
+                --tag latest \
                 --access public \
                 --registry https://npm.pkg.github.com
             )

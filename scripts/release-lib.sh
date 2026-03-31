@@ -163,56 +163,12 @@ process.stdout.write(parts.join("."));
 NODE
 }
 
-next_canary_version() {
-  local stable_version="$1"
-  shift
-
-  node - "$stable_version" "$@" <<'NODE'
-const stable = process.argv[2];
-const packageNames = process.argv.slice(3);
-const { execSync } = require("node:child_process");
-
-const pattern = new RegExp(`^${stable.replace(/\./g, '\\.')}-canary\\.(\\d+)$`);
-let max = -1;
-
-for (const packageName of packageNames) {
-  let versions = [];
-
-  try {
-    const raw = execSync(`npm view ${JSON.stringify(packageName)} versions --json`, {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    }).trim();
-
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      versions = Array.isArray(parsed) ? parsed : [parsed];
-    }
-  } catch {
-    versions = [];
-  }
-
-  for (const version of versions) {
-    const match = version.match(pattern);
-    if (!match) continue;
-    max = Math.max(max, Number(match[1]));
-  }
-}
-
-process.stdout.write(`${stable}-canary.${max + 1}`);
-NODE
-}
-
 release_notes_file() {
   printf '%s/releases/v%s.md\n' "$REPO_ROOT" "$1"
 }
 
 stable_tag_name() {
   printf 'v%s\n' "$1"
-}
-
-canary_tag_name() {
-  printf 'canary/v%s\n' "$1"
 }
 
 npm_package_version_exists() {

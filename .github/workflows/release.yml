@@ -31,7 +31,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  verify_canary:
+  # ─── On every push to main: typecheck + test + build ───
+  verify:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -67,60 +68,7 @@ jobs:
       - name: Build
         run: pnpm build
 
-  publish_canary:
-    if: github.event_name == 'push'
-    needs: verify_canary
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    environment: npm-canary
-    permissions:
-      contents: write
-      id-token: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          registry-url: 'https://registry.npmjs.org'
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Restore tracked install-time changes
-        run: git checkout -- pnpm-lock.yaml
-
-      - name: Configure git author
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-      - name: Publish canary
-        env:
-          GITHUB_ACTIONS: "true"
-          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
-        run: ./scripts/release.sh canary --skip-verify
-
-      - name: Push canary tag
-        run: |
-          tag="$(git tag --points-at HEAD | grep '^canary/v' | head -1)"
-          if [ -z "$tag" ]; then
-            echo "Error: no canary tag points at HEAD after release." >&2
-            exit 1
-          fi
-          git push origin "refs/tags/${tag}"
-
+  # ─── Manual: verify before stable release ───
   verify_stable:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -158,6 +106,7 @@ jobs:
       - name: Build
         run: pnpm build
 
+  # ─── Manual dry-run: preview what would be published ───
   preview_stable:
     if: github.event_name == 'workflow_dispatch' && inputs.dry_run
     needs: verify_stable
@@ -190,8 +139,9 @@ jobs:
       - name: Dry-run stable release
         env:
           GITHUB_ACTIONS: "true"
-        run: ./scripts/release.sh stable --skip-verify --dry-run --bump "${{ inputs.bump }}"
+        run: ./scripts/release.sh --skip-verify --dry-run --bump "${{ inputs.bump }}"
 
+  # ─── Manual publish: build + publish to npm + tag + GitHub Release ───
   publish_stable:
     if: github.event_name == 'workflow_dispatch' && !inputs.dry_run
     needs: verify_stable
@@ -236,7 +186,7 @@ jobs:
         env:
           GITHUB_ACTIONS: "true"
           NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
-        run: ./scripts/release.sh stable --skip-verify --bump "${{ inputs.bump }}"
+        run: ./scripts/release.sh --skip-verify --bump "${{ inputs.bump }}"
 
       - name: Push stable tag
         run: |

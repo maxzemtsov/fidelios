@@ -6,7 +6,6 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 . "$REPO_ROOT/scripts/release-lib.sh"
 CLI_DIR="$REPO_ROOT/cli"
 
-channel=""
 bump="patch"
 dry_run=false
 skip_verify=false
@@ -18,23 +17,18 @@ cleanup_on_exit=false
 usage() {
   cat <<'EOF'
 Usage:
-  ./scripts/release.sh <canary|stable> [--bump patch|minor|major] [--dry-run] [--skip-verify] [--print-version]
+  ./scripts/release.sh [--bump patch|minor|major] [--dry-run] [--skip-verify] [--print-version]
 
 Examples:
-  ./scripts/release.sh canary
-  ./scripts/release.sh canary --bump minor --dry-run
-  ./scripts/release.sh stable
-  ./scripts/release.sh stable --bump minor
-  ./scripts/release.sh stable --bump major
+  ./scripts/release.sh                    # publish 0.0.x (patch bump)
+  ./scripts/release.sh --bump minor       # publish 0.x.0
+  ./scripts/release.sh --bump major       # publish x.0.0
+  ./scripts/release.sh --dry-run          # preview without publishing
 
 Notes:
   - Versions follow semver: MAJOR.MINOR.PATCH (e.g. 0.0.4, 0.1.0, 1.0.0).
   - Default bump is patch. Use --bump minor or --bump major as needed.
-  - Canary releases publish X.Y.Z-canary.N under the npm dist-tag "canary"
-    and create the git tag canary/vX.Y.Z-canary.N.
-  - Stable releases publish X.Y.Z under the npm dist-tag "latest" and
-    create the git tag vX.Y.Z.
-  - Stable release notes must already exist at releases/vX.Y.Z.md.
+  - Release notes must exist at releases/vX.Y.Z.md before publishing.
   - The script rewrites versions temporarily and restores the working tree on
     exit. Tags always point at the original source commit, not a generated
     release commit.
@@ -85,11 +79,11 @@ set_cleanup_trap() {
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    canary|stable)
-      if [ -n "$channel" ]; then
-        release_fail "only one release channel may be provided."
-      fi
-      channel="$1"
+    # Accept "stable" for backward compat but ignore it
+    stable) ;;
+    # Silently ignore "canary" — it's a no-op now
+    canary)
+      release_fail "canary releases have been removed. Use './scripts/release.sh --bump patch' for regular releases."
       ;;
     --bump)
       shift
@@ -113,11 +107,6 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-[ -n "$channel" ] || {
-  usage
-  exit 1
-}
-
 PUBLISH_REMOTE="$(resolve_release_remote)"
 fetch_release_remote "$PUBLISH_REMOTE"
 
@@ -135,35 +124,21 @@ done < <(printf '%s\n' "$PUBLIC_PACKAGE_INFO" | cut -f2)
 
 [ -n "$PUBLIC_PACKAGE_INFO" ] || release_fail "no public packages were found in the workspace."
 
-TARGET_STABLE_VERSION="$(next_stable_version "$bump")"
-TARGET_PUBLISH_VERSION="$TARGET_STABLE_VERSION"
-DIST_TAG="latest"
-
-if [ "$channel" = "canary" ]; then
-  require_on_master_branch
-  TARGET_PUBLISH_VERSION="$(next_canary_version "$TARGET_STABLE_VERSION" "${PUBLIC_PACKAGE_NAMES[@]}")"
-  DIST_TAG="canary"
-  tag_name="$(canary_tag_name "$TARGET_PUBLISH_VERSION")"
-else
-  tag_name="$(stable_tag_name "$TARGET_STABLE_VERSION")"
-fi
+TARGET_VERSION="$(next_stable_version "$bump")"
+tag_name="$(stable_tag_name "$TARGET_VERSION")"
 
 if [ "$print_version_only" = true ]; then
-  printf '%s\n' "$TARGET_PUBLISH_VERSION"
+  printf '%s\n' "$TARGET_VERSION"
   exit 0
 fi
 
-NOTES_FILE="$(release_notes_file "$TARGET_STABLE_VERSION")"
+NOTES_FILE="$(release_notes_file "$TARGET_VERSION")"
 
 require_clean_worktree
 require_npm_publish_auth "$dry_run"
 
-if [ "$channel" = "stable" ] && [ ! -f "$NOTES_FILE" ]; then
-  release_fail "stable release notes file is required at $NOTES_FILE before publishing stable."
-fi
-
-if [ "$channel" = "canary" ] && [ -f "$NOTES_FILE" ]; then
-  release_info "  ✓ Stable release notes already exist at $NOTES_FILE"
+if [ ! -f "$NOTES_FILE" ]; then
+  release_fail "release notes file is required at $NOTES_FILE before publishing."
 fi
 
 if git_local_tag_exists "$tag_name" || git_remote_tag_exists "$tag_name" "$PUBLISH_REMOTE"; then
@@ -172,31 +147,22 @@ fi
 
 while IFS= read -r package_name; do
   [ -z "$package_name" ] && continue
-  if npm_package_version_exists "$package_name" "$TARGET_PUBLISH_VERSION"; then
-    release_fail "npm version ${package_name}@${TARGET_PUBLISH_VERSION} already exists."
+  if npm_package_version_exists "$package_name" "$TARGET_VERSION"; then
+    release_fail "npm version ${package_name}@${TARGET_VERSION} already exists."
   fi
 done <<< "$(printf '%s\n' "${PUBLIC_PACKAGE_NAMES[@]}")"
 
 release_info ""
 release_info "==> Release plan"
 release_info "  Remote: $PUBLISH_REMOTE"
-release_info "  Channel: $channel"
 release_info "  Bump: $bump"
 release_info "  Current branch: ${CURRENT_BRANCH:-<detached>}"
 release_info "  Source commit: $CURRENT_SHA"
 release_info "  Last stable tag: ${LAST_STABLE_TAG:-<none>}"
-release_info "  Current stable version: $CURRENT_STABLE_VERSION"
-release_info "  Next stable version: $TARGET_STABLE_VERSION"
-if [ "$channel" = "canary" ]; then
-  release_info "  Canary version: $TARGET_PUBLISH_VERSION"
-else
-  release_info "  Stable version: $TARGET_PUBLISH_VERSION"
-fi
-release_info "  Dist-tag: $DIST_TAG"
+release_info "  Current version: $CURRENT_STABLE_VERSION"
+release_info "  New version: $TARGET_VERSION"
 release_info "  Git tag: $tag_name"
-if [ "$channel" = "stable" ]; then
-  release_info "  Release notes: $NOTES_FILE"
-fi
+release_info "  Release notes: $NOTES_FILE"
 
 set_cleanup_trap
 
@@ -225,8 +191,8 @@ release_info "  ✓ Workspace build complete"
 
 release_info ""
 release_info "==> Step 3/7: Rewriting workspace versions..."
-set_public_package_version "$TARGET_PUBLISH_VERSION"
-release_info "  ✓ Versioned workspace to $TARGET_PUBLISH_VERSION"
+set_public_package_version "$TARGET_VERSION"
+release_info "  ✓ Versioned workspace to $TARGET_VERSION"
 
 release_info ""
 release_info "==> Step 4/7: Building publishable CLI bundle..."
@@ -235,8 +201,8 @@ release_info "  ✓ CLI bundle ready"
 
 VERSIONED_PACKAGE_INFO="$(list_public_package_info)"
 VERSION_IN_CLI_PACKAGE="$(node -e "console.log(require('$CLI_DIR/package.json').version)")"
-if [ "$VERSION_IN_CLI_PACKAGE" != "$TARGET_PUBLISH_VERSION" ]; then
-  release_fail "versioning drift detected. Expected $TARGET_PUBLISH_VERSION but found $VERSION_IN_CLI_PACKAGE."
+if [ "$VERSION_IN_CLI_PACKAGE" != "$TARGET_VERSION" ]; then
+  release_fail "versioning drift detected. Expected $TARGET_VERSION but found $VERSION_IN_CLI_PACKAGE."
 fi
 
 release_info ""
@@ -246,7 +212,7 @@ if [ "$dry_run" = true ]; then
     [ -z "$pkg_dir" ] && continue
     release_info "  --- $pkg_dir ---"
     cd "$REPO_ROOT/$pkg_dir"
-    pnpm publish --dry-run --no-git-checks --tag "$DIST_TAG" 2>&1 | tail -3
+    pnpm publish --dry-run --no-git-checks --tag latest 2>&1 | tail -3
   done <<< "$VERSIONED_PACKAGE_INFO"
   release_info "  [dry-run] Would create git tag $tag_name on $CURRENT_SHA"
 else
@@ -255,9 +221,9 @@ else
     [ -z "$pkg_dir" ] && continue
     release_info "  Publishing $pkg_name@$pkg_version"
     cd "$REPO_ROOT/$pkg_dir"
-    pnpm publish --no-git-checks --tag "$DIST_TAG" --access public
+    pnpm publish --no-git-checks --tag latest --access public
   done <<< "$VERSIONED_PACKAGE_INFO"
-  release_info "  ✓ Published all packages under dist-tag $DIST_TAG"
+  release_info "  ✓ Published all packages"
 fi
 
 release_info ""
@@ -299,16 +265,10 @@ fi
 
 release_info ""
 if [ "$dry_run" = true ]; then
-  release_info "Dry run complete for $channel ${TARGET_PUBLISH_VERSION}."
+  release_info "Dry run complete for ${TARGET_VERSION}."
 else
-  if [ "$channel" = "canary" ]; then
-    release_info "Published canary ${TARGET_PUBLISH_VERSION}."
-    release_info "Install with: npx fidelios@canary onboard"
-    release_info "Next step: git push ${PUBLISH_REMOTE} refs/tags/${tag_name}"
-  else
-    release_info "Published stable ${TARGET_PUBLISH_VERSION}."
-    release_info "Next steps:"
-    release_info "  git push ${PUBLISH_REMOTE} refs/tags/${tag_name}"
-    release_info "  ./scripts/create-github-release.sh $TARGET_STABLE_VERSION"
-  fi
+  release_info "Published ${TARGET_VERSION}."
+  release_info "Next steps:"
+  release_info "  git push ${PUBLISH_REMOTE} refs/tags/${tag_name}"
+  release_info "  ./scripts/create-github-release.sh $TARGET_VERSION"
 fi
