@@ -734,7 +734,7 @@ If the selected project:
 
 This dropdown should show only active execution workspaces for the selected project workspace, with labels like:
 
-- `dotta/integration-branch`
+- `dev/integration-branch`
 - `PAP-447-add-worktree-support`
 - `shared primary workspace`
 

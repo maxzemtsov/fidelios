@@ -2,7 +2,7 @@
 
 ## Role of This Document
 
-This document translates [workspace-product-model-and-work-product.md](/Users/dotta/fidelios-subissues/doc/plans/workspace-product-model-and-work-product.md) into an implementation-ready engineering plan.
+This document translates [workspace-product-model-and-work-product.md](workspace-product-model-and-work-product.md) into an implementation-ready engineering plan.
 
 It is intentionally concrete:
 

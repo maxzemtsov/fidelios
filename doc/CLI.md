@@ -40,7 +40,7 @@ Target behavior (planned) is documented in `doc/DEPLOYMENT-MODES.md` section 5.
 Allow an authenticated/private hostname (for example custom Tailscale DNS):
 
 ```sh
-pnpm fidelios allowed-hostname dotta-macbook-pro
+pnpm fidelios allowed-hostname your-hostname
 ```
 
 All client commands support:

@@ -92,7 +92,7 @@ program
 program
   .command("allowed-hostname")
   .description("Allow a hostname for authenticated/private mode access")
-  .argument("<host>", "Hostname to allow (for example dotta-macbook-pro)")
+  .argument("<host>", "Hostname to allow (for example your-hostname)")
   .option("-c, --config <path>", "Path to config file")
   .option("-d, --data-dir <path>", DATA_DIR_OPTION_HELP)
   .action(addAllowedHostname);

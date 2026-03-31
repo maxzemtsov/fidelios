@@ -75,10 +75,10 @@ describe("allowed-hostname command", () => {
     const configPath = createTempConfigPath();
     writeBaseConfig(configPath);
 
-    await addAllowedHostname("https://Dotta-MacBook-Pro:3100", { config: configPath });
-    await addAllowedHostname("dotta-macbook-pro", { config: configPath });
+    await addAllowedHostname("https://Dev-MacBook-Pro:3100", { config: configPath });
+    await addAllowedHostname("dev-macbook-pro", { config: configPath });
 
     const raw = JSON.parse(fs.readFileSync(configPath, "utf-8")) as FideliOSConfig;
-    expect(raw.server.allowedHostnames).toEqual(["dotta-macbook-pro"]);
+    expect(raw.server.allowedHostnames).toEqual(["dev-macbook-pro"]);
   });
 });

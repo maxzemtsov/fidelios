@@ -192,7 +192,7 @@ Those should not be buried inside adapter prompts. They are workflow policy.
 
 ### Human operator workflows are different from issue-isolation workflows
 
-A human operator may want a long-lived personal integration branch such as `dotta` and may not want every task to create a new branch/workspace dance.
+A human operator may want a long-lived personal integration branch such as `dev/integration-branch` and may not want every task to create a new branch/workspace dance.
 
 That is a legitimate workflow and should be supported directly.
 

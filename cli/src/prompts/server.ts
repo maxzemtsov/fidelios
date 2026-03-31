@@ -94,7 +94,7 @@ export async function promptServer(opts?: {
     const allowedHostnamesInput = await p.text({
       message: "Allowed hostnames (comma-separated, optional)",
       defaultValue: (currentServer?.allowedHostnames ?? []).join(", "),
-      placeholder: "dotta-macbook-pro, your-host.tailnet.ts.net",
+      placeholder: "my-macbook-pro, your-host.tailnet.ts.net",
       validate: (val) => {
         try {
           parseHostnameCsv(val);

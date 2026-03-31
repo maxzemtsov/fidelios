@@ -145,7 +145,7 @@ describe("company portability", () => {
           },
           instructionsFilePath: "/tmp/ignored.md",
           cwd: "/tmp/ignored",
-          command: "/Users/dotta/.local/bin/claude",
+          command: "/Users/dev/.local/bin/claude",
           model: "claude-opus-4-6",
           env: {
             ANTHROPIC_API_KEY: {
@@ -436,7 +436,7 @@ describe("company portability", () => {
     expect(extension).not.toContain("PATH:");
     expect(extension).not.toContain("requireBoardApprovalForNewAgents: true");
     expect(extension).not.toContain("budgetMonthlyCents: 0");
-    expect(exported.warnings).toContain("Agent claudecoder command /Users/dotta/.local/bin/claude was omitted from export because it is system-dependent.");
+    expect(exported.warnings).toContain("Agent claudecoder command /Users/dev/.local/bin/claude was omitted from export because it is system-dependent.");
     expect(exported.warnings).toContain("Agent claudecoder PATH override was omitted from export because it is system-dependent.");
   });
 
@@ -755,7 +755,7 @@ describe("company portability", () => {
             projectId: "project-1",
             name: "Main Repo",
             sourceType: "git_repo",
-            cwd: "/Users/dotta/fidelios",
+            cwd: "/Users/dev/fidelios",
             repoUrl: "https://github.com/fideliosai/fidelios.git",
             repoRef: "main",
             defaultRef: "main",
@@ -832,7 +832,7 @@ describe("company portability", () => {
     expect(extension).toContain('repoUrl: "https://github.com/fideliosai/fidelios.git"');
     expect(extension).toContain('defaultProjectWorkspaceKey: "main-repo"');
     expect(extension).toContain('projectWorkspaceKey: "main-repo"');
-    expect(extension).not.toContain("/Users/dotta/fidelios");
+    expect(extension).not.toContain("/Users/dev/fidelios");
     expect(extension).not.toContain("workspace-1");
     expect(exported.warnings).toContain("Project launch workspace Local Scratch was omitted from export because it does not have a portable repoUrl.");
 

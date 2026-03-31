@@ -52,7 +52,7 @@ This runs dev as `authenticated/private` and binds the server to `0.0.0.0` for p
 Allow additional private hostnames (for example custom Tailscale hostnames):
 
 ```sh
-pnpm fidelios allowed-hostname dotta-macbook-pro
+pnpm fidelios allowed-hostname your-hostname
 ```
 
 ## One-Command Local Run
