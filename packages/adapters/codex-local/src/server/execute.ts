@@ -415,7 +415,9 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       instructionsPrefix =
         `${instructionsContents}\n\n` +
         `The above agent instructions were loaded from ${instructionsFilePath}. ` +
-        `Resolve any relative file references from ${instructionsDir}.\n\n`;
+        `Resolve any relative file references from ${instructionsDir}. ` +
+        `Your personal home directory ($AGENT_HOME) is ${agentHome || instructionsDir}. ` +
+        `Use $AGENT_HOME for memory, life, and personal files — NOT the instructions directory.\n\n`;
       instructionsChars = instructionsPrefix.length;
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);

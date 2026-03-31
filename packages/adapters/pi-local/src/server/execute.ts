@@ -264,7 +264,9 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       systemPromptExtension =
         `${instructionsContents}\n\n` +
         `The above agent instructions were loaded from ${resolvedInstructionsFilePath}. ` +
-        `Resolve any relative file references from ${instructionsFileDir}.\n\n` +
+        `Resolve any relative file references from ${instructionsFileDir}. ` +
+        `Your personal home directory ($AGENT_HOME) is ${agentHome || instructionsFileDir}. ` +
+        `Use $AGENT_HOME for memory, life, and personal files — NOT the instructions directory.\n\n` +
         `You are agent {{agent.id}} ({{agent.name}}). Continue your FideliOS work.`;
     } catch (err) {
       instructionsReadFailed = true;
