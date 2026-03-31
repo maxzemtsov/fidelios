@@ -15,6 +15,7 @@ import {
   resolveFideliOSHomeDir,
   resolveFideliOSInstanceId,
 } from "../config/home.js";
+import { checkForUpdateSilently } from "./update.js";
 
 interface RunOptions {
   config?: string;
@@ -45,6 +46,14 @@ export async function runCommand(opts: RunOptions): Promise<void> {
   loadFideliOSEnvFile(configPath);
 
   p.intro(pc.bgCyan(pc.black(" fidelios run ")));
+
+  // Silent update check (non-blocking, 5s timeout)
+  const currentVersion = process.env.npm_package_version ?? "0.0.0";
+  const updateMsg = checkForUpdateSilently(currentVersion);
+  if (updateMsg) {
+    p.log.message(pc.yellow(`⬆ ${updateMsg}`));
+  }
+
   p.log.message(pc.dim(`Home: ${paths.homeDir}`));
   p.log.message(pc.dim(`Instance: ${paths.instanceId}`));
   p.log.message(pc.dim(`Config: ${configPath}`));

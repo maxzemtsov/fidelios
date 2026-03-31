@@ -9,6 +9,7 @@ import { runCommand } from "./commands/run.js";
 import { bootstrapCeoInvite } from "./commands/auth-bootstrap-ceo.js";
 import { dbBackupCommand } from "./commands/db-backup.js";
 import { uninstallCommand } from "./commands/uninstall.js";
+import { updateCommand } from "./commands/update.js";
 import { registerContextCommands } from "./commands/client/context.js";
 import { registerCompanyCommands } from "./commands/client/company.js";
 import { registerIssueCommands } from "./commands/client/issue.js";
@@ -97,6 +98,12 @@ program
   .option("-d, --data-dir <path>", DATA_DIR_OPTION_HELP)
   .option("--force", "Remove everything including backups, skip confirmation", false)
   .action(uninstallCommand);
+
+program
+  .command("update")
+  .description("Check for and install the latest FideliOS version")
+  .option("--beta", "Update to latest beta/pre-release version", false)
+  .action(updateCommand);
 
 program
   .command("allowed-hostname")
