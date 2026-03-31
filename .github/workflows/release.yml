@@ -10,11 +10,16 @@ on:
         description: Commit SHA, branch, or tag to publish as stable
         required: true
         type: string
-        default: master
-      stable_date:
-        description: Enter a UTC date in YYYY-MM-DD format, for example 2026-03-18. Do not enter a version string. The workflow will resolve that date to a stable version such as 2026.318.0, then 2026.318.1 for the next same-day stable.
+        default: main
+      bump:
+        description: Semver bump type — patch (0.0.x), minor (0.x.0), or major (x.0.0)
         required: false
-        type: string
+        type: choice
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
       dry_run:
         description: Preview the stable release without publishing
         required: true
@@ -183,12 +188,7 @@ jobs:
       - name: Dry-run stable release
         env:
           GITHUB_ACTIONS: "true"
-        run: |
-          args=(stable --skip-verify --dry-run)
-          if [ -n "${{ inputs.stable_date }}" ]; then
-            args+=(--date "${{ inputs.stable_date }}")
-          fi
-          ./scripts/release.sh "${args[@]}"
+        run: ./scripts/release.sh stable --skip-verify --dry-run --bump "${{ inputs.bump }}"
 
   publish_stable:
     if: github.event_name == 'workflow_dispatch' && !inputs.dry_run
@@ -232,12 +232,7 @@ jobs:
       - name: Publish stable
         env:
           GITHUB_ACTIONS: "true"
-        run: |
-          args=(stable --skip-verify)
-          if [ -n "${{ inputs.stable_date }}" ]; then
-            args+=(--date "${{ inputs.stable_date }}")
-          fi
-          ./scripts/release.sh "${args[@]}"
+        run: ./scripts/release.sh stable --skip-verify --bump "${{ inputs.bump }}"
 
       - name: Push stable tag
         run: |

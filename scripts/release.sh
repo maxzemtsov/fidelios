@@ -7,7 +7,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CLI_DIR="$REPO_ROOT/cli"
 
 channel=""
-release_date=""
+bump="patch"
 dry_run=false
 skip_verify=false
 print_version_only=false
@@ -18,23 +18,23 @@ cleanup_on_exit=false
 usage() {
   cat <<'EOF'
 Usage:
-  ./scripts/release.sh <canary|stable> [--date YYYY-MM-DD] [--dry-run] [--skip-verify] [--print-version]
+  ./scripts/release.sh <canary|stable> [--bump patch|minor|major] [--dry-run] [--skip-verify] [--print-version]
 
 Examples:
   ./scripts/release.sh canary
-  ./scripts/release.sh canary --date 2026-03-17 --dry-run
+  ./scripts/release.sh canary --bump minor --dry-run
   ./scripts/release.sh stable
-  ./scripts/release.sh stable --date 2026-03-17 --dry-run
-  ./scripts/release.sh stable --date 2026-03-18 --print-version
+  ./scripts/release.sh stable --bump minor
+  ./scripts/release.sh stable --bump major
 
 Notes:
-  - Stable versions use YYYY.MDD.P, where M is the UTC month, DD is the
-    zero-padded UTC day, and P is the same-day stable patch slot.
-  - Canary releases publish YYYY.MDD.P-canary.N under the npm dist-tag
-    "canary" and create the git tag canary/vYYYY.MDD.P-canary.N.
-  - Stable releases publish YYYY.MDD.P under the npm dist-tag "latest" and
-    create the git tag vYYYY.MDD.P.
-  - Stable release notes must already exist at releases/vYYYY.MDD.P.md.
+  - Versions follow semver: MAJOR.MINOR.PATCH (e.g. 0.0.4, 0.1.0, 1.0.0).
+  - Default bump is patch. Use --bump minor or --bump major as needed.
+  - Canary releases publish X.Y.Z-canary.N under the npm dist-tag "canary"
+    and create the git tag canary/vX.Y.Z-canary.N.
+  - Stable releases publish X.Y.Z under the npm dist-tag "latest" and
+    create the git tag vX.Y.Z.
+  - Stable release notes must already exist at releases/vX.Y.Z.md.
   - The script rewrites versions temporarily and restores the working tree on
     exit. Tags always point at the original source commit, not a generated
     release commit.
@@ -91,10 +91,13 @@ while [ $# -gt 0 ]; do
       fi
       channel="$1"
       ;;
-    --date)
+    --bump)
       shift
-      [ $# -gt 0 ] || release_fail "--date requires YYYY-MM-DD."
-      release_date="$1"
+      [ $# -gt 0 ] || release_fail "--bump requires patch, minor, or major."
+      case "$1" in
+        patch|minor|major) bump="$1" ;;
+        *) release_fail "--bump must be patch, minor, or major (got: $1)." ;;
+      esac
       ;;
     --dry-run) dry_run=true ;;
     --skip-verify) skip_verify=true ;;
@@ -122,7 +125,6 @@ CURRENT_BRANCH="$(git_current_branch)"
 CURRENT_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD)"
 LAST_STABLE_TAG="$(get_last_stable_tag)"
 CURRENT_STABLE_VERSION="$(get_current_stable_version)"
-RELEASE_DATE="${release_date:-$(utc_date_iso)}"
 
 PUBLIC_PACKAGE_INFO="$(list_public_package_info)"
 PUBLIC_PACKAGE_NAMES=()
@@ -133,7 +135,7 @@ done < <(printf '%s\n' "$PUBLIC_PACKAGE_INFO" | cut -f2)
 
 [ -n "$PUBLIC_PACKAGE_INFO" ] || release_fail "no public packages were found in the workspace."
 
-TARGET_STABLE_VERSION="$(next_stable_version "$RELEASE_DATE" "${PUBLIC_PACKAGE_NAMES[@]}")"
+TARGET_STABLE_VERSION="$(next_stable_version "$bump")"
 TARGET_PUBLISH_VERSION="$TARGET_STABLE_VERSION"
 DIST_TAG="latest"
 
@@ -179,12 +181,12 @@ release_info ""
 release_info "==> Release plan"
 release_info "  Remote: $PUBLISH_REMOTE"
 release_info "  Channel: $channel"
+release_info "  Bump: $bump"
 release_info "  Current branch: ${CURRENT_BRANCH:-<detached>}"
 release_info "  Source commit: $CURRENT_SHA"
 release_info "  Last stable tag: ${LAST_STABLE_TAG:-<none>}"
 release_info "  Current stable version: $CURRENT_STABLE_VERSION"
-release_info "  Release date (UTC): $RELEASE_DATE"
-release_info "  Target stable version: $TARGET_STABLE_VERSION"
+release_info "  Next stable version: $TARGET_STABLE_VERSION"
 if [ "$channel" = "canary" ]; then
   release_info "  Canary version: $TARGET_PUBLISH_VERSION"
 else

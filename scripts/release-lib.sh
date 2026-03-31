@@ -107,77 +107,59 @@ get_current_stable_version() {
   fi
 }
 
-stable_version_slot_for_date() {
-  node - "${1:-}" <<'NODE'
-const input = process.argv[2];
-
-const date = input ? new Date(`${input}T00:00:00Z`) : new Date();
-if (Number.isNaN(date.getTime())) {
-  console.error(`invalid date: ${input}`);
-  process.exit(1);
+# Bump a semver string: bump_semver <version> <patch|minor|major>
+bump_semver() {
+  node - "$1" "$2" <<'NODE'
+const [, , ver, bump] = process.argv;
+const parts = ver.split(".").map(Number);
+if (parts.length !== 3 || parts.some(isNaN)) {
+  process.stderr.write(`invalid semver: ${ver}\n`); process.exit(1);
 }
-
-const month = String(date.getUTCMonth() + 1);
-const day = String(date.getUTCDate()).padStart(2, '0');
-
-process.stdout.write(`${date.getUTCFullYear()}.${month}${day}`);
-NODE
-}
-
-utc_date_iso() {
-  node <<'NODE'
-const date = new Date();
-const y = date.getUTCFullYear();
-const m = String(date.getUTCMonth() + 1).padStart(2, '0');
-const d = String(date.getUTCDate()).padStart(2, '0');
-process.stdout.write(`${y}-${m}-${d}`);
+if (bump === "major") { parts[0]++; parts[1] = 0; parts[2] = 0; }
+else if (bump === "minor") { parts[1]++; parts[2] = 0; }
+else { parts[2]++; }
+process.stdout.write(parts.join("."));
 NODE
 }
 
 next_stable_version() {
-  local release_date="$1"
-  shift
+  local bump="${1:-patch}"
 
-  node - "$release_date" "$@" <<'NODE'
-const input = process.argv[2];
-const packageNames = process.argv.slice(3);
+  node - "$bump" "$REPO_ROOT" <<'NODE'
+const [, , bump, repoRoot] = process.argv;
 const { execSync } = require("node:child_process");
+const { readFileSync } = require("node:fs");
+const path = require("node:path");
 
-const date = input ? new Date(`${input}T00:00:00Z`) : new Date();
-if (Number.isNaN(date.getTime())) {
-  console.error(`invalid date: ${input}`);
-  process.exit(1);
-}
+// Read current version from root package.json as baseline
+const rootPkg = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8"));
+let base = rootPkg.version || "0.0.0";
+// Strip any pre-release suffix to get clean semver
+base = base.replace(/-.*$/, "");
 
-const stableSlot = `${date.getUTCFullYear()}.${date.getUTCMonth() + 1}${String(date.getUTCDate()).padStart(2, "0")}`;
-const pattern = new RegExp(`^${stableSlot.replace(/\./g, '\\.')}\.(\\d+)$`);
-let max = -1;
-
-for (const packageName of packageNames) {
-  let versions = [];
-
-  try {
-    const raw = execSync(`npm view ${JSON.stringify(packageName)} versions --json`, {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    }).trim();
-
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      versions = Array.isArray(parsed) ? parsed : [parsed];
+// Also check latest published stable tag from git
+try {
+  const tags = execSync("git tag --list 'v[0-9]*' --sort=-version:refname", {
+    encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], cwd: repoRoot,
+  }).trim().split("\n").filter(Boolean);
+  if (tags.length > 0) {
+    const tagVer = tags[0].replace(/^v/, "").replace(/-.*$/, "");
+    // Use whichever is higher
+    const a = base.split(".").map(Number);
+    const b = tagVer.split(".").map(Number);
+    for (let i = 0; i < 3; i++) {
+      if ((b[i] || 0) > (a[i] || 0)) { base = tagVer; break; }
+      if ((a[i] || 0) > (b[i] || 0)) break;
     }
-  } catch {
-    versions = [];
   }
+} catch {}
 
-  for (const version of versions) {
-    const match = version.match(pattern);
-    if (!match) continue;
-    max = Math.max(max, Number(match[1]));
-  }
-}
+const parts = base.split(".").map(Number);
+if (bump === "major") { parts[0]++; parts[1] = 0; parts[2] = 0; }
+else if (bump === "minor") { parts[1]++; parts[2] = 0; }
+else { parts[2]++; }
 
-process.stdout.write(`${stableSlot}.${max + 1}`);
+process.stdout.write(parts.join("."));
 NODE
 }
 
@@ -209,7 +191,7 @@ for (const packageName of packageNames) {
   } catch {
     versions = [];
   }
- 
+
   for (const version of versions) {
     const match = version.match(pattern);
     if (!match) continue;
