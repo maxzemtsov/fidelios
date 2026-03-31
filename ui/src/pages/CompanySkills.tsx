@@ -159,7 +159,7 @@ function sourceMeta(sourceBadge: CompanySkillSourceBadge, sourceLabel: string | 
     case "local":
       return { icon: Folder, label: sourceLabel ?? "Folder", managedLabel: "Folder managed" };
     case "fidelios":
-      return { icon: Paperclip, label: sourceLabel ?? "FideliOS", managedLabel: "Paperclip managed" };
+      return { icon: Paperclip, label: sourceLabel ?? "FideliOS", managedLabel: "FideliOS managed" };
     default:
       return { icon: Boxes, label: sourceLabel ?? "Catalog", managedLabel: "Catalog managed" };
   }
@@ -881,7 +881,7 @@ export function CompanySkills() {
       pushToast({
         tone: "success",
         title: "Skill created",
-        body: `${skill.name} is now editable in the Paperclip workspace.`,
+        body: `${skill.name} is now editable in the FideliOS workspace.`,
       });
     },
     onError: (error) => {
