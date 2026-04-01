@@ -51,6 +51,7 @@ import {
   RefreshCw,
   Save,
   Search,
+  Trash2,
 } from "lucide-react";
 import { FideliOSIcon } from "@/components/FideliOSIcon";
 
@@ -505,6 +506,8 @@ function SkillPane({
   installUpdatePending,
   onSave,
   savePending,
+  onDelete,
+  deletePending,
 }: {
   loading: boolean;
   detail: CompanySkillDetail | null | undefined;
@@ -524,8 +527,11 @@ function SkillPane({
   installUpdatePending: boolean;
   onSave: () => void;
   savePending: boolean;
+  onDelete: () => void;
+  deletePending: boolean;
 }) {
   const { pushToast } = useToast();
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   if (!detail) {
     if (loading) {
@@ -559,17 +565,54 @@ function SkillPane({
               <p className="mt-2 max-w-3xl text-sm text-muted-foreground">{detail.description}</p>
             )}
           </div>
-          {detail.editable ? (
+          <div className="flex items-center gap-3">
+            {detail.editable ? (
+              <button
+                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+                onClick={() => setEditMode(!editMode)}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                {editMode ? "Stop editing" : "Edit"}
+              </button>
+            ) : (
+              <div className="text-sm text-muted-foreground">{detail.editableReason}</div>
+            )}
             <button
-              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-              onClick={() => setEditMode(!editMode)}
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive"
+              onClick={() => setDeleteConfirmOpen(true)}
+              disabled={deletePending}
             >
-              <Pencil className="h-3.5 w-3.5" />
-              {editMode ? "Stop editing" : "Edit"}
+              <Trash2 className="h-3.5 w-3.5" />
+              Remove
             </button>
-          ) : (
-            <div className="text-sm text-muted-foreground">{detail.editableReason}</div>
-          )}
+          </div>
+
+          <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Remove skill</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to remove <strong>{detail.name}</strong> from the company? This will unlink
+                  it from all agents. The source files on disk will not be deleted.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    setDeleteConfirmOpen(false);
+                    onDelete();
+                  }}
+                  disabled={deletePending}
+                >
+                  {deletePending ? "Removing..." : "Remove"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="mt-4 space-y-3 border-t border-border pt-4 text-sm">
@@ -987,6 +1030,26 @@ export function CompanySkills() {
     },
   });
 
+  const deleteSkill = useMutation({
+    mutationFn: () => companySkillsApi.delete(selectedCompanyId!, selectedSkillId!),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.companySkills.list(selectedCompanyId!) });
+      navigate(`/${selectedCompanyId}/skills`);
+      pushToast({
+        tone: "success",
+        title: "Skill removed",
+        body: "The skill has been removed from the company.",
+      });
+    },
+    onError: (error) => {
+      pushToast({
+        tone: "error",
+        title: "Remove failed",
+        body: error instanceof Error ? error.message : "Failed to remove skill.",
+      });
+    },
+  });
+
   if (!selectedCompanyId) {
     return <EmptyState icon={Boxes} message="Select a company to manage skills." />;
   }
@@ -1162,6 +1225,8 @@ export function CompanySkills() {
             installUpdatePending={installUpdate.isPending}
             onSave={() => saveFile.mutate()}
             savePending={saveFile.isPending}
+            onDelete={() => deleteSkill.mutate()}
+            deletePending={deleteSkill.isPending}
           />
         </div>
       </div>
