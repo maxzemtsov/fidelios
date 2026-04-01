@@ -17,7 +17,7 @@
 [![Node 20+](https://img.shields.io/badge/node-20%2B-brightgreen)](https://nodejs.org)
 [![Stars](https://img.shields.io/github/stars/fideliosai/fidelios?style=flat)](https://github.com/fideliosai/fidelios/stargazers)
 
-[**Quick Start**](#quick-start) · [**Features**](#features) · [**Architecture**](#architecture) · [**fidelios.nl**](https://fidelios.nl)
+[**Quick Start**](#quick-start) · [**Features**](#features) · [**Architecture**](#architecture) · [**Roadmap**](ROADMAP.md) · [**fidelios.nl**](https://fidelios.nl)
 
 </div>
 

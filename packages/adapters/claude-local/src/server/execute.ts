@@ -33,28 +33,46 @@ import { resolveClaudeDesiredSkillNames } from "./skills.js";
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
 
 /**
- * Create a tmpdir with `.claude/skills/` containing symlinks to skills from
- * the repo's `skills/` directory, so `--add-dir` makes Claude Code discover
- * them as proper registered skills.
+ * Build a skills dir with `.claude/skills/` containing symlinks to skills.
+ * Uses a persistent per-agent dir to avoid recreating tmpdir + symlinks on
+ * every heartbeat run. Only rebuilds when the desired skill set changes.
  */
-async function buildSkillsDir(config: Record<string, unknown>): Promise<string> {
+const skillsDirCache = new Map<string, { dir: string; hash: string }>();
+
+async function buildSkillsDir(config: Record<string, unknown>, agentId?: string): Promise<string> {
+  const availableEntries = await readFideliOSRuntimeSkillEntries(config, __moduleDir);
+  const desiredNames = new Set(
+    resolveClaudeDesiredSkillNames(config, availableEntries),
+  );
+  const desiredKeys = Array.from(desiredNames).sort().join("|");
+
+  // Reuse cached dir if the skill set hasn't changed
+  const cacheKey = agentId ?? "default";
+  const cached = skillsDirCache.get(cacheKey);
+  if (cached && cached.hash === desiredKeys) {
+    // Verify dir still exists on disk
+    try {
+      await fs.access(path.join(cached.dir, ".claude", "skills"));
+      return cached.dir;
+    } catch {
+      skillsDirCache.delete(cacheKey);
+    }
+  }
+
+  // Clean up previous dir if exists
+  if (cached?.dir) {
+    await fs.rm(cached.dir, { recursive: true, force: true }).catch(() => {});
+  }
+
   const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "fidelios-skills-"));
   const target = path.join(tmp, ".claude", "skills");
   await fs.mkdir(target, { recursive: true });
-  const availableEntries = await readFideliOSRuntimeSkillEntries(config, __moduleDir);
-  const desiredNames = new Set(
-    resolveClaudeDesiredSkillNames(
-      config,
-      availableEntries,
-    ),
-  );
   for (const entry of availableEntries) {
     if (!desiredNames.has(entry.key)) continue;
-    await fs.symlink(
-      entry.source,
-      path.join(target, entry.runtimeName),
-    );
+    await fs.symlink(entry.source, path.join(target, entry.runtimeName));
   }
+
+  skillsDirCache.set(cacheKey, { dir: tmp, hash: desiredKeys });
   return tmp;
 }
 
@@ -339,7 +357,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     ),
   );
   const billingType = resolveClaudeBillingType(effectiveEnv);
-  const skillsDir = await buildSkillsDir(config);
+  const skillsDir = await buildSkillsDir(config, agent.id);
 
   // When instructionsFilePath is configured, create a combined temp file that
   // includes both the file content and the path directive, so we only need
@@ -585,6 +603,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
     return toAdapterResult(initial, { fallbackSessionId: runtimeSessionId || runtime.sessionId });
   } finally {
-    fs.rm(skillsDir, { recursive: true, force: true }).catch(() => {});
+    // Skills dir is now cached per-agent; skip cleanup.
+    // It will be replaced when skills change (hash mismatch).
   }
 }

@@ -27,6 +27,23 @@ import { prepareOpenCodeRuntimeConfig } from "./runtime-config.js";
 
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
 
+/**
+ * In-memory cache for agent instructions files. Avoids re-reading from disk
+ * on every heartbeat run. Cache is invalidated when mtime changes.
+ */
+const instructionsCache = new Map<string, { content: string; mtimeMs: number }>();
+
+async function readCachedInstructions(filePath: string): Promise<string> {
+  const stat = await fs.stat(filePath);
+  const cached = instructionsCache.get(filePath);
+  if (cached && cached.mtimeMs === stat.mtimeMs) {
+    return cached.content;
+  }
+  const content = await fs.readFile(filePath, "utf8");
+  instructionsCache.set(filePath, { content, mtimeMs: stat.mtimeMs });
+  return content;
+}
+
 function firstNonEmptyLine(text: string): string {
   return (
     text
@@ -224,7 +241,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     let instructionsPrefix = "";
     if (resolvedInstructionsFilePath) {
       try {
-        const instructionsContents = await fs.readFile(resolvedInstructionsFilePath, "utf8");
+        const instructionsContents = await readCachedInstructions(resolvedInstructionsFilePath);
         instructionsPrefix =
           `${instructionsContents}\n\n` +
           `The above agent instructions were loaded from ${resolvedInstructionsFilePath}. ` +
