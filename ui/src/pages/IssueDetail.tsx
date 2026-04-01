@@ -51,11 +51,11 @@ import {
   MoreHorizontal,
   Repeat,
   SlidersHorizontal,
+  Paperclip,
   Trash2,
 } from "lucide-react";
 import type { ActivityEvent } from "@fideliosai/shared";
 import type { Agent, IssueAttachment } from "@fideliosai/shared";
-import { FideliOSIcon } from "@/components/FideliOSIcon";
 
 type CommentReassignment = {
   assigneeAgentId: string | null;
@@ -675,7 +675,7 @@ export function IssueDetail() {
           attachmentDragActive && "border-primary bg-primary/5",
         )}
       >
-        <FideliOSIcon className="h-3.5 w-3.5 mr-1.5" />
+        <Paperclip className="h-3.5 w-3.5 mr-1.5" />
         {uploadAttachment.isPending || importMarkdownDocument.isPending ? "Uploading..." : (
           <>
             <span className="hidden sm:inline">Upload attachment</span>
