@@ -67,10 +67,22 @@ export async function prepareOpenCodeRuntimeConfig(input: {
   const existingPermission = isPlainObject(existingConfig.permission)
     ? existingConfig.permission
     : {};
+  // Set ALL permissions to "allow" for unattended FideliOS agent runs.
+  // Without this, OpenCode prompts for user approval on tool calls which
+  // hangs headless heartbeat runs or causes "user rejected permission" errors.
   const nextConfig = {
     ...existingConfig,
     permission: {
       ...existingPermission,
+      bash: "allow",
+      read: "allow",
+      edit: "allow",
+      glob: "allow",
+      grep: "allow",
+      list: "allow",
+      lsp: "allow",
+      skill: "allow",
+      task: "allow",
       external_directory: "allow",
     },
   };
