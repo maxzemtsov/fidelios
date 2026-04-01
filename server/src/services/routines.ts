@@ -584,12 +584,27 @@ export function routineService(db: Db, deps: { heartbeat?: IssueAssignmentWakeup
         }
 
         try {
+          // If the routine is scoped to a project, prepend the project name to the
+          // description so the agent knows to constrain its work to that project.
+          let scopedDescription = input.routine.description ?? "";
+          if (input.routine.projectId) {
+            const project = await txDb
+              .select({ name: projects.name })
+              .from(projects)
+              .where(eq(projects.id, input.routine.projectId))
+              .then((rows) => rows[0] ?? null);
+            if (project?.name) {
+              const scopeHeader = `> **Project scope: ${project.name}** — this task is scoped to the **${project.name}** project. Focus ONLY on issues, activity, and updates within this project.\n\n`;
+              scopedDescription = scopeHeader + scopedDescription;
+            }
+          }
+
           createdIssue = await issueSvc.create(input.routine.companyId, {
             projectId: input.routine.projectId,
             goalId: input.routine.goalId,
             parentId: input.routine.parentIssueId,
             title: input.routine.title,
-            description: input.routine.description,
+            description: scopedDescription,
             status: "todo",
             priority: input.routine.priority,
             assigneeAgentId: input.routine.assigneeAgentId,
