@@ -1286,6 +1286,7 @@ export function heartbeatService(db: Db) {
     sessionDisplayId: string | null;
     lastRunId: string | null;
     lastError: string | null;
+    lastSeenCommentId?: string | null;
   }) {
     const existing = await getTaskSession(
       input.companyId,
@@ -1301,6 +1302,7 @@ export function heartbeatService(db: Db) {
           sessionDisplayId: input.sessionDisplayId,
           lastRunId: input.lastRunId,
           lastError: input.lastError,
+          ...(input.lastSeenCommentId !== undefined ? { lastSeenCommentId: input.lastSeenCommentId } : {}),
           updatedAt: new Date(),
         })
         .where(eq(agentTaskSessions.id, existing.id))
@@ -1319,6 +1321,7 @@ export function heartbeatService(db: Db) {
         sessionDisplayId: input.sessionDisplayId,
         lastRunId: input.lastRunId,
         lastError: input.lastError,
+        ...(input.lastSeenCommentId !== undefined ? { lastSeenCommentId: input.lastSeenCommentId } : {}),
       })
       .returning()
       .then((rows) => rows[0] ?? null);
@@ -2495,6 +2498,23 @@ export function heartbeatService(db: Db) {
         });
       };
 
+      // --- Pre-compiled heartbeat context bundle (Level 2 CAG) ---
+      if (issueId) {
+        try {
+          const lastSeenCommentId = (taskSessionForRun as any)?.lastSeenCommentId ?? null;
+          const bundle = await issuesSvc.buildHeartbeatContextBundle(issueId, {
+            lastSeenCommentId,
+            maxComments: 30,
+          });
+          if (bundle) {
+            context.fideliosHeartbeatContext = bundle.markdown;
+            context.fideliosHeartbeatContextCommentCursor = bundle.commentCursor;
+          }
+        } catch (err) {
+          logger.warn({ err, runId: run.id, issueId }, "failed to build heartbeat context bundle; agent will fall back to API calls");
+        }
+      }
+
       const adapter = getServerAdapter(agent.adapterType);
       const authToken = adapter.supportsLocalAgentJwt
         ? createLocalAgentJwt(agent.id, agent.companyId, agent.adapterType, run.id)
@@ -2699,6 +2719,10 @@ export function heartbeatService(db: Db) {
               adapterType: agent.adapterType,
             });
           } else {
+            // Persist comment cursor from pre-compiled context bundle
+            const bundleCursor = parseObject(context.fideliosHeartbeatContextCommentCursor);
+            const lastSeenCommentId = readNonEmptyString(bundleCursor.latestCommentId) ?? undefined;
+
             await upsertTaskSession({
               companyId: agent.companyId,
               agentId: agent.id,
@@ -2708,6 +2732,7 @@ export function heartbeatService(db: Db) {
               sessionDisplayId: nextSessionState.displayId,
               lastRunId: finalizedRun.id,
               lastError: outcome === "succeeded" ? null : (adapterResult.errorMessage ?? "run_failed"),
+              lastSeenCommentId,
             });
           }
         }

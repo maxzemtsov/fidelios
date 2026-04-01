@@ -354,8 +354,10 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       : "";
   const sessionHandoffNote = asString(context.fideliosSessionHandoffMarkdown, "").trim();
   const fideliosEnvNote = renderFideliOSEnvNote(env);
+  const heartbeatContext = asString(context.fideliosHeartbeatContext, "").trim();
   const prompt = joinPromptSections([
     instructionsPrefix,
+    heartbeatContext,
     renderedBootstrapPrompt,
     sessionHandoffNote,
     fideliosEnvNote,

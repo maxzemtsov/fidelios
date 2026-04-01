@@ -299,7 +299,9 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       ? renderTemplate(bootstrapPromptTemplate, templateData).trim()
       : "";
   const sessionHandoffNote = asString(context.fideliosSessionHandoffMarkdown, "").trim();
+  const heartbeatContext = asString(context.fideliosHeartbeatContext, "").trim();
   const userPrompt = joinPromptSections([
+    heartbeatContext,
     renderedBootstrapPrompt,
     sessionHandoffNote,
     renderedHeartbeatPrompt,

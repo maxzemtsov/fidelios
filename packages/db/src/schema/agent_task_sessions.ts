@@ -15,6 +15,7 @@ export const agentTaskSessions = pgTable(
     sessionDisplayId: text("session_display_id"),
     lastRunId: uuid("last_run_id").references(() => heartbeatRuns.id),
     lastError: text("last_error"),
+    lastSeenCommentId: text("last_seen_comment_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

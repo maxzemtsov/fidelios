@@ -6,6 +6,7 @@ Run this checklist on every heartbeat. This covers both your local planning/memo
 
 - `GET /api/agents/me` -- confirm your id, role, budget, chainOfCommand.
 - Check wake context: `FIDELIOS_TASK_ID`, `FIDELIOS_WAKE_REASON`, `FIDELIOS_WAKE_COMMENT_ID`.
+- **If your prompt includes "## Issue Context (pre-compiled by FideliOS)"**, use it directly for the primary task. Do NOT call `heartbeat-context` or `comments` APIs for that issue -- the data is already in your prompt. Fall back to API calls only if pre-compiled context is absent.
 
 ## 2. Local Planning Check
 

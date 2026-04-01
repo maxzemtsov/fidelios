@@ -1821,5 +1821,153 @@ export function issueService(db: Db) {
         goal: a.goalId ? goalMap.get(a.goalId) ?? null : null,
       }));
     },
+
+    /**
+     * Build a pre-compiled context bundle for a heartbeat run.
+     * Returns markdown with issue details, ancestors, and comment delta.
+     * Agents receive this in their prompt so they don't need to make API calls.
+     */
+    buildHeartbeatContextBundle: async (
+      issueId: string,
+      opts?: {
+        lastSeenCommentId?: string | null;
+        maxComments?: number;
+      },
+    ) => {
+      const maxComments = opts?.maxComments ?? 30;
+
+      // Parallel fetch: issue, ancestors, comment cursor, delta comments
+      const issue = await db.select().from(issues).where(eq(issues.id, issueId)).then((r) => r[0] ?? null);
+      if (!issue) return null;
+
+      const [ancestorRows, cursor, deltaComments] = await Promise.all([
+        // Compact ancestor chain
+        (async () => {
+          const chain: Array<{ identifier: string | null; title: string; status: string }> = [];
+          const visited = new Set<string>([issueId]);
+          let currentId = issue.parentId;
+          while (currentId && !visited.has(currentId) && chain.length < 10) {
+            visited.add(currentId);
+            const parent = await db.select({
+              id: issues.id, identifier: issues.identifier, title: issues.title,
+              status: issues.status, parentId: issues.parentId,
+            }).from(issues).where(eq(issues.id, currentId)).then((r) => r[0] ?? null);
+            if (!parent) break;
+            chain.push({ identifier: parent.identifier, title: parent.title, status: parent.status });
+            currentId = parent.parentId;
+          }
+          return chain;
+        })(),
+
+        // Comment cursor
+        db.select({
+          latestCommentId: issueComments.id,
+          latestCommentAt: issueComments.createdAt,
+        }).from(issueComments)
+          .where(eq(issueComments.issueId, issueId))
+          .orderBy(desc(issueComments.createdAt), desc(issueComments.id))
+          .limit(1)
+          .then((r) => r[0] ?? null),
+
+        // Delta comments (after lastSeen, or last N if no cursor)
+        (async () => {
+          if (opts?.lastSeenCommentId) {
+            const anchor = await db.select({ id: issueComments.id, createdAt: issueComments.createdAt })
+              .from(issueComments)
+              .where(and(eq(issueComments.issueId, issueId), eq(issueComments.id, opts.lastSeenCommentId)))
+              .then((r) => r[0] ?? null);
+            if (anchor) {
+              return db.select().from(issueComments)
+                .where(and(
+                  eq(issueComments.issueId, issueId),
+                  sql<boolean>`(${issueComments.createdAt} > ${anchor.createdAt} OR (${issueComments.createdAt} = ${anchor.createdAt} AND ${issueComments.id} > ${anchor.id}))`,
+                ))
+                .orderBy(asc(issueComments.createdAt), asc(issueComments.id))
+                .limit(maxComments);
+            }
+          }
+          // No cursor: return last N comments
+          return db.select().from(issueComments)
+            .where(eq(issueComments.issueId, issueId))
+            .orderBy(desc(issueComments.createdAt), desc(issueComments.id))
+            .limit(maxComments)
+            .then((rows) => rows.reverse());
+        })(),
+      ]);
+
+      // Fetch project name
+      let projectName = "";
+      if (issue.projectId) {
+        const project = await db.select({ name: projects.name, status: projects.status })
+          .from(projects).where(eq(projects.id, issue.projectId)).then((r) => r[0] ?? null);
+        if (project) projectName = `${project.name} (${project.status})`;
+      }
+
+      // Resolve agent names for comments
+      const agentIds = [...new Set(deltaComments.map((c) => c.authorAgentId).filter(Boolean))] as string[];
+      const agentNames = new Map<string, string>();
+      if (agentIds.length > 0) {
+        const agentRows = await db.select({ id: agents.id, name: agents.name })
+          .from(agents).where(sql`${agents.id} IN (${sql.join(agentIds.map((id) => sql`${id}`), sql`, `)})`);
+        for (const a of agentRows) agentNames.set(a.id, a.name);
+      }
+
+      // Build markdown
+      const lines: string[] = [
+        `## Issue Context (pre-compiled by FideliOS)`,
+        ``,
+        `### ${issue.identifier ?? issueId.slice(0, 8)}: ${issue.title}`,
+        `**Status**: ${issue.status} | **Priority**: ${issue.priority}${projectName ? ` | **Project**: ${projectName}` : ""}`,
+      ];
+
+      if (issue.description) {
+        lines.push("", "### Description", issue.description);
+      }
+
+      if (ancestorRows.length > 0) {
+        lines.push("", "### Parent Chain");
+        for (const a of ancestorRows) {
+          lines.push(`- ${a.identifier ?? "?"}: ${a.title} [${a.status}]`);
+        }
+      }
+
+      const isIncremental = !!opts?.lastSeenCommentId;
+      if (deltaComments.length === 0) {
+        lines.push("", isIncremental ? "### Comments — no new comments since your last run" : "### Comments — none");
+      } else {
+        lines.push("", `### Comments (${isIncremental ? `${deltaComments.length} new since last run` : `last ${deltaComments.length}`})`);
+        for (const c of deltaComments) {
+          const author = c.authorAgentId ? (agentNames.get(c.authorAgentId) ?? "Agent") : (c.authorUserId ? "Board" : "System");
+          const ago = formatRelativeTime(c.createdAt);
+          const bodyPreview = c.body.length > 500 ? c.body.slice(0, 500) + "..." : c.body;
+          lines.push(``, `**@${author}** (${ago}):`, `> ${bodyPreview.split("\n").join("\n> ")}`);
+        }
+      }
+
+      const totalCount = await db.select({ c: sql<number>`count(*)::int` })
+        .from(issueComments).where(eq(issueComments.issueId, issueId)).then((r) => Number(r[0]?.c ?? 0));
+
+      return {
+        markdown: lines.join("\n"),
+        commentCursor: {
+          totalComments: totalCount,
+          latestCommentId: cursor?.latestCommentId ?? null,
+          latestCommentAt: cursor?.latestCommentAt ?? null,
+        },
+        issueUpdatedAt: issue.updatedAt,
+      };
+    },
   };
+}
+
+function formatRelativeTime(date: Date): string {
+  const now = Date.now();
+  const diffMs = now - date.getTime();
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
 }
