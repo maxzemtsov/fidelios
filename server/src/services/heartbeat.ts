@@ -978,13 +978,20 @@ export function heartbeatService(db: Db) {
       readNonEmptyString(latestSummary?.message) ??
       readNonEmptyString(latestRun.error);
 
+    const agentHome = resolveDefaultAgentWorkspaceDir(agent.id);
+    const today = new Date().toISOString().slice(0, 10);
     const handoffMarkdown = [
       "FideliOS session handoff:",
       `- Previous session: ${sessionId}`,
       issueId ? `- Issue: ${issueId}` : "",
       `- Rotation reason: ${reason}`,
       latestTextSummary ? `- Last run summary: ${latestTextSummary}` : "",
-      "Continue from the current task state. Rebuild only the minimum context you need.",
+      "",
+      "Your persistent memory survives session rotation:",
+      `- Daily notes: ${agentHome}/memory/${today}.md`,
+      `- Knowledge graph: ${agentHome}/life/ (PARA structure)`,
+      `- Lessons learned: ${agentHome}/MEMORY.md`,
+      "Read your daily notes first to recover full context before taking action.",
     ]
       .filter(Boolean)
       .join("\n");
