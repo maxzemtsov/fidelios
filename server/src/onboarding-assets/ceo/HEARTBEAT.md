@@ -10,8 +10,8 @@ Run this checklist on every heartbeat. This covers both your local planning/memo
 
 ## 2. Local Planning Check
 
-1. Read today's plan from `$AGENT_HOME/memory/YYYY-MM-DD.md` under "## Today's Plan".
-2. Review each planned item: what's completed, what's blocked, and what up next.
+1. Check for today's daily notes: `ls $AGENT_HOME/memory/` — find today's date or the most recent file. If no file exists yet, create one.
+2. Review planned items: what's completed, what's blocked, and what's next.
 3. For any blockers, resolve them yourself or escalate to the board.
 4. If you're ahead, start on the next highest priority.
 5. Record progress updates in the daily notes.
