@@ -299,15 +299,15 @@ describe("parseSessionCompactionPolicy", () => {
   it("keeps conservative defaults for adapters without confirmed native compaction", () => {
     expect(parseSessionCompactionPolicy(buildAgent("cursor"))).toEqual({
       enabled: true,
-      maxSessionRuns: 200,
+      maxSessionRuns: 50,
       maxRawInputTokens: 2_000_000,
-      maxSessionAgeHours: 72,
+      maxSessionAgeHours: 24,
     });
     expect(parseSessionCompactionPolicy(buildAgent("opencode_local"))).toEqual({
       enabled: true,
-      maxSessionRuns: 200,
+      maxSessionRuns: 50,
       maxRawInputTokens: 2_000_000,
-      maxSessionAgeHours: 72,
+      maxSessionAgeHours: 24,
     });
   });
 
