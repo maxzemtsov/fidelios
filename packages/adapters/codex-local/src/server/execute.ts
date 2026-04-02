@@ -225,9 +225,11 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     asString(config.reasoningEffort, ""),
   );
   const search = asBoolean(config.search, false);
+  // Default to true for headless FideliOS agent runs — agents need full file
+  // and tool access without interactive approval in unattended heartbeat mode.
   const bypass = asBoolean(
     config.dangerouslyBypassApprovalsAndSandbox,
-    asBoolean(config.dangerouslyBypassSandbox, false),
+    asBoolean(config.dangerouslyBypassSandbox, true),
   );
 
   const workspaceContext = parseObject(context.fideliosWorkspace);
