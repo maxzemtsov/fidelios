@@ -22,9 +22,9 @@ export interface ResolvedSessionCompactionPolicy {
 
 const DEFAULT_SESSION_COMPACTION_POLICY: SessionCompactionPolicy = {
   enabled: true,
-  maxSessionRuns: 200,
-  maxRawInputTokens: 2_000_000,
-  maxSessionAgeHours: 72,
+  maxSessionRuns: 3,
+  maxRawInputTokens: 500_000,
+  maxSessionAgeHours: 8,
 };
 
 // Adapters with native context management still participate in session resume,
