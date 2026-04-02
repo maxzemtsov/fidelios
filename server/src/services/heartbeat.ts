@@ -2738,6 +2738,50 @@ export function heartbeatService(db: Db) {
         }
       }
       await finalizeAgentStatus(agent.id, outcome);
+
+      // Auto-retry for transient errors (MCP timeout, rate limit, network errors)
+      if (outcome === "failed" && finalizedRun && issueId) {
+        const errorMsg = adapterResult.errorMessage ?? "";
+        const errorCode = adapterResult.errorCode ?? "";
+        const exitCode = adapterResult.exitCode ?? -1;
+        const isTransient =
+          errorMsg.includes("timed out") ||
+          errorMsg.includes("Request timed out") ||
+          errorMsg.includes("MCP error") ||
+          errorMsg.includes("rate limit") ||
+          errorMsg.includes("429") ||
+          errorMsg.includes("503") ||
+          errorMsg.includes("ECONNRESET") ||
+          errorMsg.includes("ETIMEDOUT") ||
+          errorCode === "claude_auth_required" ||
+          exitCode === 143;
+
+        if (isTransient) {
+          const retryDelaySec = 30;
+          logger.info(
+            { runId: run.id, agentId: agent.id, error: errorMsg.slice(0, 100), retryDelaySec },
+            "transient error detected; scheduling auto-retry",
+          );
+          setTimeout(() => {
+            void enqueueWakeup(agent.id, {
+              source: "automation",
+              triggerDetail: "system",
+              reason: "retry_transient_error",
+              requestedByActorType: "system",
+              requestedByActorId: "transient-retry",
+              contextSnapshot: {
+                issueId,
+                taskId: issueId,
+                taskKey: readNonEmptyString(context.taskKey) ?? issueId,
+                wakeReason: "retry_transient_error",
+                retriedFromRunId: run.id,
+              },
+            }).catch((retryErr) => {
+              logger.warn({ err: retryErr, runId: run.id }, "failed to enqueue transient retry");
+            });
+          }, retryDelaySec * 1000);
+        }
+      }
     } catch (err) {
       const message = redactCurrentUserText(
         err instanceof Error ? err.message : "Unknown adapter failure",
