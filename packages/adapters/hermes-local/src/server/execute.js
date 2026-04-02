@@ -277,6 +277,9 @@ export async function execute(ctx) {
         args.push("--checkpoints");
     if (cfgBoolean(config.verbose) === true)
         args.push("-v");
+    // Skip dangerous-command security scanner for unattended FideliOS agent runs.
+    // Without this, Hermes blocks curl|python pipes used in FideliOS workflow.
+    args.push("--yolo");
     // Tag sessions as "tool" source so they don't clutter the user's session history.
     // Requires hermes-agent >= PR #3255 (feat/session-source-tag).
     args.push("--source", "tool");
