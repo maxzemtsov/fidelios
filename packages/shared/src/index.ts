@@ -136,6 +136,8 @@ export {
 
 export type {
   Company,
+  PeakHoursConfig,
+  PeakHoursWindow,
   CompanySkillSourceType,
   CompanySkillTrustLevel,
   CompanySkillCompatibility,
