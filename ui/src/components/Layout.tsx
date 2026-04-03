@@ -345,7 +345,7 @@ export function Layout() {
             <div
               className={cn(
                 "flex flex-col border-r border-border transition-[width] duration-100 ease-out overflow-hidden",
-                sidebarOpen ? "w-60" : "w-10"
+                sidebarOpen ? "w-60" : "w-0"
               )}
             >
               <div className={cn("flex-1 min-h-0 overflow-hidden", !sidebarOpen && "invisible")}>
@@ -412,7 +412,7 @@ export function Layout() {
               tabIndex={-1}
               className={cn(
                 "flex-1 p-4 md:p-6",
-                isMobile ? "overflow-visible pb-[calc(5rem+env(safe-area-inset-bottom))]" : "overflow-y-auto overflow-x-hidden",
+                isMobile ? "overflow-visible pb-[calc(5rem+env(safe-area-inset-bottom))]" : "overflow-auto",
               )}
             >
               {hasUnknownCompanyPrefix ? (
