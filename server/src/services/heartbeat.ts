@@ -17,6 +17,7 @@ import {
   projects,
   projectWorkspaces,
 } from "@fideliosai/db";
+import { sanitizeForJsonb } from "../lib/sanitize-jsonb.js";
 import { conflict, notFound } from "../errors.js";
 import { logger } from "../middleware/logger.js";
 import { publishLiveEvent } from "./live-events.js";
@@ -639,7 +640,7 @@ function enrichWakeContextSnapshot(input: {
   }
 
   return {
-    contextSnapshot,
+    contextSnapshot: sanitizeForJsonb(contextSnapshot),
     issueIdFromPayload,
     commentIdFromPayload,
     taskKey,
@@ -661,7 +662,7 @@ function mergeCoalescedContextSnapshot(
     merged.commentId = commentId;
     merged.wakeCommentId = commentId;
   }
-  return merged;
+  return sanitizeForJsonb(merged);
 }
 
 function runTaskKey(run: typeof heartbeatRuns.$inferSelect) {
@@ -1546,12 +1547,12 @@ export function heartbeatService(db: Db) {
     const issueId = readNonEmptyString(contextSnapshot.issueId);
     const taskKey = deriveTaskKey(contextSnapshot, null);
     const sessionBefore = await resolveSessionBeforeForWakeup(agent, taskKey);
-    const retryContextSnapshot = {
+    const retryContextSnapshot = sanitizeForJsonb({
       ...contextSnapshot,
       retryOfRunId: run.id,
       wakeReason: "process_lost_retry",
       retryReason: "process_lost",
-    };
+    });
 
     const queued = await db.transaction(async (tx) => {
       const wakeupRequest = await tx
@@ -2536,7 +2537,7 @@ export function heartbeatService(db: Db) {
             maxComments: 30,
           });
           if (bundle) {
-            context.fideliosHeartbeatContext = bundle.markdown;
+            context.fideliosHeartbeatContext = sanitizeForJsonb(bundle.markdown);
             context.fideliosHeartbeatContextCommentCursor = bundle.commentCursor;
           }
         } catch (err) {
