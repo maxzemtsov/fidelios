@@ -149,10 +149,8 @@ A change is done when all are true:
 
 ## 11. Git Workflow
 
-**Never commit directly to `main`.** Always work in a feature branch.
-
-- Current active branch: `feature/iro-266`
-- Switch to it before making any changes: `git checkout feature/iro-266`
-- Commit your work to this branch
-- When your task is done, create a PR to `main` via `gh pr create`
+- **Never commit to `main`.**
+- Before work: `git checkout -b feature/IRO-XXX` (use actual issue number). If branch exists: `git checkout feature/IRO-XXX`.
+- Commit to that branch only.
+- When done: `gh pr create --base main`.
 
