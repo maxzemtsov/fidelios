@@ -313,8 +313,8 @@ export function companyRoutes(db: Db, storage?: StorageService) {
     if (req.actor.type === "agent") {
       const agentSvc = agentService(db);
       const actorAgent = req.actor.agentId ? await agentSvc.getById(req.actor.agentId) : null;
-      if (!actorAgent || actorAgent.role !== "ceo") {
-        throw forbidden("Only CEO agents or board users may update peak hours");
+      if (!actorAgent || (actorAgent.role !== "ceo" && actorAgent.role !== "cto")) {
+        throw forbidden("Only CEO/CTO agents or board users may update peak hours");
       }
       if (actorAgent.companyId !== companyId) {
         throw forbidden("Agent key cannot access another company");
