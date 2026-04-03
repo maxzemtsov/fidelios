@@ -412,7 +412,7 @@ export function Layout() {
               tabIndex={-1}
               className={cn(
                 "flex-1 p-4 md:p-6",
-                isMobile ? "overflow-visible pb-[calc(5rem+env(safe-area-inset-bottom))]" : "overflow-auto",
+                isMobile ? "overflow-visible pb-[calc(5rem+env(safe-area-inset-bottom))]" : "overflow-y-auto overflow-x-hidden",
               )}
             >
               {hasUnknownCompanyPrefix ? (

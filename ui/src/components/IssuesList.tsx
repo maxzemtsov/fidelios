@@ -659,7 +659,7 @@ export function IssuesList({
       )}
 
       {viewState.viewMode === "board" ? (
-        <div className="overflow-x-auto max-w-full">
+        <div className="-mx-4 md:-mx-6 overflow-x-auto">
           <KanbanBoard
             issues={filtered}
             agents={agents}
