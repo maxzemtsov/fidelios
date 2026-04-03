@@ -21,6 +21,7 @@ import { timeAgo } from "../lib/timeAgo";
 import { cn, formatCents } from "../lib/utils";
 import { Bot, CircleDot, DollarSign, ShieldCheck, LayoutDashboard, PauseCircle } from "lucide-react";
 import { ActiveAgentsPanel } from "../components/ActiveAgentsPanel";
+import { PeakHoursBanner } from "../components/PeakHoursBanner";
 import { ChartCard, RunActivityChart, PriorityChart, IssueStatusChart, SuccessRateChart } from "../components/ActivityCharts";
 import { PageSkeleton } from "../components/PageSkeleton";
 import type { Agent, Issue } from "@fideliosai/shared";
@@ -32,7 +33,7 @@ function getRecentIssues(issues: Issue[]): Issue[] {
 }
 
 export function Dashboard() {
-  const { selectedCompanyId, companies } = useCompany();
+  const { selectedCompanyId, selectedCompany, companies } = useCompany();
   const { openOnboarding } = useDialog();
   const { setBreadcrumbs } = useBreadcrumbs();
   const [animatedActivityIds, setAnimatedActivityIds] = useState<Set<string>>(new Set());
@@ -205,6 +206,8 @@ export function Dashboard() {
           </button>
         </div>
       )}
+
+      <PeakHoursBanner peakHours={selectedCompany?.peakHours} />
 
       <ActiveAgentsPanel companyId={selectedCompanyId!} />
 
