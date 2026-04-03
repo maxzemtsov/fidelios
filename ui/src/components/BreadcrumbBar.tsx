@@ -45,16 +45,6 @@ export function BreadcrumbBar() {
 
   const globalToolbarSlots = <GlobalToolbarPlugins context={globalToolbarSlotContext} />;
 
-  if (breadcrumbs.length === 0) {
-    return (
-      <div className="border-b border-border px-4 md:px-6 h-12 shrink-0 flex items-center">
-        {menuButton}
-        <div className="flex-1" />
-        {globalToolbarSlots}
-      </div>
-    );
-  }
-
   const menuButton = (
     <Button
       variant="ghost"
@@ -72,6 +62,16 @@ export function BreadcrumbBar() {
       )}
     </Button>
   );
+
+  if (breadcrumbs.length === 0) {
+    return (
+      <div className="border-b border-border px-4 md:px-6 h-12 shrink-0 flex items-center">
+        {menuButton}
+        <div className="flex-1" />
+        {globalToolbarSlots}
+      </div>
+    );
+  }
 
   // Single breadcrumb = page title (uppercase)
   if (breadcrumbs.length === 1) {
