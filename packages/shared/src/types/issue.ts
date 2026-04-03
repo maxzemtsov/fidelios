@@ -146,6 +146,30 @@ export interface Issue {
   updatedAt: Date;
 }
 
+// ── Issue Relations / Dependencies ──────────────────────────────
+
+export type IssueRelationType = "related" | "blocks" | "blocked_by" | "duplicate";
+
+export interface IssueRelation {
+  id: string;
+  companyId: string;
+  type: IssueRelationType;
+  issueId: string;
+  relatedIssueId: string;
+  /** Populated when fetching relations with joined issue data */
+  relatedIssue?: {
+    id: string;
+    identifier: string | null;
+    title: string;
+    status: string;
+    priority: string;
+    assigneeAgentId: string | null;
+  };
+  createdByActorType: string | null;
+  createdByActorId: string | null;
+  createdAt: Date;
+}
+
 export interface IssueComment {
   id: string;
   companyId: string;

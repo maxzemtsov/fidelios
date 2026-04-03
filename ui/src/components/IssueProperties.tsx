@@ -19,7 +19,8 @@ import { formatDate, cn, projectUrl } from "../lib/utils";
 import { timeAgo } from "../lib/timeAgo";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { User, Hexagon, ArrowUpRight, Tag, Plus, Trash2 } from "lucide-react";
+import { User, Hexagon, ArrowUpRight, Tag, Plus, Trash2, Link2, Ban } from "lucide-react";
+import type { IssueRelation } from "@fideliosai/shared";
 import { AgentIcon } from "./AgentIconPicker";
 
 function defaultProjectWorkspaceIdForProject(project: {
@@ -135,6 +136,25 @@ export function IssueProperties({ issue, onUpdate, inline }: IssuePropertiesProp
     queryFn: () => authApi.getSession(),
   });
   const currentUserId = session?.user?.id ?? session?.session?.userId;
+
+  const { data: relations } = useQuery({
+    queryKey: ["issue-relations", issue.id],
+    queryFn: () => issuesApi.listRelations(issue.id),
+    enabled: !!issue.id,
+  });
+
+  const blockedBy = useMemo(
+    () => (relations ?? []).filter((r) => r.type === "blocked_by"),
+    [relations],
+  );
+  const blocks = useMemo(
+    () => (relations ?? []).filter((r) => r.type === "blocks"),
+    [relations],
+  );
+  const related = useMemo(
+    () => (relations ?? []).filter((r) => r.type === "related"),
+    [relations],
+  );
 
   const { data: agents } = useQuery({
     queryKey: queryKeys.agents.list(companyId!),
@@ -577,6 +597,65 @@ export function IssueProperties({ issue, onUpdate, inline }: IssuePropertiesProp
         {issue.requestDepth > 0 && (
           <PropertyRow label="Depth">
             <span className="text-sm font-mono">{issue.requestDepth}</span>
+          </PropertyRow>
+        )}
+
+        {blockedBy.length > 0 && (
+          <PropertyRow label="Blocked by">
+            <div className="flex flex-col gap-0.5">
+              {blockedBy.map((r) => {
+                const resolved = r.relatedIssue?.status === "done" || r.relatedIssue?.status === "cancelled";
+                return (
+                  <Link
+                    key={r.id}
+                    to={`/issues/${r.relatedIssue?.identifier ?? r.relatedIssueId}`}
+                    className={cn(
+                      "text-sm hover:underline flex items-center gap-1",
+                      resolved ? "text-muted-foreground line-through" : "text-destructive",
+                    )}
+                  >
+                    <Ban className="h-3 w-3 shrink-0" />
+                    <span className="font-mono">{r.relatedIssue?.identifier ?? "?"}</span>
+                    <StatusIcon status={r.relatedIssue?.status ?? "backlog"} />
+                  </Link>
+                );
+              })}
+            </div>
+          </PropertyRow>
+        )}
+
+        {blocks.length > 0 && (
+          <PropertyRow label="Blocks">
+            <div className="flex flex-col gap-0.5">
+              {blocks.map((r) => (
+                <Link
+                  key={r.id}
+                  to={`/issues/${r.relatedIssue?.identifier ?? r.relatedIssueId}`}
+                  className="text-sm hover:underline flex items-center gap-1"
+                >
+                  <Link2 className="h-3 w-3 shrink-0" />
+                  <span className="font-mono">{r.relatedIssue?.identifier ?? "?"}</span>
+                  <StatusIcon status={r.relatedIssue?.status ?? "backlog"} />
+                </Link>
+              ))}
+            </div>
+          </PropertyRow>
+        )}
+
+        {related.length > 0 && (
+          <PropertyRow label="Related">
+            <div className="flex flex-col gap-0.5">
+              {related.map((r) => (
+                <Link
+                  key={r.id}
+                  to={`/issues/${r.relatedIssue?.identifier ?? r.relatedIssueId}`}
+                  className="text-sm hover:underline flex items-center gap-1 text-muted-foreground"
+                >
+                  <Link2 className="h-3 w-3 shrink-0" />
+                  <span className="font-mono">{r.relatedIssue?.identifier ?? "?"}</span>
+                </Link>
+              ))}
+            </div>
           </PropertyRow>
         )}
       </div>

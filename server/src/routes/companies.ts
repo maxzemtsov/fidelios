@@ -6,6 +6,7 @@ import {
   companyPortabilityPreviewSchema,
   createCompanySchema,
   updateCompanyBrandingSchema,
+  updateCompanyPeakHoursSchema,
   updateCompanySchema,
 } from "@fideliosai/shared";
 import { forbidden } from "../errors.js";
@@ -299,6 +300,30 @@ export function companyRoutes(db: Db, storage?: StorageService) {
       agentId: actor.agentId,
       runId: actor.runId,
       action: "company.branding_updated",
+      entityType: "company",
+      entityId: companyId,
+      details: req.body,
+    });
+    res.json(company);
+  });
+
+  router.patch("/:companyId/peak-hours", validate(updateCompanyPeakHoursSchema), async (req, res) => {
+    const companyId = req.params.companyId as string;
+    assertCompanyAccess(req, companyId);
+    assertBoard(req);
+    const company = await svc.update(companyId, req.body);
+    if (!company) {
+      res.status(404).json({ error: "Company not found" });
+      return;
+    }
+    const actor = getActorInfo(req);
+    await logActivity(db, {
+      companyId,
+      actorType: actor.actorType,
+      actorId: actor.actorId,
+      agentId: actor.agentId,
+      runId: actor.runId,
+      action: "company.peak_hours_updated",
       entityType: "company",
       entityId: companyId,
       details: req.body,

@@ -4,12 +4,13 @@ import { execFile as execFileCallback } from "node:child_process";
 import { promisify } from "node:util";
 import { and, asc, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import type { Db } from "@fideliosai/db";
-import type { BillingType } from "@fideliosai/shared";
+import type { BillingType, PeakHoursConfig } from "@fideliosai/shared";
 import {
   agents,
   agentRuntimeState,
   agentTaskSessions,
   agentWakeupRequests,
+  companies,
   heartbeatRunEvents,
   heartbeatRuns,
   issues,
@@ -263,6 +264,27 @@ export function prioritizeProjectWorkspaceCandidatesForRun<T extends ProjectWork
 
 function readNonEmptyString(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value : null;
+}
+
+/**
+ * Check if the current time falls within any peak-hours window.
+ * Handles overnight windows where startUtc > endUtc (crosses midnight).
+ */
+function isInPeakHours(config: PeakHoursConfig | null | undefined, now: Date = new Date()): boolean {
+  if (!config || !config.enabled || !config.windows?.length) return false;
+  const hh = now.getUTCHours().toString().padStart(2, "0");
+  const mm = now.getUTCMinutes().toString().padStart(2, "0");
+  const current = `${hh}:${mm}`;
+  for (const w of config.windows) {
+    if (w.startUtc <= w.endUtc) {
+      // Same-day window: e.g. 09:00–17:00
+      if (current >= w.startUtc && current < w.endUtc) return true;
+    } else {
+      // Overnight window: e.g. 22:00–06:00
+      if (current >= w.startUtc || current < w.endUtc) return true;
+    }
+  }
+  return false;
 }
 
 function normalizeLedgerBillingType(value: unknown): BillingType {
@@ -2757,7 +2779,10 @@ export function heartbeatService(db: Db) {
           errorMsg.includes("MCP error") ||
           errorMsg.includes("rate limit") ||
           errorMsg.includes("429") ||
+          errorMsg.includes("500") ||
           errorMsg.includes("503") ||
+          errorMsg.includes("Internal server error") ||
+          errorMsg.includes("api_error") ||
           errorMsg.includes("ECONNRESET") ||
           errorMsg.includes("ETIMEDOUT") ||
           errorCode === "claude_auth_required" ||
@@ -3130,6 +3155,18 @@ export function heartbeatService(db: Db) {
       agent.status === "pending_approval"
     ) {
       throw conflict("Agent is not invokable in its current state", { status: agent.status });
+    }
+
+    // Peak-hours gate: block timer/automation dispatches during configured windows
+    if (source === "timer" || source === "automation") {
+      const [companyRow] = await db
+        .select({ peakHours: companies.peakHours })
+        .from(companies)
+        .where(eq(companies.id, agent.companyId));
+      if (companyRow && isInPeakHours(companyRow.peakHours as PeakHoursConfig | null)) {
+        await writeSkippedRequest("peak_hours.blocked");
+        return null;
+      }
     }
 
     const policy = parseHeartbeatPolicy(agent);

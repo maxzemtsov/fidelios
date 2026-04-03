@@ -16,6 +16,7 @@ import {
   issueComments,
   issueDocuments,
   issueReadStates,
+  issueRelations,
   issues,
   labels,
   projectWorkspaces,
@@ -1822,6 +1823,198 @@ export function issueService(db: Db) {
       }));
     },
 
+    // ── Issue Relations / Dependencies ──────────────────────────────
+
+    /**
+     * List all relations for an issue, with joined related issue data.
+     */
+    listRelations: async (issueId: string, companyId: string) => {
+      const rows = await db
+        .select({
+          id: issueRelations.id,
+          companyId: issueRelations.companyId,
+          type: issueRelations.type,
+          issueId: issueRelations.issueId,
+          relatedIssueId: issueRelations.relatedIssueId,
+          createdByActorType: issueRelations.createdByActorType,
+          createdByActorId: issueRelations.createdByActorId,
+          createdAt: issueRelations.createdAt,
+          relatedIdentifier: issues.identifier,
+          relatedTitle: issues.title,
+          relatedStatus: issues.status,
+          relatedPriority: issues.priority,
+          relatedAssigneeAgentId: issues.assigneeAgentId,
+        })
+        .from(issueRelations)
+        .innerJoin(issues, eq(issues.id, issueRelations.relatedIssueId))
+        .where(
+          and(
+            eq(issueRelations.issueId, issueId),
+            eq(issueRelations.companyId, companyId),
+          ),
+        )
+        .orderBy(asc(issueRelations.createdAt));
+
+      return rows.map((r) => ({
+        id: r.id,
+        companyId: r.companyId,
+        type: r.type,
+        issueId: r.issueId,
+        relatedIssueId: r.relatedIssueId,
+        relatedIssue: {
+          id: r.relatedIssueId,
+          identifier: r.relatedIdentifier,
+          title: r.relatedTitle,
+          status: r.relatedStatus,
+          priority: r.relatedPriority,
+          assigneeAgentId: r.relatedAssigneeAgentId,
+        },
+        createdByActorType: r.createdByActorType,
+        createdByActorId: r.createdByActorId,
+        createdAt: r.createdAt,
+      }));
+    },
+
+    /**
+     * Create a relation + auto-create the inverse.
+     * blocks(A→B) auto-creates blocked_by(B→A), related(A→B) creates related(B→A).
+     */
+    createRelation: async (data: {
+      companyId: string;
+      type: string;
+      issueId: string;
+      relatedIssueId: string;
+      createdByActorType?: string;
+      createdByActorId?: string;
+    }) => {
+      const inverseType =
+        data.type === "blocks"
+          ? "blocked_by"
+          : data.type === "blocked_by"
+            ? "blocks"
+            : data.type; // related↔related, duplicate stays one-directional
+
+      const [primary] = await db
+        .insert(issueRelations)
+        .values({
+          companyId: data.companyId,
+          type: data.type,
+          issueId: data.issueId,
+          relatedIssueId: data.relatedIssueId,
+          createdByActorType: data.createdByActorType ?? null,
+          createdByActorId: data.createdByActorId ?? null,
+        })
+        .onConflictDoNothing()
+        .returning();
+
+      // Auto-create inverse (skip for duplicate — one-directional)
+      if (data.type !== "duplicate") {
+        await db
+          .insert(issueRelations)
+          .values({
+            companyId: data.companyId,
+            type: inverseType,
+            issueId: data.relatedIssueId,
+            relatedIssueId: data.issueId,
+            createdByActorType: data.createdByActorType ?? null,
+            createdByActorId: data.createdByActorId ?? null,
+          })
+          .onConflictDoNothing();
+      }
+
+      return primary ?? null;
+    },
+
+    /**
+     * Delete a relation + its inverse.
+     */
+    deleteRelation: async (relationId: string, companyId: string) => {
+      const [rel] = await db
+        .select()
+        .from(issueRelations)
+        .where(and(eq(issueRelations.id, relationId), eq(issueRelations.companyId, companyId)));
+
+      if (!rel) throw notFound("relation");
+
+      // Delete the primary
+      await db
+        .delete(issueRelations)
+        .where(eq(issueRelations.id, relationId));
+
+      // Delete the inverse
+      const inverseType =
+        rel.type === "blocks"
+          ? "blocked_by"
+          : rel.type === "blocked_by"
+            ? "blocks"
+            : rel.type;
+
+      await db
+        .delete(issueRelations)
+        .where(
+          and(
+            eq(issueRelations.companyId, companyId),
+            eq(issueRelations.issueId, rel.relatedIssueId),
+            eq(issueRelations.relatedIssueId, rel.issueId),
+            eq(issueRelations.type, inverseType),
+          ),
+        );
+
+      return rel;
+    },
+
+    /**
+     * Get all issues that block a given issue (type='blocked_by' from issue's perspective).
+     * Returns the blocking issues with their current status.
+     */
+    getBlockersForIssue: async (issueId: string, companyId: string) => {
+      const rows = await db
+        .select({
+          relationId: issueRelations.id,
+          blockingIssueId: issueRelations.relatedIssueId,
+          identifier: issues.identifier,
+          title: issues.title,
+          status: issues.status,
+          assigneeAgentId: issues.assigneeAgentId,
+        })
+        .from(issueRelations)
+        .innerJoin(issues, eq(issues.id, issueRelations.relatedIssueId))
+        .where(
+          and(
+            eq(issueRelations.issueId, issueId),
+            eq(issueRelations.companyId, companyId),
+            eq(issueRelations.type, "blocked_by"),
+          ),
+        );
+      return rows;
+    },
+
+    /**
+     * Get all issues that are blocked BY a given issue (this issue blocks them).
+     * Used when an issue transitions to done — find who to wake up.
+     */
+    getIssuesBlockedBy: async (issueId: string, companyId: string) => {
+      const rows = await db
+        .select({
+          relationId: issueRelations.id,
+          blockedIssueId: issueRelations.relatedIssueId,
+          identifier: issues.identifier,
+          title: issues.title,
+          status: issues.status,
+          assigneeAgentId: issues.assigneeAgentId,
+        })
+        .from(issueRelations)
+        .innerJoin(issues, eq(issues.id, issueRelations.relatedIssueId))
+        .where(
+          and(
+            eq(issueRelations.issueId, issueId),
+            eq(issueRelations.companyId, companyId),
+            eq(issueRelations.type, "blocks"),
+          ),
+        );
+      return rows;
+    },
+
     /**
      * Build a pre-compiled context bundle for a heartbeat run.
      * Returns markdown with issue details, ancestors, and comment delta.
@@ -1840,7 +2033,7 @@ export function issueService(db: Db) {
       const issue = await db.select().from(issues).where(eq(issues.id, issueId)).then((r) => r[0] ?? null);
       if (!issue) return null;
 
-      const [ancestorRows, cursor, deltaComments] = await Promise.all([
+      const [ancestorRows, cursor, deltaComments, blockers] = await Promise.all([
         // Compact ancestor chain
         (async () => {
           const chain: Array<{ identifier: string | null; title: string; status: string }> = [];
@@ -1893,6 +2086,24 @@ export function issueService(db: Db) {
             .limit(maxComments)
             .then((rows) => rows.reverse());
         })(),
+
+        // Blocking dependencies (issues that block this one)
+        db
+          .select({
+            blockingIssueId: issueRelations.relatedIssueId,
+            identifier: issues.identifier,
+            title: issues.title,
+            status: issues.status,
+          })
+          .from(issueRelations)
+          .innerJoin(issues, eq(issues.id, issueRelations.relatedIssueId))
+          .where(
+            and(
+              eq(issueRelations.issueId, issueId),
+              eq(issueRelations.companyId, issue.companyId),
+              eq(issueRelations.type, "blocked_by"),
+            ),
+          ),
       ]);
 
       // Fetch project name
@@ -1928,6 +2139,28 @@ export function issueService(db: Db) {
         lines.push("", "### Parent Chain");
         for (const a of ancestorRows) {
           lines.push(`- ${a.identifier ?? "?"}: ${a.title} [${a.status}]`);
+        }
+      }
+
+      if (blockers.length > 0) {
+        lines.push("", "### Dependencies");
+        lines.push("Blocked by:");
+        const resolvedCount = blockers.filter(
+          (b) => b.status === "done" || b.status === "cancelled",
+        ).length;
+        for (const b of blockers) {
+          const resolved = b.status === "done" || b.status === "cancelled";
+          const icon = resolved ? "✅" : "⏳";
+          lines.push(
+            `- ${b.identifier ?? b.blockingIssueId.slice(0, 8)}: ${b.title} [${b.status}] ${icon}${resolved ? " resolved" : " still pending"}`,
+          );
+        }
+        if (resolvedCount === blockers.length) {
+          lines.push("→ **All blocking dependencies resolved. This task can proceed.**");
+        } else {
+          lines.push(
+            `→ ${resolvedCount} of ${blockers.length} dependencies resolved. ${blockers.length - resolvedCount} still pending.`,
+          );
         }
       }
 

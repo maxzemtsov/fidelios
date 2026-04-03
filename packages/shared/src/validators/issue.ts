@@ -120,3 +120,14 @@ export const upsertIssueDocumentSchema = z.object({
 
 export type IssueDocumentFormat = z.infer<typeof issueDocumentFormatSchema>;
 export type UpsertIssueDocument = z.infer<typeof upsertIssueDocumentSchema>;
+
+// ── Issue Relations ─────────────────────────────────────────────
+
+export const ISSUE_RELATION_TYPES = ["related", "blocks", "blocked_by", "duplicate"] as const;
+
+export const createIssueRelationSchema = z.object({
+  type: z.enum(ISSUE_RELATION_TYPES),
+  relatedIssueId: z.string().uuid(),
+});
+
+export type CreateIssueRelation = z.infer<typeof createIssueRelationSchema>;

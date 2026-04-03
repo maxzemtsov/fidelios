@@ -1,4 +1,4 @@
-export type { Company } from "./company.js";
+export type { Company, PeakHoursConfig, PeakHoursWindow } from "./company.js";
 export type { InstanceExperimentalSettings, InstanceGeneralSettings, InstanceSettings } from "./instance.js";
 export type {
   CompanySkillSourceType,
@@ -86,6 +86,8 @@ export type {
   IssueAncestorGoal,
   IssueAttachment,
   IssueLabel,
+  IssueRelation,
+  IssueRelationType,
 } from "./issue.js";
 export type { Goal } from "./goal.js";
 export type { Approval, ApprovalComment } from "./approval.js";

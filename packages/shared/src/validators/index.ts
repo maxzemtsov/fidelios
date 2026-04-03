@@ -20,9 +20,12 @@ export {
   createCompanySchema,
   updateCompanySchema,
   updateCompanyBrandingSchema,
+  peakHoursConfigSchema,
+  updateCompanyPeakHoursSchema,
   type CreateCompany,
   type UpdateCompany,
   type UpdateCompanyBranding,
+  type UpdateCompanyPeakHours,
 } from "./company.js";
 export {
   companySkillSourceTypeSchema,
@@ -138,6 +141,9 @@ export {
   type CreateIssueAttachmentMetadata,
   type IssueDocumentFormat,
   type UpsertIssueDocument,
+  createIssueRelationSchema,
+  ISSUE_RELATION_TYPES,
+  type CreateIssueRelation,
 } from "./issue.js";
 
 export {

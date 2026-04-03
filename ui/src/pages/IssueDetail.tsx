@@ -11,6 +11,7 @@ import { projectsApi } from "../api/projects";
 import { useCompany } from "../context/CompanyContext";
 import { usePanel } from "../context/PanelContext";
 import { useToast } from "../context/ToastContext";
+import { useDialog } from "../context/DialogContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { assigneeValueFromSelection, suggestedCommentAssigneeValue } from "../lib/assignees";
 import { queryKeys } from "../lib/queryKeys";
@@ -49,6 +50,7 @@ import {
   ListTree,
   MessageSquare,
   MoreHorizontal,
+  Plus,
   Repeat,
   SlidersHorizontal,
   Paperclip,
@@ -204,6 +206,7 @@ export function IssueDetail() {
   const navigate = useNavigate();
   const location = useLocation();
   const { pushToast } = useToast();
+  const { openNewIssue } = useDialog();
   const [moreOpen, setMoreOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mobilePropsOpen, setMobilePropsOpen] = useState(false);
@@ -1056,6 +1059,22 @@ export function IssueDetail() {
         </TabsContent>
 
         <TabsContent value="subissues">
+          <div className="flex justify-end mb-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              onClick={() =>
+                openNewIssue({
+                  parentId: issue.id,
+                  projectId: issue.projectId ?? undefined,
+                })
+              }
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Create Sub-Issue
+            </Button>
+          </div>
           {childIssues.length === 0 ? (
             <p className="text-xs text-muted-foreground">No sub-issues.</p>
           ) : (

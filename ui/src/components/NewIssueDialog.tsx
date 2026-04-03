@@ -670,6 +670,7 @@ export function NewIssueDialog() {
         ? { executionWorkspaceId: selectedExecutionWorkspaceId }
         : {}),
       ...(executionWorkspaceSettings ? { executionWorkspaceSettings } : {}),
+      ...(newIssueDefaults.parentId ? { parentId: newIssueDefaults.parentId } : {}),
     });
   }
 

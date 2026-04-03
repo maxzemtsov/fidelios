@@ -147,3 +147,12 @@ A change is done when all are true:
 3. Contracts are synced across db/shared/server/ui
 4. Docs updated when behavior or commands change
 
+## 11. Git Workflow
+
+- **Never commit to `main`.**
+- Find your issue's **root parent** (top-level issue with no parentId). Use its branch: `feature/IRO-{root}`.
+- If no parent: create `git checkout -b feature/IRO-XXX`. If branch exists: `git checkout feature/IRO-XXX`.
+- All sub-issues commit to the root parent's branch.
+- When root issue is done: `gh pr create --base main`.
+- CTO reviews and merges all PRs.
+

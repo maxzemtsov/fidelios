@@ -1,6 +1,23 @@
 import { z } from "zod";
 import { COMPANY_STATUSES } from "../constants.js";
 
+const peakHoursWindowSchema = z.object({
+  startUtc: z.string().regex(/^\d{2}:\d{2}$/, "Must be HH:MM format"),
+  endUtc: z.string().regex(/^\d{2}:\d{2}$/, "Must be HH:MM format"),
+});
+
+export const peakHoursConfigSchema = z.object({
+  enabled: z.boolean(),
+  windows: z.array(peakHoursWindowSchema),
+  policy: z.literal("skip"),
+});
+
+export const updateCompanyPeakHoursSchema = z.object({
+  peakHours: peakHoursConfigSchema.nullable(),
+});
+
+export type UpdateCompanyPeakHours = z.infer<typeof updateCompanyPeakHoursSchema>;
+
 const logoAssetIdSchema = z.string().uuid().nullable().optional();
 const brandColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional();
 

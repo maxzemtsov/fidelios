@@ -1,5 +1,16 @@
 import type { CompanyStatus, PauseReason } from "../constants.js";
 
+export interface PeakHoursWindow {
+  startUtc: string; // "HH:MM"
+  endUtc: string;   // "HH:MM"
+}
+
+export interface PeakHoursConfig {
+  enabled: boolean;
+  windows: PeakHoursWindow[];
+  policy: "skip";
+}
+
 export interface Company {
   id: string;
   name: string;
@@ -13,6 +24,7 @@ export interface Company {
   spentMonthlyCents: number;
   requireBoardApprovalForNewAgents: boolean;
   brandColor: string | null;
+  peakHours: PeakHoursConfig | null;
   logoAssetId: string | null;
   logoUrl: string | null;
   createdAt: Date;

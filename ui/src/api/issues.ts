@@ -6,6 +6,7 @@ import type {
   IssueComment,
   IssueDocument,
   IssueLabel,
+  IssueRelation,
   IssueWorkProduct,
   UpsertIssueDocument,
 } from "@fideliosai/shared";
@@ -111,4 +112,12 @@ export const issuesApi = {
   updateWorkProduct: (id: string, data: Record<string, unknown>) =>
     api.patch<IssueWorkProduct>(`/work-products/${id}`, data),
   deleteWorkProduct: (id: string) => api.delete<IssueWorkProduct>(`/work-products/${id}`),
+
+  // Relations / Dependencies
+  listRelations: (issueId: string) =>
+    api.get<IssueRelation[]>(`/issues/${issueId}/relations`),
+  createRelation: (issueId: string, data: { type: string; relatedIssueId: string }) =>
+    api.post<IssueRelation>(`/issues/${issueId}/relations`, data),
+  deleteRelation: (issueId: string, relationId: string) =>
+    api.delete<{ ok: true }>(`/issues/${issueId}/relations/${relationId}`),
 };

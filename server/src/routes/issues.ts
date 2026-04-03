@@ -13,6 +13,7 @@ import {
   updateIssueWorkProductSchema,
   upsertIssueDocumentSchema,
   updateIssueSchema,
+  createIssueRelationSchema,
 } from "@fideliosai/shared";
 import type { StorageService } from "../storage/types.js";
 import { validate } from "../middleware/validate.js";
@@ -1088,6 +1089,58 @@ export function issueRoutes(db: Db, storage: StorageService) {
         }
       }
 
+      // ── Auto-wake agents blocked by this issue when it resolves ──
+      const statusBecameResolved =
+        (issue.status === "done" || issue.status === "cancelled") &&
+        existing.status !== "done" &&
+        existing.status !== "cancelled";
+
+      if (statusBecameResolved) {
+        try {
+          const blockedIssues = await svc.getIssuesBlockedBy(issue.id, issue.companyId);
+          for (const blocked of blockedIssues) {
+            if (!blocked.assigneeAgentId) continue;
+            // Check if ALL blockers for this blocked issue are now resolved
+            const allBlockers = await svc.getBlockersForIssue(blocked.blockedIssueId, issue.companyId);
+            const allResolved = allBlockers.every(
+              (b) => b.status === "done" || b.status === "cancelled",
+            );
+            if (allResolved && !wakeups.has(blocked.assigneeAgentId)) {
+              wakeups.set(blocked.assigneeAgentId, {
+                source: "automation",
+                triggerDetail: "system",
+                reason: "dependency_resolved",
+                payload: {
+                  issueId: blocked.blockedIssueId,
+                  resolvedIssueId: issue.id,
+                  resolvedIdentifier: issue.identifier,
+                  mutation: "dependency_resolved",
+                },
+                requestedByActorType: actor.actorType,
+                requestedByActorId: actor.actorId,
+                contextSnapshot: {
+                  issueId: blocked.blockedIssueId,
+                  source: "dependency_resolved",
+                  wakeReason: "dependency_resolved",
+                },
+              });
+              logger.info(
+                {
+                  resolvedIssueId: issue.id,
+                  resolvedIdentifier: issue.identifier,
+                  blockedIssueId: blocked.blockedIssueId,
+                  blockedIdentifier: blocked.identifier,
+                  agentId: blocked.assigneeAgentId,
+                },
+                "all dependencies resolved — waking blocked issue assignee",
+              );
+            }
+          }
+        } catch (err) {
+          logger.warn({ err, issueId: issue.id }, "failed to check/wake blocked dependencies");
+        }
+      }
+
       for (const [agentId, wakeup] of wakeups.entries()) {
         heartbeat
           .wakeup(agentId, wakeup)
@@ -1669,6 +1722,77 @@ export function issueRoutes(db: Db, storage: StorageService) {
       entityId: removed.issueId,
       details: {
         attachmentId: removed.id,
+      },
+    });
+
+    res.json({ ok: true });
+  });
+
+  // ── Issue Relations / Dependencies ──────────────────────────────
+
+  router.get("/issues/:id/relations", async (req, res) => {
+    const id = req.params.id as string;
+    const issue = await svc.getById(id) ?? await svc.getByIdentifier(id);
+    if (!issue) return res.status(404).json({ error: "Issue not found" });
+    const relations = await svc.listRelations(issue.id, issue.companyId);
+    res.json(relations);
+  });
+
+  router.post("/issues/:id/relations", validate(createIssueRelationSchema), async (req, res) => {
+    const id = req.params.id as string;
+    const issue = await svc.getById(id) ?? await svc.getByIdentifier(id);
+    if (!issue) return res.status(404).json({ error: "Issue not found" });
+
+    const actor = getActorInfo(req);
+    const relation = await svc.createRelation({
+      companyId: issue.companyId,
+      type: req.body.type,
+      issueId: issue.id,
+      relatedIssueId: req.body.relatedIssueId,
+      createdByActorType: actor.actorType,
+      createdByActorId: actor.actorId,
+    });
+
+    await logActivity(db, {
+      companyId: issue.companyId,
+      actorType: actor.actorType,
+      actorId: actor.actorId,
+      agentId: actor.agentId,
+      runId: actor.runId,
+      action: "issue.relation_created",
+      entityType: "issue",
+      entityId: issue.id,
+      details: {
+        type: req.body.type,
+        relatedIssueId: req.body.relatedIssueId,
+      },
+    });
+
+    res.status(201).json(relation);
+  });
+
+  router.delete("/issues/:id/relations/:relationId", async (req, res) => {
+    const id = req.params.id as string;
+    const relationId = req.params.relationId as string;
+    const issue = await svc.getById(id) ?? await svc.getByIdentifier(id);
+    if (!issue) return res.status(404).json({ error: "Issue not found" });
+
+    const deleted = await svc.deleteRelation(relationId, issue.companyId);
+
+    const actor = getActorInfo(req);
+    await logActivity(db, {
+      companyId: issue.companyId,
+      actorType: actor.actorType,
+      actorId: actor.actorId,
+      agentId: actor.agentId,
+      runId: actor.runId,
+      action: "issue.relation_removed",
+      entityType: "issue",
+      entityId: issue.id,
+      details: {
+        relationId: deleted.id,
+        type: deleted.type,
+        relatedIssueId: deleted.relatedIssueId,
       },
     });
 
