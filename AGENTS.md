@@ -147,3 +147,12 @@ A change is done when all are true:
 3. Contracts are synced across db/shared/server/ui
 4. Docs updated when behavior or commands change
 
+## 11. Git Workflow
+
+**Never commit directly to `main`.** Always work in a feature branch.
+
+- Current active branch: `feature/iro-266`
+- Switch to it before making any changes: `git checkout feature/iro-266`
+- Commit your work to this branch
+- When your task is done, create a PR to `main` via `gh pr create`
+
