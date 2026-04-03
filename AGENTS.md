@@ -154,4 +154,5 @@ A change is done when all are true:
 - If no parent: create `git checkout -b feature/IRO-XXX`. If branch exists: `git checkout feature/IRO-XXX`.
 - All sub-issues commit to the root parent's branch.
 - When root issue is done: `gh pr create --base main`.
+- CTO reviews and merges all PRs.
 
