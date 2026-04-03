@@ -24,6 +24,8 @@ export type HealthStatus = {
     companyDeletionEnabled?: boolean;
   };
   devServer?: DevServerHealthStatus;
+  latestVersion?: string | null;
+  updateAvailable?: boolean;
 };
 
 export const healthApi = {

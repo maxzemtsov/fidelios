@@ -34,6 +34,8 @@ import { createStorageServiceFromConfig } from "./storage/index.js";
 import { printStartupBanner } from "./startup-banner.js";
 import { getBoardClaimWarningUrl, initializeBoardClaimChallenge } from "./board-claim.js";
 import { maybePersistWorktreeRuntimePorts } from "./worktree-config.js";
+import { createUpdateChecker } from "./update-check.js";
+import { serverVersion } from "./version.js";
 
 type BetterAuthSessionUser = {
   id: string;
@@ -522,6 +524,10 @@ export async function startServer(): Promise<StartedServer> {
   });
   const uiMode = config.uiDevMiddleware ? "vite-dev" : config.serveUi ? "static" : "none";
   const storageService = createStorageServiceFromConfig(config);
+  const updateChecker = createUpdateChecker({
+    currentVersion: serverVersion,
+    enabled: config.updateCheckEnabled,
+  });
   const app = await createApp(db as any, {
     uiMode,
     serverPort: listenPort,
@@ -534,6 +540,7 @@ export async function startServer(): Promise<StartedServer> {
     companyDeletionEnabled: config.companyDeletionEnabled,
     betterAuthHandler,
     resolveSession,
+    getUpdateStatus: () => updateChecker.getStatus(),
   });
   const server = createServer(app as unknown as Parameters<typeof createServer>[0]);
   
@@ -733,6 +740,8 @@ export async function startServer(): Promise<StartedServer> {
         databaseBackupDir: config.databaseBackupDir,
       });
 
+      updateChecker.start();
+
       const boardClaimUrl = getBoardClaimWarningUrl(config.host, listenPort);
       if (boardClaimUrl) {
         const red = "\x1b[41m\x1b[30m";
@@ -755,6 +764,7 @@ export async function startServer(): Promise<StartedServer> {
   
   {
     const shutdown = async (signal: "SIGINT" | "SIGTERM") => {
+      updateChecker.stop();
       // Kill all running agent child processes before exiting
       if (runningProcesses.size > 0) {
         logger.info({ signal, count: runningProcesses.size }, "Sending SIGTERM to running agent processes");

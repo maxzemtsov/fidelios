@@ -74,6 +74,7 @@ export async function createApp(
     localPluginDir?: string;
     betterAuthHandler?: express.RequestHandler;
     resolveSession?: (req: ExpressRequest) => Promise<BetterAuthSessionResult | null>;
+    getUpdateStatus?: () => import("./update-check.js").UpdateCheckResult;
   },
 ) {
   const app = express();
@@ -137,6 +138,7 @@ export async function createApp(
       deploymentExposure: opts.deploymentExposure,
       authReady: opts.authReady,
       companyDeletionEnabled: opts.companyDeletionEnabled,
+      getUpdateStatus: opts.getUpdateStatus,
     }),
   );
   api.use("/companies", companyRoutes(db, opts.storageService));

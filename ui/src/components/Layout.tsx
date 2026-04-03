@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, Moon, Settings, Sun } from "lucide-react";
+import { ArrowUpCircle, BookOpen, Moon, Settings, Sun } from "lucide-react";
 import { Link, Outlet, useLocation, useNavigate, useParams } from "@/lib/router";
 import { CompanyRail } from "./CompanyRail";
 import { Sidebar } from "./Sidebar";
@@ -16,6 +16,7 @@ import { ToastViewport } from "./ToastViewport";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { WorktreeBanner } from "./WorktreeBanner";
 import { DevRestartBanner } from "./DevRestartBanner";
+import { UpdateBanner } from "./UpdateBanner";
 import { useDialog } from "../context/DialogContext";
 import { usePanel } from "../context/PanelContext";
 import { useCompany } from "../context/CompanyContext";
@@ -81,7 +82,8 @@ export function Layout() {
     retry: false,
     refetchInterval: (query) => {
       const data = query.state.data as { devServer?: { enabled?: boolean } } | undefined;
-      return data?.devServer?.enabled ? 2000 : false;
+      // 2s in dev (hot-reload feedback), 30min in production (update notifications)
+      return data?.devServer?.enabled ? 2000 : 30 * 60 * 1000;
     },
     refetchIntervalInBackground: true,
   });
@@ -273,6 +275,12 @@ export function Layout() {
       </a>
       <WorktreeBanner />
       <DevRestartBanner devServer={health?.devServer} />
+      <UpdateBanner
+        currentVersion={health?.version}
+        latestVersion={health?.latestVersion}
+        updateAvailable={health?.updateAvailable}
+        deploymentMode={health?.deploymentMode}
+      />
       <div className={cn("min-h-0 flex-1", isMobile ? "w-full" : "flex overflow-hidden")}>
         {isMobile && sidebarOpen && (
           <button
@@ -308,9 +316,21 @@ export function Layout() {
                 {health?.version && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span className="px-2 text-xs text-muted-foreground shrink-0 cursor-default">v</span>
+                      <span className={cn(
+                        "px-2 text-xs shrink-0 cursor-default inline-flex items-center gap-1",
+                        health.updateAvailable
+                          ? "text-blue-600 dark:text-blue-400"
+                          : "text-muted-foreground",
+                      )}>
+                        v{health.version}
+                        {health.updateAvailable && <ArrowUpCircle className="h-3 w-3" />}
+                      </span>
                     </TooltipTrigger>
-                    <TooltipContent>v{health.version}</TooltipContent>
+                    <TooltipContent>
+                      {health.updateAvailable && health.latestVersion
+                        ? `Update available: v${health.latestVersion}`
+                        : `v${health.version}`}
+                    </TooltipContent>
                   </Tooltip>
                 )}
                 <Button variant="ghost" size="icon-sm" className="text-muted-foreground shrink-0" asChild>
@@ -366,9 +386,21 @@ export function Layout() {
                     {health?.version && (
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="px-2 text-xs text-muted-foreground shrink-0 cursor-default">v</span>
+                          <span className={cn(
+                            "px-2 text-xs shrink-0 cursor-default inline-flex items-center gap-1",
+                            health.updateAvailable
+                              ? "text-blue-600 dark:text-blue-400"
+                              : "text-muted-foreground",
+                          )}>
+                            v{health.version}
+                            {health.updateAvailable && <ArrowUpCircle className="h-3 w-3" />}
+                          </span>
                         </TooltipTrigger>
-                        <TooltipContent>v{health.version}</TooltipContent>
+                        <TooltipContent>
+                          {health.updateAvailable && health.latestVersion
+                            ? `Update available: v${health.latestVersion}`
+                            : `v${health.version}`}
+                        </TooltipContent>
                       </Tooltip>
                     )}
                     <Button variant="ghost" size="icon-sm" className="text-muted-foreground shrink-0" asChild>

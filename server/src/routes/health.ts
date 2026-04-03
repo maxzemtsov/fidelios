@@ -6,6 +6,7 @@ import type { DeploymentExposure, DeploymentMode } from "@fideliosai/shared";
 import { readPersistedDevServerStatus, toDevServerHealthStatus } from "../dev-server-status.js";
 import { instanceSettingsService } from "../services/instance-settings.js";
 import { serverVersion } from "../version.js";
+import type { UpdateCheckResult } from "../update-check.js";
 
 export function healthRoutes(
   db?: Db,
@@ -14,6 +15,7 @@ export function healthRoutes(
     deploymentExposure: DeploymentExposure;
     authReady: boolean;
     companyDeletionEnabled: boolean;
+    getUpdateStatus?: () => UpdateCheckResult;
   } = {
     deploymentMode: "local_trusted",
     deploymentExposure: "private",
@@ -74,6 +76,8 @@ export function healthRoutes(
       });
     }
 
+    const updateStatus = opts.getUpdateStatus?.() ?? null;
+
     res.json({
       status: "ok",
       version: serverVersion,
@@ -86,6 +90,8 @@ export function healthRoutes(
         companyDeletionEnabled: opts.companyDeletionEnabled,
       },
       ...(devServer ? { devServer } : {}),
+      latestVersion: updateStatus?.latestVersion ?? null,
+      updateAvailable: updateStatus?.updateAvailable ?? false,
     });
   });
 
