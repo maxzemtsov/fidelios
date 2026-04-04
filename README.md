@@ -100,6 +100,10 @@ You approve and go   →  Review strategy, set budgets, monitor from the dashboa
 
 | | |
 |:---|:---|
+| **CAG (Context-Augmented Generation)** | Pre-compiled context bundles so agents get full project state in one shot — no API round-trips, no hallucinated context. |
+| **RAG-ready architecture** | Structured knowledge retrieval from issues, comments, goals, and org data — agents search, not guess. |
+| **Token optimization** | Smart context compression, session persistence across heartbeats, and skip-detection to avoid wasting tokens on no-op runs. |
+| **Process security** | Atomic task checkout, budget enforcement, approval gates, and full audit trails — no agent acts without authorization. |
 | **Atomic execution** | Task checkout + budget check in one transaction. No double-work, no surprise bills. |
 | **Persistent state** | Agents resume the same context across heartbeats — no "starting from scratch" every run. |
 | **Skill injection** | Agents learn your workflows at runtime without retraining. |
