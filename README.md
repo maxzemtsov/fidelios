@@ -148,25 +148,17 @@ You approve and go   →  Review strategy, set budgets, monitor from the dashboa
 
 ## Quick Start
 
-**macOS** (one command — installs Node.js if needed):
+[![Install macOS](https://img.shields.io/badge/macOS-Install_with_curl-black?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/fideliosai/fidelios/blob/main/site/install.sh) [![Install Linux](https://img.shields.io/badge/Linux-Install_with_Docker-orange?style=for-the-badge&logo=linux&logoColor=white)](https://github.com/fideliosai/fidelios/blob/main/site/install-linux.sh) [![Install Windows](https://img.shields.io/badge/Windows-Install_with_Docker-blue?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/fideliosai/fidelios/blob/main/site/install.ps1)
+
 ```bash
+# macOS / Linux
 curl -fsSL https://raw.githubusercontent.com/fideliosai/fidelios/main/site/install.sh | bash
-```
 
-**Linux** (Docker):
-```bash
-curl -fsSL https://raw.githubusercontent.com/fideliosai/fidelios/main/site/install-linux.sh | bash
-```
-
-**Windows** (Docker, run in PowerShell):
-```powershell
+# Windows (PowerShell)
 iwr -useb https://raw.githubusercontent.com/fideliosai/fidelios/main/site/install.ps1 | iex
-```
 
-**Or install manually:**
-```bash
-npm install -g fidelios
-fidelios run
+# Or just npm
+npm install -g fidelios && fidelios run
 ```
 
 Open **http://127.0.0.1:3100** — the wizard walks you through creating your first company and hiring your first agent. Embedded PostgreSQL starts automatically.
