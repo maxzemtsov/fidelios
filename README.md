@@ -27,6 +27,18 @@
 
 <br>
 
+> ### 🚨 BREAKING: Third-party agent harnesses now cost extra. FideliOS doesn't.
+>
+> Starting April 2025, AI providers classify third-party harnesses (OpenClaw, Cline, and others) as **extra usage** — every agent run eats premium credits on top of your subscription. **FideliOS is immune.** We connect through official first-party CLIs (Claude Code, Codex, Gemini CLI) that run on your existing plan. No middleman. No markup. No surprise bills.
+>
+> But we don't just save you from surcharges — we **actively cut your token spend**. CAG pre-compiles full project context into ready-made bundles so agents get everything in one shot instead of burning tokens on repeated lookups. RAG retrieves only what's relevant instead of stuffing entire histories into every prompt. Session persistence and smart skip-detection eliminate redundant runs.
+>
+> Take it even further — plug in local models (Ollama, LM Studio, llama.cpp) and your cost approaches **literally zero** without sacrificing quality. Cloud for heavy lifting, local for routine tasks. Same orchestration, same governance, same audit trails.
+>
+> **Your subscription. Your tokens. Your rules.**
+
+<br>
+
 ## What is FideliOS?
 
 FideliOS is an **operating system for AI-driven companies**. You define the mission, hire a team of AI agents, set budgets and rules — and they figure out the work.
@@ -100,6 +112,7 @@ You approve and go   →  Review strategy, set budgets, monitor from the dashboa
 
 | | |
 |:---|:---|
+| **🔒 Subscription-safe** | First-party CLI integration means your agents run on your existing subscription — not on metered third-party credits. Zero extra usage fees, zero harness surcharges, zero surprises. |
 | **CAG (Context-Augmented Generation)** | Pre-compiled context bundles so agents get full project state in one shot — no API round-trips, no hallucinated context. |
 | **RAG-ready architecture** | Structured knowledge retrieval from issues, comments, goals, and org data — agents search, not guess. |
 | **Token optimization** | Smart context compression, session persistence across heartbeats, and skip-detection to avoid wasting tokens on no-op runs. |
