@@ -148,18 +148,45 @@ You approve and go   →  Review strategy, set budgets, monitor from the dashboa
 
 ## Quick Start
 
-[![Install macOS](https://img.shields.io/badge/macOS-Install_with_curl-black?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/fideliosai/fidelios/blob/main/site/install.sh) [![Install Linux](https://img.shields.io/badge/Linux-Install_with_Docker-orange?style=for-the-badge&logo=linux&logoColor=white)](https://github.com/fideliosai/fidelios/blob/main/site/install-linux.sh) [![Install Windows](https://img.shields.io/badge/Windows-Install_with_Docker-blue?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/fideliosai/fidelios/blob/main/site/install.ps1)
+<table>
+<tr>
+<td width="33%">
 
-```bash
-# macOS / Linux
-curl -fsSL https://raw.githubusercontent.com/fideliosai/fidelios/main/site/install.sh | bash
+### 🍎 macOS
 
-# Windows (PowerShell)
-iwr -useb https://raw.githubusercontent.com/fideliosai/fidelios/main/site/install.ps1 | iex
-
-# Or just npm
-npm install -g fidelios && fidelios run
+Open **Terminal** and paste:
 ```
+curl -fsSL https://fidelios.nl/install.sh | bash
+```
+Installs everything automatically.
+
+</td>
+<td width="33%">
+
+### 🐧 Linux
+
+Open **Terminal** and paste:
+```
+curl -fsSL https://fidelios.nl/install-linux.sh | bash
+```
+Sets up Docker and runs FideliOS.
+
+</td>
+<td width="33%">
+
+### 🪟 Windows
+
+Open **PowerShell** and paste:
+```
+iwr -useb https://fidelios.nl/install.ps1 | iex
+```
+Sets up Docker and runs FideliOS.
+
+</td>
+</tr>
+</table>
+
+> **Already have Node.js?** Just run `npm install -g fidelios && fidelios run`
 
 Open **http://127.0.0.1:3100** — the wizard walks you through creating your first company and hiring your first agent. Embedded PostgreSQL starts automatically.
 
