@@ -46,7 +46,7 @@ if [[ "$(uname)" != "Darwin" ]]; then
   error "FideliOS installer only supports macOS."
   echo ""
   echo -e "  For Linux, use Docker:"
-  echo -e "  ${DIM}docker run --rm -it ghcr.io/fideliosai/fidelios:latest${RESET}"
+  echo -e "  ${DIM}curl -fsSL https://raw.githubusercontent.com/fideliosai/fidelios/main/site/install-linux.sh | bash${RESET}"
   echo ""
   exit 1
 fi

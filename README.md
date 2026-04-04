@@ -148,6 +148,22 @@ You approve and go   →  Review strategy, set budgets, monitor from the dashboa
 
 ## Quick Start
 
+**macOS** (one command — installs Node.js if needed):
+```bash
+curl -fsSL https://raw.githubusercontent.com/fideliosai/fidelios/main/site/install.sh | bash
+```
+
+**Linux** (Docker):
+```bash
+curl -fsSL https://raw.githubusercontent.com/fideliosai/fidelios/main/site/install-linux.sh | bash
+```
+
+**Windows** (Docker, run in PowerShell):
+```powershell
+iwr -useb https://raw.githubusercontent.com/fideliosai/fidelios/main/site/install.ps1 | iex
+```
+
+**Or install manually:**
 ```bash
 npm install -g fidelios
 fidelios run

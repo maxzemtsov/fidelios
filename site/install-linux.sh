@@ -3,7 +3,7 @@
 # Usage: curl -fsSL https://fidelios.nl/install-linux.sh | bash
 set -euo pipefail
 
-IMAGE="ghcr.io/maxzemtsov/fidelios:latest"
+IMAGE="ghcr.io/fideliosai/fidelios:latest"
 CONTAINER="fidelios"
 PORT=3100
 DOCKER_WAIT_TIMEOUT=120
@@ -41,8 +41,8 @@ header "🔍 Checking platform…"
 if [[ "$(uname)" != "Linux" ]]; then
   error "This installer only supports Linux."
   echo ""
-  echo -e "  For macOS, use: ${DIM}curl -fsSL https://fidelios.nl/install.sh | bash${RESET}"
-  echo -e "  For Windows, use: ${DIM}iwr -useb https://fidelios.nl/install.ps1 | iex${RESET}"
+  echo -e "  For macOS, use: ${DIM}curl -fsSL https://raw.githubusercontent.com/fideliosai/fidelios/main/site/install.sh | bash${RESET}"
+  echo -e "  For Windows, use: ${DIM}iwr -useb https://raw.githubusercontent.com/fideliosai/fidelios/main/site/install.ps1 | iex${RESET}"
   echo ""
   exit 1
 fi

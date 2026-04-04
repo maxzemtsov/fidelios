@@ -3,7 +3,7 @@
 # Usage: iwr -useb https://fidelios.nl/install.ps1 | iex
 $ErrorActionPreference = "Stop"
 
-$IMAGE     = "ghcr.io/maxzemtsov/fidelios:latest"
+$IMAGE     = "ghcr.io/fideliosai/fidelios:latest"
 $CONTAINER = "fidelios"
 $PORT      = 3100
 $DOCKER_WAIT_TIMEOUT = 120  # seconds
