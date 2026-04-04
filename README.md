@@ -21,8 +21,10 @@
 
 </div>
 
+<br>
+
 <div align="center">
-  <video src="https://github.com/fideliosai/fidelios/releases/download/v0.0.19/FideliOS.mp4" autoplay loop muted playsinline width="720"></video>
+  <video src="https://github.com/fideliosai/fidelios/raw/main/doc/assets/demo.mp4" width="720" controls></video>
 </div>
 
 ---
