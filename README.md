@@ -19,10 +19,10 @@
 
 [**Quick Start**](#quick-start) · [**Features**](#features) · [**Architecture**](#architecture) · [**Roadmap**](ROADMAP.md) · [**fidelios.nl**](https://fidelios.nl)
 
-<br>
+</div>
 
-https://github.com/fideliosai/fidelios/releases/download/v0.0.19/FideliOS.mp4
-
+<div align="center">
+  <video src="https://github.com/fideliosai/fidelios/releases/download/v0.0.19/FideliOS.mp4" autoplay loop muted playsinline width="720"></video>
 </div>
 
 ---
