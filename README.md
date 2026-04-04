@@ -1,5 +1,5 @@
 > [!IMPORTANT]
-> **🚀 April 2025: Third-party agent tools (OpenClaw, Cline) now incur extra usage fees from AI providers.** FideliOS uses official first-party CLIs — your agents run on your existing subscription with zero surcharges. [Read more →](#-zero-extra-fees-smarter-token-usage-no-provider-restrictions)
+> **April 2025: Third-party tools (OpenClaw, Cline) now charge extra fees. FideliOS doesn't — and saves your tokens on top.** [Learn how →](#-zero-extra-fees-smarter-token-usage-no-provider-restrictions)
 
 <div align="center">
 
