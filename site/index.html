@@ -7,84 +7,165 @@
   <meta name="description" content="FideliOS orchestrates autonomous AI agents that run your company. Install in one command on macOS, Linux, or Windows.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%E2%9A%99%EF%B8%8F</text></svg>">
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       theme: {
         extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          },
           colors: {
-            brand: '#6366f1',
-            'brand-light': '#818cf8',
-            surface: '#0f1117',
-            'surface-raised': '#1a1d2e',
-            'surface-border': '#2a2d3e',
-          }
-        }
-      }
+            brand: {
+              50:  '#eef2ff',
+              100: '#e0e7ff',
+              200: '#c7d2fe',
+              300: '#a5b4fc',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+          },
+        },
+      },
     }
   </script>
   <style>
-    body { background: #0f1117; }
-    .glow { box-shadow: 0 0 40px rgba(99, 102, 241, 0.15); }
+    body {
+      background: linear-gradient(180deg, #f8fafc 0%, #ffffff 40%, #f8fafc 100%);
+      min-height: 100vh;
+    }
+    .card-hover {
+      transition: box-shadow 0.25s ease, transform 0.25s ease;
+    }
+    .card-hover:hover {
+      box-shadow: 0 8px 30px rgba(99, 102, 241, 0.10), 0 2px 8px rgba(0,0,0,0.04);
+      transform: translateY(-2px);
+    }
     details[open] summary .chevron { transform: rotate(90deg); }
     .chevron { transition: transform 0.2s ease; }
-    .copy-btn:active { transform: scale(0.95); }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    .fade-up { animation: fadeUp 0.6s ease-out both; }
-    .fade-up-delay-1 { animation-delay: 0.1s; }
-    .fade-up-delay-2 { animation-delay: 0.2s; }
-    .fade-up-delay-3 { animation-delay: 0.3s; }
+    .copy-btn { transition: all 0.15s ease; }
+    .copy-btn:active { transform: scale(0.92); }
+    .code-block {
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 transparent;
+    }
+    .code-block::-webkit-scrollbar { height: 4px; }
+    .code-block::-webkit-scrollbar-track { background: transparent; }
+    .code-block::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
+    .fade-up-1 { animation-delay: 0.08s; }
+    .fade-up-2 { animation-delay: 0.18s; }
+    .fade-up-3 { animation-delay: 0.28s; }
+    .fade-up-4 { animation-delay: 0.38s; }
+    .fade-up-5 { animation-delay: 0.48s; }
+    /* Subtle gradient orb behind hero */
+    .hero-glow {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -55%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    @media (max-width: 640px) {
+      .hero-glow { width: 360px; height: 360px; }
+    }
   </style>
 </head>
-<body class="text-gray-200 antialiased">
+<body class="font-sans text-slate-700 antialiased overflow-x-hidden">
 
   <!-- Hero -->
-  <main class="min-h-screen flex flex-col items-center justify-center px-4 py-20">
-    <div class="max-w-3xl w-full text-center">
+  <main class="relative min-h-[100dvh] flex flex-col items-center justify-center px-5 sm:px-8 py-20">
+    <div class="hero-glow" aria-hidden="true"></div>
 
-      <!-- Logo / Wordmark -->
-      <div class="fade-up mb-6">
-        <h1 class="text-5xl sm:text-6xl font-bold tracking-tight text-white">
-          Fideli<span class="text-brand">OS</span>
+    <div class="relative z-10 w-full max-w-4xl mx-auto text-center">
+
+      <!-- Wordmark -->
+      <div class="fade-up mb-5">
+        <h1 class="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-slate-900">
+          Fideli<span class="text-brand-500">OS</span>
         </h1>
       </div>
 
       <!-- Tagline -->
-      <p class="fade-up fade-up-delay-1 text-xl sm:text-2xl text-gray-400 mb-16 max-w-xl mx-auto leading-relaxed">
+      <p class="fade-up fade-up-1 text-lg sm:text-xl lg:text-2xl text-slate-500 mb-6 max-w-lg mx-auto leading-relaxed">
         Your AI workforce, one command away
       </p>
 
+      <!-- Subtitle -->
+      <p class="fade-up fade-up-2 text-sm sm:text-base text-slate-400 mb-10 max-w-md mx-auto">
+        Orchestrate autonomous agents that ship code, manage ops, and run your company.
+      </p>
+
+      <!-- Demo Video -->
+      <div class="fade-up fade-up-3 mb-14 max-w-2xl mx-auto">
+        <div class="rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-white">
+          <video
+            src="https://github.com/user-attachments/assets/e64935a9-1676-440e-9120-0e7ce6989a44"
+            class="w-full"
+            controls
+            preload="metadata"
+            playsinline
+          ></video>
+        </div>
+      </div>
+
       <!-- Install Cards -->
-      <div class="fade-up fade-up-delay-2 grid gap-4 sm:grid-cols-3 mb-16">
+      <div class="fade-up fade-up-4 grid gap-5 sm:grid-cols-3 mb-16 max-w-3xl mx-auto">
 
         <!-- macOS -->
-        <div class="bg-surface-raised border border-surface-border rounded-xl p-5 glow">
-          <div class="text-sm font-medium text-gray-400 mb-3">macOS</div>
+        <div class="card-hover bg-white border border-slate-200 rounded-2xl p-5 shadow-sm min-w-0">
+          <div class="flex items-center gap-2 mb-3">
+            <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+            <span class="text-sm font-semibold text-slate-600">macOS</span>
+          </div>
           <div class="relative group">
-            <pre class="bg-surface rounded-lg px-4 py-3 text-sm text-gray-300 overflow-x-auto text-left"><code id="cmd-mac">curl -fsSL https://raw.githubusercontent.com/fideliosai/fidelios/main/site/install.sh | bash</code></pre>
-            <button onclick="copyCmd('cmd-mac', this)" class="copy-btn absolute top-2 right-2 p-1.5 rounded-md bg-surface-border/50 hover:bg-surface-border text-gray-400 hover:text-white transition-colors" title="Copy">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            <pre class="code-block bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-[13px] text-slate-600 overflow-x-auto text-left leading-relaxed"><code id="cmd-mac">curl -fsSL https://fidelios.nl/install.sh | bash</code></pre>
+            <button onclick="copyCmd('cmd-mac', this)" class="copy-btn absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-brand-500 hover:border-brand-200 shadow-sm" title="Copy to clipboard">
+              <svg class="w-4 h-4 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              <svg class="w-4 h-4 check-icon hidden text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
             </button>
           </div>
         </div>
 
         <!-- Linux -->
-        <div class="bg-surface-raised border border-surface-border rounded-xl p-5 glow">
-          <div class="text-sm font-medium text-gray-400 mb-3">Linux</div>
+        <div class="card-hover bg-white border border-slate-200 rounded-2xl p-5 shadow-sm min-w-0">
+          <div class="flex items-center gap-2 mb-3">
+            <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.368 1.884 1.43.868.134 1.703-.272 2.191-.574.163-.135.543-.331.763-.53.55-.466.353-.665.101-.929a6.7 6.7 0 01-.347-.315c-.239-.25-.45-.535-.649-.842-.541-.879-.49-1.058-.49-1.058l.894-.369s.267-.178.267-.465c0-.2-.091-.4-.2-.6a3.4 3.4 0 00-.412-.53c-.37-.378-.535-.535-.668-.8-.377-.737-.4-1.485-.267-2.2.135-.8.4-1.6.67-2.327.4-1.069.136-2.138-.134-2.939-.331-1.067-.864-1.87-1.202-3.003-.34-1.135-.47-2.535-.204-4.27A5.42 5.42 0 0012.504 0z"/></svg>
+            <span class="text-sm font-semibold text-slate-600">Linux</span>
+          </div>
           <div class="relative group">
-            <pre class="bg-surface rounded-lg px-4 py-3 text-sm text-gray-300 overflow-x-auto text-left"><code id="cmd-linux">curl -fsSL https://raw.githubusercontent.com/fideliosai/fidelios/main/site/install-linux.sh | bash</code></pre>
-            <button onclick="copyCmd('cmd-linux', this)" class="copy-btn absolute top-2 right-2 p-1.5 rounded-md bg-surface-border/50 hover:bg-surface-border text-gray-400 hover:text-white transition-colors" title="Copy">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            <pre class="code-block bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-[13px] text-slate-600 overflow-x-auto text-left leading-relaxed"><code id="cmd-linux">curl -fsSL https://fidelios.nl/install-linux.sh | bash</code></pre>
+            <button onclick="copyCmd('cmd-linux', this)" class="copy-btn absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-brand-500 hover:border-brand-200 shadow-sm" title="Copy to clipboard">
+              <svg class="w-4 h-4 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              <svg class="w-4 h-4 check-icon hidden text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
             </button>
           </div>
         </div>
 
         <!-- Windows -->
-        <div class="bg-surface-raised border border-surface-border rounded-xl p-5 glow">
-          <div class="text-sm font-medium text-gray-400 mb-3">Windows</div>
+        <div class="card-hover bg-white border border-slate-200 rounded-2xl p-5 shadow-sm min-w-0">
+          <div class="flex items-center gap-2 mb-3">
+            <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
+            <span class="text-sm font-semibold text-slate-600">Windows</span>
+          </div>
           <div class="relative group">
-            <pre class="bg-surface rounded-lg px-4 py-3 text-sm text-gray-300 overflow-x-auto text-left"><code id="cmd-win">iwr -useb https://raw.githubusercontent.com/fideliosai/fidelios/main/site/install.ps1 | iex</code></pre>
-            <button onclick="copyCmd('cmd-win', this)" class="copy-btn absolute top-2 right-2 p-1.5 rounded-md bg-surface-border/50 hover:bg-surface-border text-gray-400 hover:text-white transition-colors" title="Copy">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            <pre class="code-block bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-[13px] text-slate-600 overflow-x-auto text-left leading-relaxed"><code id="cmd-win">iwr -useb https://fidelios.nl/install.ps1 | iex</code></pre>
+            <button onclick="copyCmd('cmd-win', this)" class="copy-btn absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-brand-500 hover:border-brand-200 shadow-sm" title="Copy to clipboard">
+              <svg class="w-4 h-4 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              <svg class="w-4 h-4 check-icon hidden text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
             </button>
           </div>
         </div>
@@ -92,37 +173,61 @@
       </div>
 
       <!-- FAQ -->
-      <div class="fade-up fade-up-delay-3 max-w-2xl mx-auto text-left">
-        <details class="bg-surface-raised border border-surface-border rounded-xl overflow-hidden">
-          <summary class="flex items-center gap-3 px-6 py-4 cursor-pointer select-none hover:bg-surface-border/30 transition-colors">
-            <svg class="chevron w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-            <span class="font-medium text-gray-300">What does this install?</span>
+      <div class="fade-up fade-up-5 max-w-2xl mx-auto text-left space-y-3">
+        <details class="group bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <summary class="flex items-center gap-3 px-6 py-4 cursor-pointer select-none hover:bg-slate-50 transition-colors">
+            <svg class="chevron w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <span class="font-medium text-slate-700">What does this install?</span>
           </summary>
-          <div class="px-6 pb-5 pt-2 border-t border-surface-border space-y-4">
+          <div class="px-6 pb-5 pt-2 border-t border-slate-100 space-y-4">
             <div>
-              <h4 class="text-sm font-semibold text-brand-light mb-1.5">macOS</h4>
-              <ul class="text-sm text-gray-400 space-y-1 list-disc list-inside">
+              <h4 class="text-sm font-semibold text-brand-600 mb-1.5">macOS</h4>
+              <ul class="text-sm text-slate-500 space-y-1 list-disc list-inside">
                 <li>Homebrew (if not already installed)</li>
                 <li>Node.js via Homebrew</li>
-                <li>FideliOS CLI (<code class="text-gray-300">npm install -g fidelios</code>)</li>
+                <li>FideliOS CLI (<code class="text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded text-xs">npm install -g fidelios</code>)</li>
               </ul>
             </div>
             <div>
-              <h4 class="text-sm font-semibold text-brand-light mb-1.5">Linux</h4>
-              <ul class="text-sm text-gray-400 space-y-1 list-disc list-inside">
+              <h4 class="text-sm font-semibold text-brand-600 mb-1.5">Linux</h4>
+              <ul class="text-sm text-slate-500 space-y-1 list-disc list-inside">
                 <li>Docker Engine (if not already installed)</li>
-                <li>Pulls <code class="text-gray-300">ghcr.io/maxzemtsov/fidelios:latest</code></li>
+                <li>Pulls <code class="text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded text-xs">ghcr.io/maxzemtsov/fidelios:latest</code></li>
                 <li>Runs FideliOS container on port 3100</li>
               </ul>
             </div>
             <div>
-              <h4 class="text-sm font-semibold text-brand-light mb-1.5">Windows</h4>
-              <ul class="text-sm text-gray-400 space-y-1 list-disc list-inside">
+              <h4 class="text-sm font-semibold text-brand-600 mb-1.5">Windows</h4>
+              <ul class="text-sm text-slate-500 space-y-1 list-disc list-inside">
                 <li>Docker Desktop (if not already installed)</li>
-                <li>Pulls <code class="text-gray-300">ghcr.io/maxzemtsov/fidelios:latest</code></li>
+                <li>Pulls <code class="text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded text-xs">ghcr.io/maxzemtsov/fidelios:latest</code></li>
                 <li>Runs FideliOS container on port 3100</li>
               </ul>
             </div>
+          </div>
+        </details>
+
+        <details class="group bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <summary class="flex items-center gap-3 px-6 py-4 cursor-pointer select-none hover:bg-slate-50 transition-colors">
+            <svg class="chevron w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <span class="font-medium text-slate-700">How does it work?</span>
+          </summary>
+          <div class="px-6 pb-5 pt-2 border-t border-slate-100">
+            <p class="text-sm text-slate-500 leading-relaxed">
+              FideliOS runs a control plane that coordinates autonomous AI agents. Each agent has a role, tools, and instructions. You define your company structure, assign tasks, and agents execute them — writing code, managing deployments, handling ops, and more.
+            </p>
+          </div>
+        </details>
+
+        <details class="group bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <summary class="flex items-center gap-3 px-6 py-4 cursor-pointer select-none hover:bg-slate-50 transition-colors">
+            <svg class="chevron w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <span class="font-medium text-slate-700">Is it free?</span>
+          </summary>
+          <div class="px-6 pb-5 pt-2 border-t border-slate-100">
+            <p class="text-sm text-slate-500 leading-relaxed">
+              FideliOS is open source and free to self-host. You bring your own LLM API keys. The platform itself has no license fees.
+            </p>
           </div>
         </details>
       </div>
@@ -131,12 +236,12 @@
   </main>
 
   <!-- Footer -->
-  <footer class="border-t border-surface-border py-8 px-4">
-    <div class="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
+  <footer class="border-t border-slate-200 bg-white/60 backdrop-blur-sm py-8 px-5 sm:px-8">
+    <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-400">
       <span>&copy; 2026 FideliOS</span>
       <div class="flex items-center gap-6">
-        <a href="https://github.com/fideliosai/fidelios" class="hover:text-gray-300 transition-colors">GitHub</a>
-        <a href="https://github.com/fideliosai/fidelios/tree/main/doc" class="hover:text-gray-300 transition-colors">Docs</a>
+        <a href="https://github.com/maxzemtsov/fidelios" class="hover:text-brand-500 transition-colors">GitHub</a>
+        <a href="https://github.com/maxzemtsov/fidelios/tree/main/doc" class="hover:text-brand-500 transition-colors">Docs</a>
       </div>
     </div>
   </footer>
@@ -146,11 +251,14 @@
     function copyCmd(id, btn) {
       const text = document.getElementById(id).textContent;
       navigator.clipboard.writeText(text).then(() => {
-        const svg = btn.querySelector('svg');
-        const orig = svg.innerHTML;
-        svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>';
-        btn.classList.add('text-green-400');
-        setTimeout(() => { svg.innerHTML = orig; btn.classList.remove('text-green-400'); }, 1500);
+        btn.querySelector('.copy-icon').classList.add('hidden');
+        btn.querySelector('.check-icon').classList.remove('hidden');
+        btn.classList.add('text-emerald-500', 'border-emerald-200');
+        setTimeout(() => {
+          btn.querySelector('.copy-icon').classList.remove('hidden');
+          btn.querySelector('.check-icon').classList.add('hidden');
+          btn.classList.remove('text-emerald-500', 'border-emerald-200');
+        }, 1500);
       });
     }
   </script>
