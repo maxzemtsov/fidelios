@@ -14,7 +14,7 @@ Run FideliOS locally with zero external dependencies.
 
 ```sh
 pnpm install
-pnpm dev
+pnpm dev:watch
 ```
 
 This starts:

@@ -34,6 +34,15 @@
             ]
           },
           {
+            "group": "Install",
+            "pages": [
+              "start/install/mac",
+              "start/install/windows",
+              "start/install/linux",
+              "start/install/cloud-vms"
+            ]
+          },
+          {
             "group": "Concepts",
             "pages": [
               "concepts/execution-workspaces",
@@ -83,6 +92,12 @@
             "group": "Plugin System",
             "pages": [
               "plugins/overview"
+            ]
+          },
+          {
+            "group": "Built-in Plugins",
+            "pages": [
+              "plugins/telegram"
             ]
           }
         ]

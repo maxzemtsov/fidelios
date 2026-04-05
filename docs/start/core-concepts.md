@@ -1,9 +1,9 @@
 ---
 title: Core Concepts
-summary: Companies, agents, issues, delegation, heartbeats, and governance
+summary: Companies, agents, issues, delegation, heartbeats, skills, approvals, and governance
 ---
 
-FideliOS organizes autonomous AI work around six key concepts.
+FideliOS organizes autonomous AI work around a small set of key concepts. Understanding these makes the rest of the system click.
 
 ## Company
 
@@ -75,6 +75,32 @@ A heartbeat can be triggered by:
 
 Each heartbeat, the agent: checks its identity, reviews assignments, picks work, checks out a task, does the work, and updates status. This is the **heartbeat protocol**.
 
+## Skills
+
+A **skill** is a reusable capability that can be installed on one or more agents. Skills package how an agent should handle a specific class of work — for example, "how to interact with the FideliOS API" or "how to deploy a service to Render."
+
+Skills are installed at the company level and assigned to individual agents. This means you write a capability once and share it across your workforce. When a skill is updated, all agents using it get the improvement.
+
+## Approvals
+
+Some actions require a human decision before an agent proceeds. **Approvals** are the structured mechanism for this.
+
+An agent creates an approval request — for example, "I need to hire a new engineer" — and the task waits. A board operator reviews and approves or rejects. The agent then proceeds or escalates based on the decision.
+
+Common approval types: agent hire requests, budget increases, strategy proposals, and any custom action you want to gate.
+
+## Secrets
+
+Agents often need credentials — API keys, database passwords, webhook tokens. FideliOS stores these as **secrets**: encrypted at rest, scoped to the agents that need them, and never appearing in run logs or prompts.
+
+Secrets are injected into agent runs automatically. Agents never handle plaintext keys.
+
+## Plugins
+
+**Plugins** extend FideliOS itself. A plugin can contribute scheduled jobs, webhook handlers, UI panels, MCP servers, or Telegram bots — installed at the instance or company level.
+
+Plugins are separate from skills. Skills extend what agents can do. Plugins extend what FideliOS can do.
+
 ## Governance
 
 Some actions require board (human) approval:
@@ -84,4 +110,21 @@ Some actions require board (human) approval:
 - **Board overrides** — the board can pause, resume, or terminate any agent and reassign any task
 
 The board operator has full visibility and control through the web UI. Every mutation is logged in an **activity audit trail**.
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Architecture" icon="diagram-project" href="/start/architecture">
+    How all these concepts connect at the system level.
+  </Card>
+  <Card title="Heartbeat Protocol" icon="heart-pulse" href="/guides/agent-developer/heartbeat-protocol">
+    The step-by-step procedure agents follow to execute work.
+  </Card>
+  <Card title="Managing Agents" icon="users" href="/guides/board-operator/managing-agents">
+    Board operator guide: hiring, configuring, and monitoring agents.
+  </Card>
+  <Card title="Skills" icon="puzzle-piece" href="/guides/agent-developer/skills">
+    How to use and author reusable agent capabilities.
+  </Card>
+</CardGroup>
 

@@ -5,21 +5,41 @@ summary: Get FideliOS running in minutes
 
 Get FideliOS running locally in under 5 minutes.
 
-## Quick Start (Recommended)
+## Install
 
-```sh
-npx fidelios onboard --yes
-```
+<Tabs>
+  <Tab title="macOS">
+    Open **Terminal** and paste:
+    ```sh
+    curl -fsSL https://fidelios.nl/install.sh | bash
+    ```
+    Installs everything automatically.
+  </Tab>
+  <Tab title="Linux">
+    Open **Terminal** and paste:
+    ```sh
+    curl -fsSL https://fidelios.nl/install-linux.sh | bash
+    ```
+    Sets up Docker and runs FideliOS.
+  </Tab>
+  <Tab title="Windows">
+    Open **PowerShell** and paste:
+    ```powershell
+    iwr -useb https://fidelios.nl/install.ps1 | iex
+    ```
+    Sets up Docker and runs FideliOS.
+  </Tab>
+</Tabs>
 
-This walks you through setup, configures your environment, and gets FideliOS running.
+> **Already have Node.js?** Run `npm install -g fidelios && fidelios run`
+
+Open **http://127.0.0.1:3100** — the wizard walks you through creating your first company and hiring your first agent.
 
 To start FideliOS again later:
 
 ```sh
-npx fidelios run
+fidelios run
 ```
-
-> **Note:** If you used `npx` for setup, always use `npx fidelios` to run commands. The `pnpm fidelios` form only works inside a cloned copy of the FideliOS repository (see Local Development below).
 
 ## Local Development
 
@@ -29,7 +49,7 @@ Clone the repository, then:
 
 ```sh
 pnpm install
-pnpm dev
+pnpm dev:watch
 ```
 
 This starts the API server and UI at [http://localhost:3100](http://localhost:3100).
