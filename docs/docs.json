@@ -10,8 +10,9 @@
   },
   "favicon": "/favicon.svg",
   "logo": {
-    "dark": "/favicon.svg",
-    "light": "/favicon.svg"
+    "dark": "/logo-dark.svg",
+    "light": "/logo-light.svg",
+    "href": "https://fidelios.nl"
   },
   "topbarLinks": [
     {

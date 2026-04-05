@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 32" fill="none">
+  <!-- Planet icon -->
+  <g transform="translate(0, 4) scale(1)">
+    <circle cx="12" cy="12" r="8" stroke="#09090b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M4.05 13c-1.7 1.8-2.5 3.5-1.8 4.5 1.1 1.9 6.4 1 11.8-2s8.9-7.1 7.7-9c-.6-1-2.4-1.2-4.7-.7" stroke="#09090b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- "Fideli" text -->
+  <text x="30" y="22" font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif" font-size="18" font-weight="700" fill="#09090b" letter-spacing="-0.3">Fideli</text>
+  <!-- "OS" text in brand color -->
+  <text x="101" y="22" font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif" font-size="18" font-weight="700" fill="#6366f1" letter-spacing="-0.3">OS</text>
+</svg>
