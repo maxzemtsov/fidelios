@@ -17,7 +17,7 @@
   "topbarLinks": [
     {
       "name": "GitHub",
-      "url": "https://github.com/fidelios-ai/fidelios"
+      "url": "https://github.com/fideliosai/fidelios"
     }
   ],
   "navigation": {
@@ -177,7 +177,7 @@
   },
   "footer": {
     "socials": {
-      "github": "https://github.com/fidelios-ai/fidelios"
+      "github": "https://github.com/fideliosai/fidelios"
     },
     "links": [
       {
