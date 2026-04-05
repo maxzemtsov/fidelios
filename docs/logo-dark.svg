@@ -1,11 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 32" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 148 32" fill="none">
   <!-- Planet icon -->
-  <g transform="translate(0, 4) scale(1)">
+  <g transform="translate(0, 4)">
     <circle cx="12" cy="12" r="8" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M4.05 13c-1.7 1.8-2.5 3.5-1.8 4.5 1.1 1.9 6.4 1 11.8-2s8.9-7.1 7.7-9c-.6-1-2.4-1.2-4.7-.7" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
-  <!-- "Fideli" text -->
-  <text x="30" y="22" font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif" font-size="18" font-weight="700" fill="#ffffff" letter-spacing="-0.3">Fideli</text>
-  <!-- "OS" text in brand color -->
-  <text x="101" y="22" font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif" font-size="18" font-weight="700" fill="#818cf8" letter-spacing="-0.3">OS</text>
+  <!-- FideliOS wordmark as single text with tspan for color split -->
+  <text x="30" y="22" font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif" font-size="18" font-weight="700" letter-spacing="-0.3"><tspan fill="#ffffff">Fideli</tspan><tspan fill="#818cf8">OS</tspan></text>
 </svg>
