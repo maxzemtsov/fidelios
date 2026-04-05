@@ -33,4 +33,4 @@ jobs:
 
       - name: Run Mintlify check
         working-directory: docs
-        run: mintlify check
+        run: mintlify validate

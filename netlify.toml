@@ -1,7 +1,7 @@
 [build]
   base    = "docs"
-  command = "npx --yes mintlify@latest build"
-  publish = ".mintlify"
+  command = "npx --yes mintlify@latest export && unzip -q export.zip -d _site"
+  publish = "_site"
 
 [build.environment]
   NODE_VERSION = "20"
