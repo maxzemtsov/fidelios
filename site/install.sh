@@ -1,7 +1,25 @@
 #!/usr/bin/env bash
 # FideliOS zero-knowledge macOS installer
-# Usage: curl -fsSL https://fidelios.nl/install.sh | bash
+# Usage: curl -fsSL https://fidelios.nl/install.sh | bash -s -- --yes
+#        curl -fsSL https://fidelios.nl/install.sh | bash        (non-interactive: auto-proceeds)
 set -euo pipefail
+
+# ── Arg parsing ──────────────────────────────────────────────────────────────
+YES=false
+for arg in "$@"; do
+  case "$arg" in
+    --yes|-y) YES=true ;;
+  esac
+done
+
+# ── Interactive detection ────────────────────────────────────────────────────
+# When piped through curl, stdin is the script itself — not a TTY.
+# We detect this and auto-proceed (or skip prompts with --yes).
+if [ -t 0 ]; then
+  INTERACTIVE=true
+else
+  INTERACTIVE=false
+fi
 
 # ── Colors ──────────────────────────────────────────────────────────────────
 if [ -t 1 ]; then
@@ -25,6 +43,14 @@ header()  { echo -e "\n${BOLD}$*${RESET}"; }
 ask()     {
   local prompt="$1"
   local answer
+  if $YES; then
+    echo -e "${CYAN}${BOLD}  ?${RESET} ${prompt} ${DIM}[y/N]${RESET} ${DIM}--yes${RESET} y"
+    return 0
+  fi
+  if ! $INTERACTIVE; then
+    echo -e "${CYAN}${BOLD}  ?${RESET} ${prompt} ${DIM}[y/N]${RESET} ${DIM}(non-interactive, auto-proceeding)${RESET} y"
+    return 0
+  fi
   echo -en "${CYAN}${BOLD}  ?${RESET} ${prompt} ${DIM}[y/N]${RESET} "
   read -r answer
   [[ "$answer" =~ ^[Yy]$ ]]
@@ -109,9 +135,16 @@ success "FideliOS CLI ready ($NEW_VERSION)"
 # ── Step 5: Onboarding ────────────────────────────────────────────────────────
 header "🚀 Starting FideliOS setup…"
 echo ""
-echo -e "  ${DIM}Running interactive setup wizard…${RESET}"
-echo ""
-fidelios onboard
+if $INTERACTIVE; then
+  echo -e "  ${DIM}Running interactive setup wizard…${RESET}"
+  echo ""
+  fidelios onboard
+else
+  warn "Non-interactive mode: skipping setup wizard."
+  echo ""
+  echo -e "  Run ${BOLD}fidelios onboard${RESET} in your terminal to complete setup."
+  echo ""
+fi
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 echo ""
