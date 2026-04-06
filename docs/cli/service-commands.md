@@ -1,0 +1,144 @@
+---
+title: Service Commands
+summary: Run FideliOS as a persistent background service
+---
+
+Run FideliOS as a persistent background service that starts automatically at login and survives terminal close.
+
+## Overview
+
+By default, `fidelios run` runs in the foreground of your terminal — closing the terminal or pressing `Ctrl+C` stops the server.
+
+The `fidelios service` commands register FideliOS with your operating system's process manager:
+
+- **macOS** — [launchd](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html) (`~/Library/LaunchAgents/`)
+- **Linux** — [systemd user session](https://systemd.io/) (`~/.config/systemd/user/`)
+
+Once installed, the server:
+
+- Starts automatically at login
+- Restarts automatically on crash
+- Runs independently of any terminal window
+
+## `fidelios service install`
+
+Registers FideliOS with the OS process manager and starts it immediately.
+
+```sh
+fidelios service install
+```
+
+<Tabs>
+  <Tab title="macOS">
+    Writes a launchd plist to:
+    ```
+    ~/Library/LaunchAgents/nl.fidelios.server.plist
+    ```
+    Then loads it with `launchctl load`. The service starts immediately and restarts on login.
+
+    Expected output:
+    ```
+    ✓  Plist written to ~/Library/LaunchAgents/nl.fidelios.server.plist
+    ✓  Service loaded.
+    ◆  Service installed.
+    ```
+  </Tab>
+  <Tab title="Linux">
+    Writes a systemd user unit to:
+    ```
+    ~/.config/systemd/user/fidelios.service
+    ```
+    Then runs `systemctl --user enable --now fidelios`. The service starts immediately and is enabled for future logins.
+
+    Expected output:
+    ```
+    ✓  Unit file written to ~/.config/systemd/user/fidelios.service
+    ✓  Service enabled and started.
+    ◆  Service installed.
+    ```
+  </Tab>
+</Tabs>
+
+> **Onboard shortcut:** `fidelios onboard` offers to run `service install` at the end of the wizard. Answer `y` to skip this manual step.
+
+## `fidelios service uninstall`
+
+Stops and removes the background service.
+
+```sh
+fidelios service uninstall
+```
+
+<Tabs>
+  <Tab title="macOS">
+    Runs `launchctl unload` on the plist and removes it from `~/Library/LaunchAgents/`.
+  </Tab>
+  <Tab title="Linux">
+    Runs `systemctl --user stop` and `disable`, removes the unit file, and reloads the systemd daemon.
+  </Tab>
+</Tabs>
+
+Your data in `~/.fidelios/` is not affected. Reinstall at any time with `fidelios service install`.
+
+## `fidelios service status`
+
+Reports whether the service is installed, running, and accepting connections.
+
+```sh
+fidelios service status
+```
+
+Example output (macOS, running):
+
+```
+✓  Service file: ~/Library/LaunchAgents/nl.fidelios.server.plist
+✓  Service: running (PID 12345)
+✓  Port 3100: in use (server is listening)
+```
+
+| Check | What it means |
+|-------|---------------|
+| Service file | Whether the plist or unit file is present on disk |
+| Service | `running (PID …)` / `loaded but not running` / `not loaded` |
+| Port 3100 | Whether the server is currently accepting connections |
+
+## Recommended workflow
+
+```sh
+# First-time setup
+fidelios onboard
+
+# Install as a background service
+fidelios service install
+
+# Confirm it is running
+fidelios service status
+
+# Open the web UI
+open http://127.0.0.1:3100   # macOS
+xdg-open http://127.0.0.1:3100  # Linux
+```
+
+After this, FideliOS starts automatically at login. You do not need to run `fidelios run` again.
+
+## Viewing logs
+
+The service writes stdout and stderr to the FideliOS log file:
+
+```
+~/.fidelios/instances/default/fidelios.log
+```
+
+Tail it in real time:
+
+```sh
+tail -f ~/.fidelios/instances/default/fidelios.log
+```
+
+## Platform support
+
+| Platform | Process manager | Supported |
+|----------|----------------|-----------|
+| macOS | launchd | Yes |
+| Linux | systemd (user session) | Yes |
+| Windows | — | Not supported |
