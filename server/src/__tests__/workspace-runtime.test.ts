@@ -405,7 +405,7 @@ describe("realizeExecutionWorkspace", () => {
       const envContents = await fs.readFile(envPath, "utf8");
       const configContents = JSON.parse(await fs.readFile(configPath, "utf8"));
       const configStats = await fs.lstat(configPath);
-      const expectedInstanceId = "pap-885-show-worktree-banner";
+      const expectedInstanceId = "tst-885-show-worktree-banner";
       const expectedInstanceRoot = path.join(
         isolatedWorktreeHome,
         "instances",

@@ -185,7 +185,7 @@ describe("worktree merge history planner", () => {
     const plan = buildWorktreeMergePlan({
       companyId: "company-1",
       companyName: "FideliOS",
-      issuePrefix: "PAP",
+      issuePrefix: "TST",
       previewIssueCounterStart: 500,
       scopes: ["issues", "comments"],
       sourceIssues: [sharedIssue, branchOneIssue, branchTwoIssue],
@@ -209,7 +209,7 @@ describe("worktree merge history planner", () => {
     const plan = buildWorktreeMergePlan({
       companyId: "company-1",
       companyName: "FideliOS",
-      issuePrefix: "PAP",
+      issuePrefix: "TST",
       previewIssueCounterStart: 10,
       scopes: ["issues"],
       sourceIssues: [
@@ -251,7 +251,7 @@ describe("worktree merge history planner", () => {
     const plan = buildWorktreeMergePlan({
       companyId: "company-1",
       companyName: "FideliOS",
-      issuePrefix: "PAP",
+      issuePrefix: "TST",
       previewIssueCounterStart: 10,
       scopes: ["issues"],
       sourceIssues: [
@@ -298,7 +298,7 @@ describe("worktree merge history planner", () => {
     const plan = buildWorktreeMergePlan({
       companyId: "company-1",
       companyName: "FideliOS",
-      issuePrefix: "PAP",
+      issuePrefix: "TST",
       previewIssueCounterStart: 10,
       scopes: ["issues"],
       sourceIssues: [
@@ -355,7 +355,7 @@ describe("worktree merge history planner", () => {
     const plan = buildWorktreeMergePlan({
       companyId: "company-1",
       companyName: "FideliOS",
-      issuePrefix: "PAP",
+      issuePrefix: "TST",
       previewIssueCounterStart: 10,
       scopes: ["issues", "comments"],
       sourceIssues: [sharedIssue, newIssue],
@@ -417,7 +417,7 @@ describe("worktree merge history planner", () => {
     const plan = buildWorktreeMergePlan({
       companyId: "company-1",
       companyName: "FideliOS",
-      issuePrefix: "PAP",
+      issuePrefix: "TST",
       previewIssueCounterStart: 10,
       scopes: ["issues", "comments"],
       sourceIssues: [sharedIssue],
@@ -462,7 +462,7 @@ describe("worktree merge history planner", () => {
     const plan = buildWorktreeMergePlan({
       companyId: "company-1",
       companyName: "FideliOS",
-      issuePrefix: "PAP",
+      issuePrefix: "TST",
       previewIssueCounterStart: 10,
       scopes: ["issues"],
       sourceIssues: [sharedIssue],

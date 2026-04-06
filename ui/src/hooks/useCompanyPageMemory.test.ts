@@ -6,7 +6,7 @@ import {
 
 const companies = [
   { id: "for", issuePrefix: "FOR" },
-  { id: "pap", issuePrefix: "PAP" },
+  { id: "tst", issuePrefix: "TST" },
 ];
 
 describe("getRememberedPathOwnerCompanyId", () => {
@@ -56,7 +56,7 @@ describe("sanitizeRememberedPathForCompany", () => {
     expect(
       sanitizeRememberedPathForCompany({
         path: "/issues/TST-12",
-        companyPrefix: "PAP",
+        companyPrefix: "TST",
       }),
     ).toBe("/issues/TST-12");
   });
@@ -65,7 +65,7 @@ describe("sanitizeRememberedPathForCompany", () => {
     expect(
       sanitizeRememberedPathForCompany({
         path: "/issues/FOR-1",
-        companyPrefix: "PAP",
+        companyPrefix: "TST",
       }),
     ).toBe("/dashboard");
   });
@@ -74,7 +74,7 @@ describe("sanitizeRememberedPathForCompany", () => {
     expect(
       sanitizeRememberedPathForCompany({
         path: null,
-        companyPrefix: "PAP",
+        companyPrefix: "TST",
       }),
     ).toBe("/dashboard");
   });
@@ -83,7 +83,7 @@ describe("sanitizeRememberedPathForCompany", () => {
     expect(
       sanitizeRememberedPathForCompany({
         path: "/skills/skill-123/files/SKILL.md",
-        companyPrefix: "PAP",
+        companyPrefix: "TST",
       }),
     ).toBe("/skills/skill-123/files/SKILL.md");
   });

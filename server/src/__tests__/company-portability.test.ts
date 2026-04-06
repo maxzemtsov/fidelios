@@ -121,7 +121,7 @@ describe("company portability", () => {
       id: "company-1",
       name: "FideliOS",
       description: null,
-      issuePrefix: "PAP",
+      issuePrefix: "TST",
       brandColor: "#5c5fff",
       logoAssetId: null,
       logoUrl: null,
@@ -418,8 +418,8 @@ describe("company portability", () => {
     expect(asTextFile(exported.files["skills/fideliosai/fidelios/fidelios/SKILL.md"])).toContain("metadata:");
     expect(asTextFile(exported.files["skills/fideliosai/fidelios/fidelios/SKILL.md"])).toContain('kind: "github-dir"');
     expect(exported.files["skills/fideliosai/fidelios/fidelios/references/api.md"]).toBeUndefined();
-    expect(asTextFile(exported.files["skills/company/PAP/company-playbook/SKILL.md"])).toContain("# Company Playbook");
-    expect(asTextFile(exported.files["skills/company/PAP/company-playbook/references/checklist.md"])).toContain("# Checklist");
+    expect(asTextFile(exported.files["skills/company/TST/company-playbook/SKILL.md"])).toContain("# Company Playbook");
+    expect(asTextFile(exported.files["skills/company/TST/company-playbook/references/checklist.md"])).toContain("# Checklist");
 
     const extension = asTextFile(exported.files[".fidelios.yaml"]);
     expect(extension).toContain('schema: "fidelios/v1"');
@@ -529,8 +529,8 @@ describe("company portability", () => {
       skills: ["company-playbook"],
     });
 
-    expect(exported.files["skills/company/PAP/company-playbook/SKILL.md"]).toBeDefined();
-    expect(asTextFile(exported.files["skills/company/PAP/company-playbook/SKILL.md"])).toContain("# Company Playbook");
+    expect(exported.files["skills/company/TST/company-playbook/SKILL.md"]).toBeDefined();
+    expect(asTextFile(exported.files["skills/company/TST/company-playbook/SKILL.md"])).toContain("# Company Playbook");
     expect(exported.files["skills/fideliosai/fidelios/fidelios/SKILL.md"]).toBeUndefined();
   });
 
@@ -548,7 +548,7 @@ describe("company portability", () => {
     });
 
     expect(exported.warnings).toContainEqual(expect.stringContaining("nonexistent-skill"));
-    expect(exported.files["skills/company/PAP/company-playbook/SKILL.md"]).toBeDefined();
+    expect(exported.files["skills/company/TST/company-playbook/SKILL.md"]).toBeDefined();
     expect(exported.files["skills/fideliosai/fidelios/fidelios/SKILL.md"]).toBeDefined();
   });
 
@@ -562,7 +562,7 @@ describe("company portability", () => {
       id: "company-1",
       name: "FideliOS",
       description: null,
-      issuePrefix: "PAP",
+      issuePrefix: "TST",
       brandColor: "#5c5fff",
       logoAssetId: "logo-1",
       logoUrl: "/api/assets/logo-1/content",
@@ -1104,7 +1104,7 @@ describe("company portability", () => {
     });
 
     expect(exported.warnings).toContain("Project launch workspace Local Scratch was omitted from export because it does not have a portable repoUrl.");
-    expect(exported.warnings).toContain("Tasks pap-1, pap-2, pap-3 reference workspace workspace-1, but that workspace could not be exported portably.");
+    expect(exported.warnings).toContain("Tasks tst-1, tst-2, tst-3 reference workspace workspace-1, but that workspace could not be exported portably.");
     expect(exported.warnings.filter((warning) => warning.includes("workspace reference workspace-1 was omitted from export"))).toHaveLength(0);
     expect(exported.warnings.filter((warning) => warning.includes("could not be exported portably"))).toHaveLength(1);
   });
