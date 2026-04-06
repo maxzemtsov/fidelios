@@ -72,3 +72,14 @@ If `FIDELIOS_APPROVAL_ID` is set:
 - Comment in concise markdown: status line + bullets + links.
 - Self-assign via checkout only when explicitly @-mentioned.
 
+## Critical Safety Rules (applies to ALL agents, ALL adapters)
+
+- **NEVER** write `FIDELIOS_IN_WORKTREE=true` or `FIDELIOS_HOME` to `~/.fidelios/instances/default/.env`. This file must contain ONLY `FIDELIOS_AGENT_JWT_SECRET`.
+- **NEVER** publish npm releases or run `scripts/release.sh` without explicit board approval.
+- **NEVER** run `fidelios run` from the repository source directory — this triggers dev mode.
+- **NEVER** modify `~/.fidelios/instances/default/config.json` to point paths into `/var/folders/` or temporary directories.
+- **NEVER** delete database backups, `.env` files, or `config.json` without creating a backup first.
+- **NEVER** create new agents, modify production config, or change deployment settings without board approval.
+- **ALWAYS** work on feature branches (`feature/IRO-XXX`) — never commit to `main`.
+- **ALWAYS** verify production port is 3100 after any config-related changes.
+
