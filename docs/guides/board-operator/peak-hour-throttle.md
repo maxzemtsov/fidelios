@@ -1,9 +1,11 @@
 ---
 title: Peak-Hour Throttle
-summary: How FideliOS protects against high-cost automated runs during Anthropic's peak pricing window
+summary: How FideliOS protects against high-cost automated runs during Anthropic's peak pricing window (Claude local adapter only)
 ---
 
-FideliOS can automatically skip scheduled and automated agent runs during high-cost pricing windows. This feature is called the **peak-hour throttle** and applies to companies using the Claude adapter.
+FideliOS can automatically skip scheduled and automated agent runs during high-cost pricing windows. This feature is called the **peak-hour throttle**.
+
+> **Scope:** This feature only applies to companies using the **Claude (local) adapter** — the adapter that routes agent runs through Anthropic's API. Companies using any other adapter are not affected by peak-hour throttling.
 
 ## Why This Exists
 
@@ -36,7 +38,7 @@ This is the same HTTP status as a successful wakeup. Callers should inspect the 
 | `on_demand` (manual board runs) | **No — always runs** |
 | `assignment` (triggered by task assignment) | **No — always runs** |
 
-The throttle applies **company-wide** — it affects all agents, regardless of role or plan tier. Only the dispatch _source_ determines whether a run is blocked.
+When using the Claude (local) adapter, the throttle applies to **all agents in your company** — regardless of role or plan tier. Only the dispatch _source_ determines whether a run is blocked. Companies on other adapters are unaffected.
 
 ## Configuring Peak-Hour Windows
 
@@ -90,3 +92,11 @@ Because `timer` and `automation` dispatches are blocked during peak windows, kee
 ## Rate Limits
 
 There are no token-level caps or per-minute request limits tied to peak hours. The throttle is a binary gate: a dispatch either runs normally or is skipped entirely. Budget-based auto-pause is a separate mechanism — see [Costs and Budgets](/guides/board-operator/costs-and-budgets).
+
+## Anthropic's Multi-Agent Restrictions — FideliOS Is Not Affected
+
+Anthropic has introduced additional restrictions on certain multi-agent orchestration frameworks during peak hours. These restrictions target specific systems (such as OpenClaw) and limit their ability to dispatch sub-agents or run parallel workloads through the Anthropic API during high-demand windows.
+
+**FideliOS is not subject to these restrictions.** FideliOS operates as a fully independent agent orchestration platform and is not classified under the frameworks Anthropic has rate-limited. Your multi-agent workflows — including agent-to-agent task delegation, parallel agent runs, and automated pipelines — continue to work normally on FideliOS, even during Anthropic's peak windows (subject only to the peak-hour throttle described above, which you control).
+
+This is a meaningful advantage over affected frameworks: your team's automation is not disrupted by Anthropic's ecosystem-level restrictions.
