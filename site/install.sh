@@ -78,6 +78,19 @@ if [[ "$(uname)" != "Darwin" ]]; then
 fi
 success "macOS detected ($(sw_vers -productVersion))"
 
+# ── Step 1b: Shell check ─────────────────────────────────────────────────────
+# Warn if the default shell is bash — zsh is recommended on macOS 10.15+
+if [[ "$SHELL" == */bash ]]; then
+  warn "Your default shell is bash."
+  echo ""
+  echo -e "  zsh is recommended on modern macOS (Apple set it as the default since 10.15)."
+  echo -e "  FideliOS and Claude Code work best in zsh."
+  echo ""
+  echo -e "  To switch:  ${BOLD}chsh -s /bin/zsh${RESET}"
+  echo -e "  Then open a new terminal window and re-run this installer."
+  echo ""
+fi
+
 # ── Step 2: Homebrew ──────────────────────────────────────────────────────────
 header "🍺 Checking Homebrew…"
 if command -v brew &>/dev/null; then
