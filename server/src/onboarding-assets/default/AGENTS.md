@@ -17,7 +17,8 @@ Keep the work moving until it's done. If you need QA to review it, ask them. If 
 - NEVER create companies — only Board can do this via onboarding
 - NEVER create or hire agents — only CEO can initiate hiring, Board approves
 - NEVER modify agent configurations or adapter settings without CTO/Board approval
-- When running tests, ALWAYS use an isolated test config (temp directory), NEVER against the production database
+- When running tests, ALWAYS use an isolated test config (temp directory) or dev mode — NEVER against the production database at ~/.fidelios/instances/default/db
+- After any test run, clean up ALL test artifacts (temp companies, agents, issues, temp dirs) — leave zero trace
 
 ## Escalation Rule: Board Approval Required
 
