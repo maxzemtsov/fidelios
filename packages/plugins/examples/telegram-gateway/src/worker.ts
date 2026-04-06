@@ -105,10 +105,11 @@ async function saveMessageMapping(
   entityId: string,
   companyId: string,
 ): Promise<void> {
-  const current = await ctx.state.get<Record<string, MessageEntry>>({
+  const raw = await ctx.state.get({
     scopeKind: "instance",
     stateKey: MSG_MAP_KEY,
-  }) ?? {};
+  });
+  const current = (raw as Record<string, MessageEntry> | null) ?? {};
   current[String(telegramMessageId)] = { entityType, entityId, companyId };
   // Keep map bounded to last 1000 messages
   const keys = Object.keys(current);
@@ -123,10 +124,11 @@ async function lookupMessage(
   ctx: PluginContext,
   telegramMessageId: number,
 ): Promise<MessageEntry | null> {
-  const map = await ctx.state.get<Record<string, MessageEntry>>({
+  const raw = await ctx.state.get({
     scopeKind: "instance",
     stateKey: MSG_MAP_KEY,
   });
+  const map = raw as Record<string, MessageEntry> | null;
   return map?.[String(telegramMessageId)] ?? null;
 }
 
@@ -193,7 +195,8 @@ const plugin = definePlugin({
     currentContext = ctx;
     ctx.logger.info(`${PLUGIN_ID} setup`);
 
-    const config = await ctx.config.get() as TelegramConfig | null;
+    const raw = await ctx.config.get();
+    const config = raw as unknown as TelegramConfig | null;
     if (!config?.botToken || !config?.chatId) {
       ctx.logger.warn(`${PLUGIN_ID}: botToken and chatId required — not subscribing to events`);
       return;
@@ -233,20 +236,20 @@ const plugin = definePlugin({
     return { status: "ok", message: "Telegram Gateway ready" };
   },
 
-  async onConfigChanged(newConfig) {
-    currentConfig = newConfig as TelegramConfig;
+  async onConfigChanged(newConfig: Record<string, unknown>) {
+    currentConfig = newConfig as unknown as TelegramConfig;
   },
 
-  async onValidateConfig(config) {
+  async onValidateConfig(config: Record<string, unknown>) {
     const errors: string[] = [];
-    const c = config as TelegramConfig;
+    const c = config as unknown as TelegramConfig;
     if (!c.botToken) errors.push("botToken is required");
     if (!c.chatId) errors.push("chatId is required");
     if (c.chatId && !c.chatId.startsWith("-")) errors.push("chatId must be a negative number (supergroup IDs start with -)");
     if (c.topicRouting) {
       try { JSON.parse(c.topicRouting); } catch { errors.push("topicRouting must be valid JSON"); }
     }
-    return errors.length > 0 ? { valid: false, errors } : { valid: true };
+    return errors.length > 0 ? { ok: false, errors } : { ok: true };
   },
 
   async onWebhook(input: PluginWebhookInput) {
