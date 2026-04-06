@@ -93,4 +93,7 @@ See [Service Commands](/cli/service-commands) for full details.
   <Card title="Cloud VMs" href="/start/install/cloud-vms">
     Running FideliOS on AWS, Azure, or other cloud providers
   </Card>
+  <Card title="Updating FideliOS" href="/cli/updating">
+    Keep FideliOS up to date with the latest release
+  </Card>
 </CardGroup>
