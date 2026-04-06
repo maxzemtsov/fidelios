@@ -48,6 +48,28 @@ fidelios run
 
 Your data is preserved between restarts.
 
+## Run as a Background Service
+
+To keep FideliOS running after you close the terminal and have it start automatically at login, install it as a launchd service:
+
+```sh
+fidelios service install
+```
+
+Check that it is running:
+
+```sh
+fidelios service status
+```
+
+To remove the service:
+
+```sh
+fidelios service uninstall
+```
+
+See [Service Commands](/cli/service-commands) for full details.
+
 ## Where Your Data Lives
 
 | Data | Location |

@@ -25,6 +25,16 @@ Choose a specific instance:
 pnpm fidelios run --instance dev
 ```
 
+## `fidelios service`
+
+Run FideliOS as a persistent background service that survives terminal close. See [Service Commands](/cli/service-commands) for full reference.
+
+```sh
+fidelios service install    # register and start the service
+fidelios service status     # check if the service is running
+fidelios service uninstall  # remove the service
+```
+
 ## `fidelios onboard`
 
 Interactive first-time setup:

@@ -169,6 +169,7 @@
             "pages": [
               "cli/overview",
               "cli/setup-commands",
+              "cli/service-commands",
               "cli/control-plane-commands"
             ]
           }

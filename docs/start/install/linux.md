@@ -47,41 +47,33 @@ fidelios run
 
 Your data is preserved between restarts.
 
-## Run as a System Service (Optional)
+## Run as a Background Service
 
-To keep FideliOS running in the background and have it start automatically on boot, create a systemd service:
+To keep FideliOS running after you close the terminal and have it start automatically at login, install it as a systemd user service:
 
 ```sh
-sudo tee /etc/systemd/system/fidelios.service > /dev/null <<EOF
-[Unit]
-Description=FideliOS
-After=network.target
-
-[Service]
-ExecStart=/usr/local/bin/fidelios run
-Restart=on-failure
-User=$USER
-Environment=HOME=$HOME
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-sudo systemctl daemon-reload
-sudo systemctl enable --now fidelios
+fidelios service install
 ```
 
-Check status:
+Check that it is running:
 
 ```sh
-sudo systemctl status fidelios
+fidelios service status
 ```
 
 View logs:
 
 ```sh
-journalctl -u fidelios -f
+tail -f ~/.fidelios/instances/default/fidelios.log
 ```
+
+To remove the service:
+
+```sh
+fidelios service uninstall
+```
+
+See [Service Commands](/cli/service-commands) for full details.
 
 ## Where Your Data Lives
 
