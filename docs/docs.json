@@ -170,6 +170,7 @@
               "cli/overview",
               "cli/setup-commands",
               "cli/service-commands",
+              "cli/updating",
               "cli/control-plane-commands"
             ]
           }

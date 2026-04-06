@@ -98,4 +98,7 @@ Then open FideliOS using your Mac's local IP or Tailscale address. See [Tailscal
   <Card title="Adapters" href="/adapters/overview">
     Connect FideliOS to Claude, Codex, or your own model
   </Card>
+  <Card title="Updating FideliOS" href="/cli/updating">
+    Keep FideliOS up to date with the latest release
+  </Card>
 </CardGroup>
