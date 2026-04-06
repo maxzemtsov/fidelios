@@ -36,22 +36,49 @@ export function PeakHoursBanner({ peakHours, agents }: PeakHoursBannerProps) {
   const [dismissed, setDismissed] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
-  if (!peakHours || !isWithinPeakHours(peakHours) || dismissed) return null;
+  if (!peakHours || !peakHours.enabled || peakHours.windows.length === 0 || dismissed) return null;
 
+  const isActive = isWithinPeakHours(peakHours);
   const windowLabels = peakHours.windows.map((w) => `${w.startUtc}–${w.endUtc} UTC`).join(", ");
   const affectedAgents = (agents ?? []).filter((a) => a.adapterType === "claude_local");
 
+  const containerClass = isActive
+    ? "rounded-md border border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-500/25 dark:bg-amber-950/60"
+    : "rounded-md border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-500/25 dark:bg-blue-950/40";
+  const iconClass = isActive
+    ? "h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400"
+    : "h-4 w-4 shrink-0 text-blue-500 dark:text-blue-400";
+  const textClass = isActive
+    ? "text-sm font-medium text-amber-900 dark:text-amber-100"
+    : "text-sm font-medium text-blue-800 dark:text-blue-200";
+  const expandClass = isActive
+    ? "ml-1 inline-flex items-center gap-0.5 font-medium underline underline-offset-2 hover:text-amber-700 dark:hover:text-amber-200"
+    : "ml-1 inline-flex items-center gap-0.5 font-medium underline underline-offset-2 hover:text-blue-600 dark:hover:text-blue-300";
+  const subtextClass = isActive
+    ? "ml-1 text-xs font-normal text-amber-700 dark:text-amber-300"
+    : "ml-1 text-xs font-normal text-blue-600 dark:text-blue-400";
+  const dismissClass = isActive
+    ? "shrink-0 text-amber-600 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-100"
+    : "shrink-0 text-blue-500 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-100";
+  const listLinkClass = isActive
+    ? "text-sm text-amber-800 underline underline-offset-2 hover:text-amber-600 dark:text-amber-200 dark:hover:text-amber-100"
+    : "text-sm text-blue-700 underline underline-offset-2 hover:text-blue-500 dark:text-blue-300 dark:hover:text-blue-100";
+
+  const message = isActive
+    ? `Peak hours active (${windowLabels}) — automated heartbeats paused`
+    : `Peak hours scheduled (${windowLabels}) — heartbeats will pause during this window`;
+
   return (
-    <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-500/25 dark:bg-amber-950/60">
+    <div className={containerClass}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <Clock className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-          <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
-            Peak hours active ({windowLabels}) — automated heartbeats paused
+          <Clock className={iconClass} />
+          <p className={textClass}>
+            {message}
             {affectedAgents.length > 0 ? (
               <button
                 onClick={() => setExpanded((v) => !v)}
-                className="ml-1 inline-flex items-center gap-0.5 font-medium underline underline-offset-2 hover:text-amber-700 dark:hover:text-amber-200"
+                className={expandClass}
               >
                 for Agents
                 {expanded ? (
@@ -61,7 +88,7 @@ export function PeakHoursBanner({ peakHours, agents }: PeakHoursBannerProps) {
                 )}
               </button>
             ) : (
-              <span className="ml-1 text-xs font-normal text-amber-700 dark:text-amber-300">
+              <span className={subtextClass}>
                 (Claude local adapter)
               </span>
             )}
@@ -69,7 +96,7 @@ export function PeakHoursBanner({ peakHours, agents }: PeakHoursBannerProps) {
         </div>
         <button
           onClick={() => setDismissed(true)}
-          className="shrink-0 text-amber-600 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-100"
+          className={dismissClass}
           aria-label="Dismiss peak hours banner"
         >
           <X className="h-4 w-4" />
@@ -81,7 +108,7 @@ export function PeakHoursBanner({ peakHours, agents }: PeakHoursBannerProps) {
             <li key={a.id}>
               <Link
                 to={`/agents/${a.urlKey}`}
-                className="text-sm text-amber-800 underline underline-offset-2 hover:text-amber-600 dark:text-amber-200 dark:hover:text-amber-100"
+                className={listLinkClass}
               >
                 {a.name}
               </Link>
