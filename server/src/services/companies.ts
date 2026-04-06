@@ -26,6 +26,7 @@ import {
   principalPermissionGrants,
   companyMemberships,
 } from "@fideliosai/db";
+import type { PeakHoursConfig } from "@fideliosai/shared";
 import { notFound, unprocessable } from "../errors.js";
 
 export function companyService(db: Db) {
@@ -147,6 +148,12 @@ export function companyService(db: Db) {
     throw new Error("Unable to allocate unique issue prefix");
   }
 
+  const DEFAULT_PEAK_HOURS: PeakHoursConfig = {
+    enabled: true,
+    windows: [{ startUtc: "13:00", endUtc: "19:00" }],
+    policy: "skip",
+  };
+
   return {
     list: async () => {
       const rows = await getCompanyQuery(db);
@@ -164,7 +171,11 @@ export function companyService(db: Db) {
     },
 
     create: async (data: typeof companies.$inferInsert) => {
-      const created = await createCompanyWithUniquePrefix(data);
+      const withDefaults = {
+        ...data,
+        peakHours: data.peakHours ?? DEFAULT_PEAK_HOURS,
+      };
+      const created = await createCompanyWithUniquePrefix(withDefaults);
       const row = await getCompanyQuery(db)
         .where(eq(companies.id, created.id))
         .then((rows) => rows[0] ?? null);
