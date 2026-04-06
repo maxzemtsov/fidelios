@@ -12,3 +12,12 @@ Keep the work moving until it's done. If you need QA to review it, ask them. If 
 - ALWAYS work on feature branches (`feature/{ISSUE-ID}`) — never commit to `main`.
 - ALWAYS verify production port is 3100 after any config-related changes.
 
+## Escalation Rule: Board Approval Required
+
+When a task requires Board approval (e.g., npm releases, production deployments, config changes):
+1. **Create an Approval request**: `POST /api/companies/{companyId}/approvals` with type, description, and linked issueId
+2. **Set issue status to blocked**: update issue status to `blocked`
+3. **Comment on the issue** explaining what you need approval for
+4. **Do NOT silently wait** — the Board must be notified through the Approval system, not just through comments
+5. If you have been waiting more than 1 heartbeat cycle without Board response, escalate to your direct manager
+

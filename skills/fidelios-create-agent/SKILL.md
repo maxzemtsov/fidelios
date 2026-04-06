@@ -149,7 +149,8 @@ Your `promptTemplate` must include:
 - ALWAYS verify production port is 3100 after any config-related changes
 ```
 
-6. **Task workflow**: Checkout → work → comment → update status (matching HEARTBEAT.md patterns)
+6. **Escalation rule**: When Board approval is needed, agent MUST create an Approval request via API (not just comment and wait). Set issue to `blocked` and escalate to manager after 1 heartbeat with no response.
+7. **Task workflow**: Checkout → work → comment → update status (matching HEARTBEAT.md patterns)
 
 Example for a Frontend Engineer:
 ```
