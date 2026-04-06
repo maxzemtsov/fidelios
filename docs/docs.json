@@ -67,6 +67,7 @@
               "guides/board-operator/delegation",
               "guides/board-operator/approvals",
               "guides/board-operator/costs-and-budgets",
+              "guides/board-operator/peak-hour-throttle",
               "guides/board-operator/activity-log",
               "guides/board-operator/importing-and-exporting"
             ]
