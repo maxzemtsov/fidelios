@@ -20,7 +20,7 @@ describe("opencode local skill sync", () => {
     cleanupDirs.clear();
   });
 
-  it("reports configured FideliOS skills and installs them into the shared Claude/OpenCode skills home", async () => {
+  it("reports configured FideliOS skills and installs them into the OpenCode skills home", async () => {
     const home = await makeTempDir("fidelios-opencode-skill-sync-");
     cleanupDirs.add(home);
 
@@ -40,14 +40,14 @@ describe("opencode local skill sync", () => {
 
     const before = await listOpenCodeSkills(ctx);
     expect(before.mode).toBe("persistent");
-    expect(before.warnings).toContain("OpenCode currently uses the shared Claude skills home (~/.claude/skills).");
+    expect(before.warnings ?? []).toHaveLength(0);
     expect(before.desiredSkills).toContain(fideliosKey);
     expect(before.entries.find((entry) => entry.key === fideliosKey)?.required).toBe(true);
     expect(before.entries.find((entry) => entry.key === fideliosKey)?.state).toBe("missing");
 
     const after = await syncOpenCodeSkills(ctx, [fideliosKey]);
     expect(after.entries.find((entry) => entry.key === fideliosKey)?.state).toBe("installed");
-    expect((await fs.lstat(path.join(home, ".claude", "skills", "fidelios"))).isSymbolicLink()).toBe(true);
+    expect((await fs.lstat(path.join(home, ".opencode", "skills", "fidelios"))).isSymbolicLink()).toBe(true);
   });
 
   it("keeps required bundled FideliOS skills installed even when the desired set is emptied", async () => {
@@ -85,6 +85,6 @@ describe("opencode local skill sync", () => {
     const after = await syncOpenCodeSkills(clearedCtx, []);
     expect(after.desiredSkills).toContain(fideliosKey);
     expect(after.entries.find((entry) => entry.key === fideliosKey)?.state).toBe("installed");
-    expect((await fs.lstat(path.join(home, ".claude", "skills", "fidelios"))).isSymbolicLink()).toBe(true);
+    expect((await fs.lstat(path.join(home, ".opencode", "skills", "fidelios"))).isSymbolicLink()).toBe(true);
   });
 });

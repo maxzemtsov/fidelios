@@ -151,6 +151,7 @@ Your `promptTemplate` must include:
 
 6. **Escalation rule**: When Board approval is needed, agent MUST create an Approval request via API (not just comment and wait). Set issue to `blocked` and escalate to manager after 1 heartbeat with no response.
 7. **Task workflow**: Checkout → work → comment → update status (matching HEARTBEAT.md patterns)
+8. **1Password Access** (if the role needs credentials): Include the `## 1Password Access` section from the `op-secrets` skill (§8). This ensures the agent knows how to securely access project-specific vaults based on the current Issue's Project. The `op-secrets` skill must be in the company's skill library for this to work.
 
 Example for a Frontend Engineer:
 ```
