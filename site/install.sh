@@ -209,8 +209,11 @@ if $INTERACTIVE; then
   echo ""
   fidelios onboard
 else
-  warn "Non-interactive mode: skipping setup wizard."
+  # Non-interactive (curl | bash): create a quickstart config so `fidelios run`
+  # works out of the box. Users can re-run `fidelios onboard` later to customise.
+  info "Non-interactive mode: running 'fidelios onboard --yes' with quickstart defaults."
   echo ""
+  fidelios onboard --yes || warn "fidelios onboard --yes exited non-zero — re-run manually in an interactive shell."
 fi
 
 # ── Done ──────────────────────────────────────────────────────────────────────

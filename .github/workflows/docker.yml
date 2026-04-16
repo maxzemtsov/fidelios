@@ -2,9 +2,11 @@ name: Docker
 
 on:
   push:
+    branches:
+      - main
     tags:
-      - "v0.*.0"
-      - "v[1-9]*.0"
+      - "v*"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -36,11 +38,15 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}
+          # `latest` points at the most recent released (non-prerelease) tag.
+          # `nightly` points at the tip of main for users who want bleeding-edge.
+          # `{{version}}` / `{{major}}.{{minor}}` give end-users pinnable releases.
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ github.ref_type == 'tag' && !contains(github.ref, '-') }}
+            type=raw,value=nightly,enable={{is_default_branch}}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=sha
+            type=sha,format=short
 
       - name: Build and push
         uses: docker/build-push-action@v6

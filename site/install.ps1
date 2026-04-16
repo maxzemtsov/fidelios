@@ -1,12 +1,8 @@
 #Requires -Version 5.1
-# FideliOS Windows Docker installer
+# FideliOS zero-knowledge Windows installer
 # Usage: iwr -useb https://fidelios.nl/install.ps1 | iex
+#        iwr -useb https://fidelios.nl/install.ps1 | iex; fidelios onboard
 $ErrorActionPreference = "Stop"
-
-$IMAGE     = "ghcr.io/fideliosai/fidelios:latest"
-$CONTAINER = "fidelios"
-$PORT      = 3100
-$DOCKER_WAIT_TIMEOUT = 120  # seconds
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 function Write-Info    { param([string]$Msg) Write-Host "  -> $Msg" -ForegroundColor Cyan }
@@ -15,6 +11,18 @@ function Write-Warn    { param([string]$Msg) Write-Host "  !! $Msg" -ForegroundC
 function Write-Err     { param([string]$Msg) Write-Host "  XX $Msg" -ForegroundColor Red }
 function Write-Header  { param([string]$Msg) Write-Host "`n$Msg" -ForegroundColor White }
 
+function Refresh-Path {
+    $machinePath = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
+    $userPath    = [System.Environment]::GetEnvironmentVariable("Path", "User")
+    if ($machinePath -and $userPath) {
+        $env:Path = "$machinePath;$userPath"
+    } elseif ($machinePath) {
+        $env:Path = $machinePath
+    } elseif ($userPath) {
+        $env:Path = $userPath
+    }
+}
+
 # ── Banner ────────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "  +-------------------------------------+" -ForegroundColor Cyan
@@ -22,105 +30,99 @@ Write-Host "  |    FideliOS Windows Installer       |" -ForegroundColor Cyan
 Write-Host "  +-------------------------------------+" -ForegroundColor Cyan
 Write-Host ""
 
-# ── Step 1: Check / install Docker Desktop ────────────────────────────────────
-Write-Header "Checking Docker Desktop..."
-$dockerCmd = Get-Command docker -ErrorAction SilentlyContinue
+# ── Step 1: Check / install Node.js ───────────────────────────────────────────
+Write-Header "Checking Node.js..."
+$nodeCmd = Get-Command node -ErrorAction SilentlyContinue
 
-if ($dockerCmd) {
-    Write-Success "Docker already installed ($((docker --version) -replace '\n',''))"
+if ($nodeCmd) {
+    $nodeVersion = & node --version 2>$null
+    Write-Success "Node.js already installed ($nodeVersion)"
 } else {
-    Write-Warn "Docker Desktop not found."
-    Write-Info "Downloading Docker Desktop installer..."
+    Write-Warn "Node.js not found. Installing..."
 
-    $installerUrl  = "https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe"
-    $installerPath = "$env:TEMP\DockerDesktopInstaller.exe"
+    $wingetCmd = Get-Command winget -ErrorAction SilentlyContinue
+    if ($wingetCmd) {
+        Write-Info "Installing Node.js LTS via winget..."
+        try {
+            & winget install --id OpenJS.NodeJS.LTS --silent `
+                --accept-package-agreements --accept-source-agreements | Out-Null
+        } catch {
+            Write-Warn "winget install returned an error: $_"
+        }
+        Refresh-Path
+    }
 
-    try {
-        Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath -UseBasicParsing
-    } catch {
-        Write-Err "Failed to download Docker Desktop: $_"
+    if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+        Write-Info "winget unavailable or failed — falling back to nvm-windows."
+        $nvmInstallerUrl  = "https://github.com/coreybutler/nvm-windows/releases/latest/download/nvm-setup.exe"
+        $nvmInstallerPath = Join-Path $env:TEMP "nvm-setup.exe"
+        Invoke-WebRequest -Uri $nvmInstallerUrl -OutFile $nvmInstallerPath -UseBasicParsing
+        Write-Info "Running nvm-windows installer (follow the prompts)..."
+        Start-Process -FilePath $nvmInstallerPath -ArgumentList "/SILENT" -Wait
+        Refresh-Path
+        if (Get-Command nvm -ErrorAction SilentlyContinue) {
+            & nvm install lts
+            & nvm use lts
+        }
+    }
+
+    Refresh-Path
+    if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+        Write-Err "Node.js is still not on PATH after installation. Open a new PowerShell window and re-run this script."
+        Write-Err "Manual install: https://nodejs.org/en/download"
         exit 1
     }
-
-    Write-Info "Launching Docker Desktop installer — please follow the prompts..."
-    Start-Process -FilePath $installerPath -ArgumentList "install", "--quiet" -Wait
-
-    if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
-        # Reload PATH
-        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
-                    [System.Environment]::GetEnvironmentVariable("Path", "User")
-    }
-
-    if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
-        Write-Err "Docker was installed but 'docker' is not on PATH yet. Please restart your terminal and re-run this script."
-        exit 1
-    }
-
-    Write-Success "Docker Desktop installed"
+    Write-Success "Node.js installed ($((& node --version).Trim()))"
 }
 
-# ── Step 2: Wait for Docker daemon ────────────────────────────────────────────
-Write-Header "Waiting for Docker daemon..."
-$elapsed = 0
-while ($true) {
-    $result = docker info 2>&1
-    if ($LASTEXITCODE -eq 0) { break }
-
-    if ($elapsed -ge $DOCKER_WAIT_TIMEOUT) {
-        Write-Err "Docker daemon did not start within ${DOCKER_WAIT_TIMEOUT}s."
-        Write-Err "Please start Docker Desktop manually and re-run this script."
-        exit 1
-    }
-
-    Write-Info "Waiting... (${elapsed}s elapsed)"
-    Start-Sleep -Seconds 5
-    $elapsed += 5
-}
-Write-Success "Docker daemon is ready"
-
-# ── Step 3: Remove existing container (idempotent) ────────────────────────────
-Write-Header "Preparing container..."
-$existing = docker ps -a --filter "name=^${CONTAINER}$" --format "{{.Names}}" 2>&1
-if ($existing -match "^${CONTAINER}$") {
-    Write-Warn "Existing '$CONTAINER' container found — removing..."
-    docker stop $CONTAINER 2>&1 | Out-Null
-    docker rm   $CONTAINER 2>&1 | Out-Null
-    Write-Success "Removed existing container"
+# ── Step 2: Install the FideliOS CLI globally ─────────────────────────────────
+Write-Header "Installing FideliOS CLI..."
+$existing = Get-Command fidelios -ErrorAction SilentlyContinue
+if ($existing) {
+    $currentVersion = & fidelios --version 2>$null
+    Write-Info "Updating FideliOS CLI (current: $currentVersion)..."
+} else {
+    Write-Info "Installing FideliOS CLI..."
 }
 
-# ── Step 4: Pull image ────────────────────────────────────────────────────────
-Write-Header "Pulling FideliOS image..."
-docker pull $IMAGE
+& npm install -g fidelios@latest
 if ($LASTEXITCODE -ne 0) {
-    Write-Err "Failed to pull image '$IMAGE'"
+    Write-Err "npm install -g fidelios@latest failed. If you see EACCES/permission errors, run 'npm config set prefix %USERPROFILE%\.npm-global' and re-run this script."
     exit 1
 }
-Write-Success "Image ready"
+Refresh-Path
 
-# ── Step 5: Run container ─────────────────────────────────────────────────────
-Write-Header "Starting FideliOS..."
-docker run -d `
-    -p "${PORT}:${PORT}" `
-    --name $CONTAINER `
-    --restart unless-stopped `
-    $IMAGE
-
-if ($LASTEXITCODE -ne 0) {
-    Write-Err "Failed to start container"
+$newVersion = & fidelios --version 2>$null
+if (-not $newVersion) {
+    Write-Err "fidelios command not on PATH after install. Open a new PowerShell window and run 'fidelios --version'."
     exit 1
 }
-Write-Success "Container '$CONTAINER' started"
+Write-Success "FideliOS CLI ready ($newVersion)"
 
-# ── Step 6: Open browser ──────────────────────────────────────────────────────
-$URL = "http://localhost:$PORT"
-Write-Info "Opening browser at $URL..."
-Start-Process $URL
+# ── Step 3: Setup wizard (interactive only) ───────────────────────────────────
+$INTERACTIVE = [Environment]::UserInteractive -and $Host.UI.RawUI -ne $null -and -not $env:NONINTERACTIVE
+Write-Header "Starting FideliOS setup..."
+if ($INTERACTIVE) {
+    Write-Info "Running interactive setup wizard..."
+    Write-Host ""
+    & fidelios onboard
+} else {
+    Write-Warn "Non-interactive shell detected — skipping the setup wizard."
+    Write-Host ""
+    Write-Host "  Next step (run in a real PowerShell window):" -ForegroundColor DarkGray
+    Write-Host "     fidelios onboard" -ForegroundColor White
+    Write-Host ""
+}
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 Write-Host ""
-Write-Host "  FideliOS is running!" -ForegroundColor Green
+Write-Host "  OK FideliOS installation complete!" -ForegroundColor Green
 Write-Host ""
-Write-Host "  Open $URL in your browser to get started." -ForegroundColor DarkGray
-Write-Host "  Stop:  docker stop $CONTAINER" -ForegroundColor DarkGray
-Write-Host "  Logs:  docker logs -f $CONTAINER" -ForegroundColor DarkGray
+Write-Host "  Start FideliOS with: " -NoNewline -ForegroundColor DarkGray
+Write-Host "fidelios run" -ForegroundColor White
+Write-Host "  Then open:            " -NoNewline -ForegroundColor DarkGray
+Write-Host "http://127.0.0.1:3100" -ForegroundColor White
+Write-Host ""
+Write-Host "  To run in the background at login, use Task Scheduler or nssm." -ForegroundColor DarkGray
+Write-Host "  Native 'fidelios service install' on Windows is coming soon." -ForegroundColor DarkGray
 Write-Host ""

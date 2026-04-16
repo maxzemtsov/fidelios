@@ -34,13 +34,19 @@ fidelios service install
     ```
     ~/Library/LaunchAgents/nl.fidelios.server.plist
     ```
-    Then loads it with `launchctl load`. The service starts immediately and restarts on login.
+    Then loads it with `launchctl load` and immediately force-starts it with
+    `launchctl kickstart`. `RunAtLoad=true` + `KeepAlive=true` in the plist mean
+    the service starts automatically at login and is restarted by launchd on any
+    exit (clean or crash). The plist also seeds `PATH` with the common adapter
+    locations (`~/.claude/local/bin`, `~/.codex/bin`, `/opt/homebrew/bin`, …) so
+    agent heartbeats can resolve `claude`, `codex`, `gh`, `git`, and friends.
 
     Expected output:
     ```
     ✓  Plist written to ~/Library/LaunchAgents/nl.fidelios.server.plist
-    ✓  Service loaded.
-    ◆  Service installed.
+    ✓  Service registered.
+    ✓  Service started.
+    ◆  FideliOS service installed. It will restart automatically on crash and at login.
     ```
   </Tab>
   <Tab title="Linux">
@@ -134,6 +140,28 @@ Tail it in real time:
 ```sh
 tail -f ~/.fidelios/instances/default/fidelios.log
 ```
+
+## Stopping everything (`fidelios stop`)
+
+If you see stale processes — leftover embedded PostgreSQL, stuck plugin workers,
+or a port still bound after `Ctrl+C` — use:
+
+```sh
+fidelios stop
+```
+
+This walks the fidelios process tree (server, embedded-postgres and its
+background workers, plugin workers, anything bound to ports 3100-3110 / 5173 /
+54331), sends SIGTERM, then SIGKILL to stragglers, and removes any stale
+`~/.fidelios/instances/*/db/postmaster.pid` so the next `fidelios run` can start
+cleanly.
+
+Flags:
+
+| Flag | Purpose |
+|------|---------|
+| `--service` | Also `launchctl unload` / `systemctl --user stop` the background service |
+| `--dry-run` / `-n` | Print what would be killed without killing anything |
 
 ## Platform support
 

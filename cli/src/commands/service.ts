@@ -35,8 +35,38 @@ function resolveLogPath(): string {
   return path.resolve(instanceRoot, "fidelios.log");
 }
 
-function buildPlist(nodeBin: string, fideliosBin: string, logPath: string): string {
+export function buildServicePath(nodeBin: string): string {
   const homeDir = os.homedir();
+  const nodeBinDir = path.dirname(nodeBin);
+  // Order matters: node first, then common adapter CLI locations, then system dirs.
+  // launchd/systemd start with an empty PATH, so anything the server shells out to
+  // (claude, codex, gh, git, brew, ...) must resolve via this list.
+  const candidates = [
+    nodeBinDir,
+    path.join(homeDir, ".claude", "local", "bin"),
+    path.join(homeDir, ".codex", "bin"),
+    path.join(homeDir, ".cargo", "bin"),
+    path.join(homeDir, ".npm-global", "bin"),
+    path.join(homeDir, ".nvm", "versions", "node", "current", "bin"),
+    path.join(homeDir, "bin"),
+    path.join(homeDir, ".local", "bin"),
+    "/opt/homebrew/bin",
+    "/opt/homebrew/sbin",
+    "/usr/local/bin",
+    "/usr/local/sbin",
+    "/usr/bin",
+    "/usr/sbin",
+    "/bin",
+    "/sbin",
+  ];
+  // Dedupe while preserving order.
+  const seen = new Set<string>();
+  return candidates.filter((dir) => (seen.has(dir) ? false : (seen.add(dir), true))).join(":");
+}
+
+export function buildPlist(nodeBin: string, fideliosBin: string, logPath: string): string {
+  const homeDir = os.homedir();
+  const servicePath = buildServicePath(nodeBin);
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -54,7 +84,7 @@ function buildPlist(nodeBin: string, fideliosBin: string, logPath: string): stri
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
-        <string>${path.dirname(nodeBin)}:/usr/local/bin:/usr/bin:/bin</string>
+        <string>${servicePath}</string>
         <key>HOME</key>
         <string>${homeDir}</string>
         <key>NODE_ENV</key>
@@ -65,13 +95,10 @@ function buildPlist(nodeBin: string, fideliosBin: string, logPath: string): stri
     <string>${homeDir}</string>
 
     <key>RunAtLoad</key>
-    <false/>
+    <true/>
 
     <key>KeepAlive</key>
-    <dict>
-        <key>SuccessfulExit</key>
-        <false/>
-    </dict>
+    <true/>
 
     <key>ThrottleInterval</key>
     <integer>10</integer>
@@ -85,9 +112,10 @@ function buildPlist(nodeBin: string, fideliosBin: string, logPath: string): stri
 `;
 }
 
-function buildSystemdUnit(fideliosBin: string, logPath: string): string {
+export function buildSystemdUnit(fideliosBin: string, logPath: string): string {
   const homeDir = os.homedir();
   const nodeBin = resolveBinary("node");
+  const servicePath = buildServicePath(nodeBin);
   return `[Unit]
 Description=FideliOS Server
 After=network.target
@@ -98,7 +126,8 @@ ExecStart=${nodeBin} ${fideliosBin} run
 WorkingDirectory=${homeDir}
 Environment=NODE_ENV=production
 Environment=HOME=${homeDir}
-Restart=on-failure
+Environment=PATH=${servicePath}
+Restart=always
 RestartSec=10
 StandardOutput=append:${logPath}
 StandardError=append:${logPath}
@@ -174,15 +203,29 @@ async function installMacOS(nodeBin: string, fideliosBin: string, logPath: strin
   spinner.start("Loading service with launchctl...");
   try {
     execFileSync("launchctl", ["load", PLIST_PATH]);
-    spinner.stop(pc.green("Service registered and starting."));
+    spinner.stop(pc.green("Service registered."));
   } catch (err) {
     spinner.stop(pc.red("launchctl load failed."));
     p.log.error(String(err));
     process.exit(1);
   }
 
+  // RunAtLoad=true should start the service on `load`, but that only fires once per
+  // user session. `kickstart -k` force-restarts it to guarantee it runs right now
+  // even when the user previously uninstalled a stale copy in the same session.
+  const uid = typeof process.getuid === "function" ? process.getuid() : null;
+  if (uid !== null) {
+    const target = `gui/${uid}/${LAUNCHD_LABEL}`;
+    try {
+      execFileSync("launchctl", ["kickstart", "-k", target], { stdio: "ignore" });
+      p.log.success(pc.green("Service started."));
+    } catch {
+      p.log.warn(pc.yellow("Could not force-start the service — check `fidelios service status`."));
+    }
+  }
+
   p.log.message(pc.dim(`Logs: tail -f ${logPath}`));
-  p.outro(pc.green("FideliOS service installed. It will restart automatically on crash."));
+  p.outro(pc.green("FideliOS service installed. It will restart automatically on crash and at login."));
 }
 
 async function installLinux(fideliosBin: string, logPath: string): Promise<void> {

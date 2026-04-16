@@ -78,9 +78,10 @@ const env = {
   FIDELIOS_UI_DEV_MIDDLEWARE: "true",
 };
 
-if (mode === "dev") {
-  env.FIDELIOS_DEV_SERVER_STATUS_FILE = devServerStatusFilePath;
-}
+// Both modes use dev-runner's own file watcher + status file so the
+// `autoRestartDevServerWhenIdle` toggle works consistently. In watch mode we also
+// auto-apply migrations (legacy behavior), in dev:once we surface the prompt.
+env.FIDELIOS_DEV_SERVER_STATUS_FILE = devServerStatusFilePath;
 
 if (mode === "watch") {
   env.FIDELIOS_MIGRATION_PROMPT ??= "never";
@@ -222,8 +223,6 @@ function ensureDevStatusDirectory() {
 }
 
 function writeDevServerStatus() {
-  if (mode !== "dev") return;
-
   ensureDevStatusDirectory();
   const changedPaths = [...dirtyPaths].sort();
   writeFileSync(
@@ -241,7 +240,6 @@ function writeDevServerStatus() {
 }
 
 function clearDevServerStatus() {
-  if (mode !== "dev") return;
   rmSync(devServerStatusFilePath, { force: true });
 }
 
@@ -402,7 +400,7 @@ async function markChildAsCurrent() {
 }
 
 async function scanForBackendChanges() {
-  if (mode !== "dev" || scanInFlight || restartInFlight) return;
+  if (scanInFlight || restartInFlight) return;
   scanInFlight = true;
   try {
     const nextSnapshot = collectWatchedSnapshot();
@@ -455,10 +453,13 @@ async function stopChildForRestart() {
 async function startServerChild() {
   await buildPluginSdk();
 
-  const serverScript = mode === "watch" ? "dev:watch" : "dev";
+  // Always spawn the plain `dev` script — dev-runner does the file watching itself
+  // (and the auto-restart-when-idle toggle depends on being in control of restarts).
+  // Previously watch mode used `dev:watch` which delegated to tsx's internal
+  // watcher, which restarted the server unconditionally and bypassed the toggle.
   child = spawn(
     pnpmBin,
-    ["--filter", "@fideliosai/server", serverScript, ...forwardedArgs],
+    ["--filter", "@fideliosai/server", "dev", ...forwardedArgs],
     { stdio: "inherit", env, shell: process.platform === "win32" },
   );
 
@@ -486,7 +487,7 @@ async function startServerChild() {
 }
 
 async function maybeAutoRestartChild() {
-  if (mode !== "dev" || restartInFlight || !child) return;
+  if (restartInFlight || !child) return;
   if (dirtyPaths.size === 0 && pendingMigrations.length === 0) return;
 
   restartInFlight = true;
@@ -494,16 +495,31 @@ async function maybeAutoRestartChild() {
   try {
     health = await getDevHealthPayload();
   } catch {
+    // Server may be booting or briefly unavailable; wait for next tick.
     restartInFlight = false;
     return;
   }
 
   const devServer = health?.devServer;
-  if (!devServer?.enabled || devServer.autoRestartEnabled !== true) {
+  if (!devServer?.enabled) {
     restartInFlight = false;
     return;
   }
-  if ((devServer.activeRunCount ?? 0) > 0) {
+
+  const toggleOn = devServer.autoRestartEnabled === true;
+  const activeRuns = devServer.activeRunCount ?? 0;
+
+  // Decision matrix:
+  //   dev:once (mode === "dev") + toggle OFF  → never auto-restart (user drives it)
+  //   dev:once + toggle ON                    → wait for idle, then restart
+  //   watch    + toggle OFF                   → restart immediately (legacy behaviour)
+  //   watch    + toggle ON                    → wait for idle, then restart
+  if (mode === "dev" && !toggleOn) {
+    restartInFlight = false;
+    return;
+  }
+  if (toggleOn && activeRuns > 0) {
+    // Idle wait — poll loop will retry.
     restartInFlight = false;
     return;
   }
@@ -526,8 +542,8 @@ async function maybeAutoRestartChild() {
 }
 
 function installDevIntervals() {
-  if (mode !== "dev") return;
-
+  // Run in both dev:once and watch modes so the auto-restart toggle is honoured
+  // regardless of how the developer launched FideliOS.
   scanTimer = setInterval(() => {
     void scanForBackendChanges();
   }, scanIntervalMs);

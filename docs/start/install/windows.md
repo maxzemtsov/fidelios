@@ -22,9 +22,9 @@ iwr -useb https://fidelios.nl/install.ps1 | iex
 
 The script:
 
-1. Checks for Node.js and installs it if missing
-2. Installs the `fidelios` CLI
-3. Runs a quick health check
+1. Checks for Node.js — installs the LTS via `winget` (or nvm-windows as fallback) if missing
+2. Installs the `fidelios` CLI globally via `npm install -g fidelios@latest`
+3. Runs the interactive setup wizard (`fidelios onboard`) when launched from a real PowerShell window
 
 > If you see a security warning about running scripts, open PowerShell as Administrator and run:
 > `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser`
@@ -60,6 +60,18 @@ Your data is preserved between restarts.
 | Database | `%USERPROFILE%\.fidelios\instances\default\db` |
 | Secrets key | `%USERPROFILE%\.fidelios\instances\default\secrets\master.key` |
 | Logs | `%USERPROFILE%\.fidelios\instances\default\logs` |
+
+## Run in the Background
+
+Windows does not yet ship a `fidelios service install` command (it works on macOS and Linux today — see [Service Commands](/cli/service-commands)). Until that lands you have two options:
+
+1. **Task Scheduler** — create a task that runs `fidelios run` at logon with a hidden window.
+2. **[nssm](https://nssm.cc/)** — wrap the CLI as a real Windows service:
+
+   ```powershell
+   nssm install FideliOS "C:\Path\To\node.exe" "C:\Users\you\AppData\Roaming\npm\node_modules\fidelios\dist\index.js" run
+   nssm start FideliOS
+   ```
 
 ## Using WSL (Optional)
 
