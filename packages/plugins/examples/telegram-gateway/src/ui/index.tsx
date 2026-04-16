@@ -117,6 +117,7 @@ interface CreateTopicsResult {
   ok: boolean;
   topics?: Record<string, number>;
   error?: string;
+  newChatId?: string;
 }
 
 interface TestConnectionResult {
@@ -169,7 +170,10 @@ export function TelegramGatewaySettingsPage({ context: _context }: PluginSetting
     try {
       const result = (await createTopics({ companyId })) as CreateTopicsResult;
       if (result.ok) {
-        toast({ title: "Forum topics created", body: "Routing is now active.", tone: "success" });
+        const body = result.newChatId
+          ? `Routing is now active. Chat ID updated to supergroup ID: ${result.newChatId}`
+          : "Routing is now active.";
+        toast({ title: "Forum topics created", body, tone: "success" });
         refresh();
       } else {
         const msg = result.error ?? "Failed to create topics";

@@ -238,13 +238,33 @@ const plugin = definePlugin({
 
       const topicMap: Record<string, number> = {};
       const errors: string[] = [];
+      let effectiveChatId = cfg.chatId;
+      let migratedChatId: string | undefined;
 
       for (const def of TOPIC_DEFINITIONS) {
         try {
-          const result = await telegramRequest(ctx, cfg.botToken, "createForumTopic", {
-            chat_id: cfg.chatId,
+          let result = await telegramRequest(ctx, cfg.botToken, "createForumTopic", {
+            chat_id: effectiveChatId,
             name: def.name,
-          }) as { ok: boolean; result?: { message_thread_id: number }; description?: string };
+          }) as { ok: boolean; result?: { message_thread_id: number }; description?: string; parameters?: { migrate_to_chat_id?: number } };
+
+          // When Topics/Forum mode is enabled on a regular group, Telegram upgrades it to a
+          // supergroup and the chat ID changes.  The API returns the new ID in
+          // parameters.migrate_to_chat_id.  Detect this, switch IDs, and retry.
+          if (!result.ok && result.parameters?.migrate_to_chat_id) {
+            const newChatId = String(result.parameters.migrate_to_chat_id);
+            ctx.logger.info(`${PLUGIN_ID}: group migrated to supergroup, retrying with new chat ID`, {
+              oldChatId: effectiveChatId,
+              newChatId,
+            });
+            effectiveChatId = newChatId;
+            migratedChatId = newChatId;
+
+            result = await telegramRequest(ctx, cfg.botToken, "createForumTopic", {
+              chat_id: effectiveChatId,
+              name: def.name,
+            }) as { ok: boolean; result?: { message_thread_id: number }; description?: string; parameters?: { migrate_to_chat_id?: number } };
+          }
 
           if (result.ok && result.result?.message_thread_id) {
             topicMap[def.key] = result.result.message_thread_id;
@@ -263,7 +283,12 @@ const plugin = definePlugin({
       await ctx.state.set({ scopeKind: "company", scopeId: companyId, stateKey: TOPICS_STATE_KEY }, topicMap);
       ctx.logger.info(`${PLUGIN_ID}: created ${Object.keys(topicMap).length} topics for company ${companyId}`);
 
-      return { ok: true, topics: topicMap, errors: errors.length > 0 ? errors : undefined };
+      return {
+        ok: true,
+        topics: topicMap,
+        ...(migratedChatId ? { newChatId: migratedChatId } : {}),
+        ...(errors.length > 0 ? { errors } : {}),
+      };
     });
 
     ctx.actions.register("test-connection", async (_params) => {
