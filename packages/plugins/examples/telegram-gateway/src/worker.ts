@@ -90,15 +90,19 @@ async function getSavedTopics(ctx: PluginContext, companyId: string): Promise<To
   return raw as TopicMap | null;
 }
 
-function resolveTopicId(routing: TopicRouting, companyId: string, key: string, defaultTopicId: number, savedTopics: TopicMap | null): number {
-  // State-stored topics (created via UI) take precedence over config JSON routing
+// Exported so unit tests can verify routing without spinning up a worker
+// (see ./__tests__/routing.test.ts). Ordering contract:
+//   1. UI-created topics (saved in plugin state) win for the given key
+//   2. Config JSON `topicRouting[companyId][key]` is the fallback
+//   3. `defaultTopicId` is the final fallback
+export function resolveTopicId(routing: TopicRouting, companyId: string, key: string, defaultTopicId: number, savedTopics: TopicMap | null): number {
   if (savedTopics && key in savedTopics) {
     return (savedTopics as Record<string, number>)[key]!;
   }
   return routing[companyId]?.[key] ?? defaultTopicId;
 }
 
-function parseTopicRouting(raw: string | undefined): TopicRouting {
+export function parseTopicRouting(raw: string | undefined): TopicRouting {
   if (!raw) return {};
   try {
     return JSON.parse(raw) as TopicRouting;

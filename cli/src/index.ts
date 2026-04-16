@@ -22,7 +22,7 @@ import { loadFideliOSEnvFile } from "./config/env.js";
 import { registerWorktreeCommands } from "./commands/worktree.js";
 import { registerPluginCommands } from "./commands/client/plugin.js";
 import { registerClientAuthCommands } from "./commands/client/auth.js";
-import { serviceInstall, serviceUninstall, serviceStatus } from "./commands/service.js";
+import { serviceInstall, serviceUninstall, serviceStatus, serviceSwitch } from "./commands/service.js";
 import { stopCommand } from "./commands/stop.js";
 
 const program = new Command();
@@ -170,7 +170,13 @@ const service = program.command("service").description("Manage the FideliOS back
 service
   .command("install")
   .description("Register FideliOS with the OS process manager and start it immediately")
-  .action(serviceInstall);
+  .option("--dev", "Install in dev mode (runs dev-runner.mjs watch from the repo — honours Auto-Restart toggle)", false)
+  .option("--release", "Install in release mode (published fidelios binary, default)", false)
+  .option("--repo <path>", "Path to the FideliOS monorepo (dev mode only; auto-detected by default)")
+  .action((opts) => {
+    const mode: "dev" | "release" = opts.dev ? "dev" : "release";
+    return serviceInstall({ mode, repoDir: opts.repo });
+  });
 
 service
   .command("uninstall")
@@ -181,6 +187,30 @@ service
   .command("status")
   .description("Report whether the service is installed, running, and accepting connections")
   .action(serviceStatus);
+
+service
+  .command("switch")
+  .description("Switch the installed service between dev and release mode")
+  .argument("<mode>", "'dev' or 'release'")
+  .option("--repo <path>", "Path to the FideliOS monorepo (dev mode only)")
+  .action((modeArg: string, opts) => {
+    if (modeArg !== "dev" && modeArg !== "release") {
+      console.error(`Invalid mode "${modeArg}" — expected "dev" or "release".`);
+      process.exit(1);
+    }
+    return serviceSwitch({ mode: modeArg, repoDir: opts.repo });
+  });
+
+service
+  .command("dev")
+  .description("Shortcut for `fidelios service switch dev` — enables hot-reload + Auto-Restart toggle")
+  .option("--repo <path>", "Path to the FideliOS monorepo (auto-detected by default)")
+  .action((opts) => serviceSwitch({ mode: "dev", repoDir: opts.repo }));
+
+service
+  .command("release")
+  .description("Shortcut for `fidelios service switch release` — back to the published fidelios binary")
+  .action(() => serviceSwitch({ mode: "release" }));
 
 const auth = program.command("auth").description("Authentication and bootstrap utilities");
 

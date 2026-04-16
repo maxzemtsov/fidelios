@@ -14,7 +14,14 @@ const SYSTEMD_UNIT_DIR = path.resolve(os.homedir(), ".config", "systemd", "user"
 const SYSTEMD_UNIT_PATH = path.resolve(SYSTEMD_UNIT_DIR, "fidelios.service");
 const PRODUCTION_PORT = 3100;
 
+export type ServiceMode = "release" | "dev";
+
 type Platform = "macos" | "linux" | "unsupported";
+
+interface ServiceModeState {
+  mode: ServiceMode;
+  repoDir?: string;
+}
 
 function detectPlatform(): Platform {
   if (process.platform === "darwin") return "macos";
@@ -33,6 +40,70 @@ function resolveBinary(name: string): string {
 function resolveLogPath(): string {
   const instanceRoot = resolveFideliOSInstanceRoot("default");
   return path.resolve(instanceRoot, "fidelios.log");
+}
+
+function serviceModeStatePath(): string {
+  return path.resolve(resolveFideliOSInstanceRoot("default"), "service-mode.json");
+}
+
+function readServiceModeState(): ServiceModeState | null {
+  const statePath = serviceModeStatePath();
+  if (!fs.existsSync(statePath)) return null;
+  try {
+    const raw = JSON.parse(fs.readFileSync(statePath, "utf8"));
+    if (raw && typeof raw === "object") {
+      const mode = raw.mode === "dev" ? "dev" : "release";
+      const repoDir = typeof raw.repoDir === "string" ? raw.repoDir : undefined;
+      return { mode, repoDir };
+    }
+  } catch {
+    // corrupt state file — ignore
+  }
+  return null;
+}
+
+async function writeServiceModeState(state: ServiceModeState): Promise<void> {
+  const statePath = serviceModeStatePath();
+  await fsp.mkdir(path.dirname(statePath), { recursive: true });
+  await fsp.writeFile(statePath, `${JSON.stringify(state, null, 2)}\n`, "utf8");
+}
+
+// Walks up from `startDir` looking for a FideliOS monorepo root: package.json
+// with `"name": "fidelios"` that owns scripts/dev-runner.mjs. Returns null when
+// the starting dir is not inside a checkout.
+function findFideliosRepoRoot(startDir: string): string | null {
+  let current = path.resolve(startDir);
+  const root = path.parse(current).root;
+  while (current !== root) {
+    const pkgPath = path.join(current, "package.json");
+    const devRunnerPath = path.join(current, "scripts", "dev-runner.mjs");
+    if (fs.existsSync(pkgPath) && fs.existsSync(devRunnerPath)) {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
+        if (pkg?.name === "fidelios") return current;
+      } catch {
+        // not a JSON file we can read — continue walking
+      }
+    }
+    const parent = path.dirname(current);
+    if (parent === current) break;
+    current = parent;
+  }
+  return null;
+}
+
+export function resolveDevRepoDir(providedPath: string | undefined): string | null {
+  if (providedPath) {
+    const absolute = path.resolve(providedPath);
+    const validated = findFideliosRepoRoot(absolute);
+    if (validated) return validated;
+    return null;
+  }
+  const fromCwd = findFideliosRepoRoot(process.cwd());
+  if (fromCwd) return fromCwd;
+  const defaultGuess = path.join(os.homedir(), "fidelios");
+  const validatedGuess = findFideliosRepoRoot(defaultGuess);
+  return validatedGuess;
 }
 
 export function buildServicePath(nodeBin: string): string {
@@ -64,9 +135,44 @@ export function buildServicePath(nodeBin: string): string {
   return candidates.filter((dir) => (seen.has(dir) ? false : (seen.add(dir), true))).join(":");
 }
 
-export function buildPlist(nodeBin: string, fideliosBin: string, logPath: string): string {
+interface PlistOptions {
+  mode?: ServiceMode;
+  repoDir?: string;
+}
+
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function renderPlistProgramArgs(nodeBin: string, fideliosBin: string, opts: PlistOptions): string[] {
+  if (opts.mode === "dev") {
+    if (!opts.repoDir) {
+      throw new Error("dev mode plist requires repoDir");
+    }
+    const devRunner = path.join(opts.repoDir, "scripts", "dev-runner.mjs");
+    return [nodeBin, devRunner, "watch"];
+  }
+  return [nodeBin, fideliosBin, "run"];
+}
+
+export function buildPlist(
+  nodeBin: string,
+  fideliosBin: string,
+  logPath: string,
+  opts: PlistOptions = {},
+): string {
   const homeDir = os.homedir();
+  const mode = opts.mode ?? "release";
   const servicePath = buildServicePath(nodeBin);
+  const workingDir = mode === "dev" && opts.repoDir ? opts.repoDir : homeDir;
+  const programArgs = renderPlistProgramArgs(nodeBin, fideliosBin, { mode, repoDir: opts.repoDir });
+  const nodeEnvValue = mode === "dev" ? "development" : "production";
+  const programArgsXml = programArgs
+    .map((arg) => `        <string>${escapeXml(arg)}</string>`)
+    .join("\n");
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -76,23 +182,23 @@ export function buildPlist(nodeBin: string, fideliosBin: string, logPath: string
 
     <key>ProgramArguments</key>
     <array>
-        <string>${nodeBin}</string>
-        <string>${fideliosBin}</string>
-        <string>run</string>
+${programArgsXml}
     </array>
 
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
-        <string>${servicePath}</string>
+        <string>${escapeXml(servicePath)}</string>
         <key>HOME</key>
-        <string>${homeDir}</string>
+        <string>${escapeXml(homeDir)}</string>
         <key>NODE_ENV</key>
-        <string>production</string>
+        <string>${nodeEnvValue}</string>
+        <key>FIDELIOS_SERVICE_MODE</key>
+        <string>${mode}</string>
     </dict>
 
     <key>WorkingDirectory</key>
-    <string>${homeDir}</string>
+    <string>${escapeXml(workingDir)}</string>
 
     <key>RunAtLoad</key>
     <true/>
@@ -104,27 +210,39 @@ export function buildPlist(nodeBin: string, fideliosBin: string, logPath: string
     <integer>10</integer>
 
     <key>StandardOutPath</key>
-    <string>${logPath}</string>
+    <string>${escapeXml(logPath)}</string>
     <key>StandardErrorPath</key>
-    <string>${logPath}</string>
+    <string>${escapeXml(logPath)}</string>
 </dict>
 </plist>
 `;
 }
 
-export function buildSystemdUnit(fideliosBin: string, logPath: string): string {
+interface SystemdOptions {
+  mode?: ServiceMode;
+  repoDir?: string;
+}
+
+export function buildSystemdUnit(fideliosBin: string, logPath: string, opts: SystemdOptions = {}): string {
   const homeDir = os.homedir();
   const nodeBin = resolveBinary("node");
   const servicePath = buildServicePath(nodeBin);
+  const mode = opts.mode ?? "release";
+  const execStart = mode === "dev" && opts.repoDir
+    ? `${nodeBin} ${path.join(opts.repoDir, "scripts", "dev-runner.mjs")} watch`
+    : `${nodeBin} ${fideliosBin} run`;
+  const workingDir = mode === "dev" && opts.repoDir ? opts.repoDir : homeDir;
+  const nodeEnvValue = mode === "dev" ? "development" : "production";
   return `[Unit]
-Description=FideliOS Server
+Description=FideliOS Server (${mode})
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=${nodeBin} ${fideliosBin} run
-WorkingDirectory=${homeDir}
-Environment=NODE_ENV=production
+ExecStart=${execStart}
+WorkingDirectory=${workingDir}
+Environment=NODE_ENV=${nodeEnvValue}
+Environment=FIDELIOS_SERVICE_MODE=${mode}
 Environment=HOME=${homeDir}
 Environment=PATH=${servicePath}
 Restart=always
@@ -159,7 +277,26 @@ function isPortOpen(port: number): Promise<boolean> {
 
 // ── install ──────────────────────────────────────────────────────────────────
 
-export async function serviceInstall(): Promise<void> {
+interface ServiceInstallOptions {
+  mode?: ServiceMode;
+  repoDir?: string;
+}
+
+function resolveModeAndRepo(options: ServiceInstallOptions): { mode: ServiceMode; repoDir?: string } {
+  const mode = options.mode ?? "release";
+  if (mode !== "dev") return { mode };
+  const repoDir = resolveDevRepoDir(options.repoDir);
+  if (!repoDir) {
+    p.log.error(
+      `Could not locate a FideliOS monorepo. Pass --repo <path> or cd into the repo and re-run.\n` +
+        `Looked for scripts/dev-runner.mjs next to package.json with "name": "fidelios".`,
+    );
+    process.exit(1);
+  }
+  return { mode, repoDir };
+}
+
+export async function serviceInstall(options: ServiceInstallOptions = {}): Promise<void> {
   p.intro(pc.bgCyan(pc.black(" fidelios service install ")));
 
   const platform = detectPlatform();
@@ -168,19 +305,28 @@ export async function serviceInstall(): Promise<void> {
     process.exit(1);
   }
 
+  const { mode, repoDir } = resolveModeAndRepo(options);
   const nodeBin = resolveBinary("node");
   const fideliosBin = resolveBinary("fidelios");
   const logPath = resolveLogPath();
 
   if (platform === "macos") {
-    await installMacOS(nodeBin, fideliosBin, logPath);
+    await installMacOS(nodeBin, fideliosBin, logPath, mode, repoDir);
   } else {
-    await installLinux(fideliosBin, logPath);
+    await installLinux(fideliosBin, logPath, mode, repoDir);
   }
+
+  await writeServiceModeState({ mode, ...(repoDir ? { repoDir } : {}) });
 }
 
-async function installMacOS(nodeBin: string, fideliosBin: string, logPath: string): Promise<void> {
-  p.log.step(`Installing launchd service: ${LAUNCHD_LABEL}`);
+async function installMacOS(
+  nodeBin: string,
+  fideliosBin: string,
+  logPath: string,
+  mode: ServiceMode,
+  repoDir: string | undefined,
+): Promise<void> {
+  p.log.step(`Installing launchd service: ${LAUNCHD_LABEL} (${mode} mode)`);
 
   // Ensure log directory exists
   await fsp.mkdir(path.dirname(logPath), { recursive: true });
@@ -195,9 +341,12 @@ async function installMacOS(nodeBin: string, fideliosBin: string, logPath: strin
     // not loaded yet — fine
   }
 
-  const plist = buildPlist(nodeBin, fideliosBin, logPath);
+  const plist = buildPlist(nodeBin, fideliosBin, logPath, { mode, repoDir });
   await fsp.writeFile(PLIST_PATH, plist, "utf8");
   p.log.message(pc.dim(`Plist written: ${PLIST_PATH}`));
+  if (mode === "dev") {
+    p.log.message(pc.dim(`Dev-mode repo:  ${repoDir}`));
+  }
 
   const spinner = p.spinner();
   spinner.start("Loading service with launchctl...");
@@ -228,15 +377,23 @@ async function installMacOS(nodeBin: string, fideliosBin: string, logPath: strin
   p.outro(pc.green("FideliOS service installed. It will restart automatically on crash and at login."));
 }
 
-async function installLinux(fideliosBin: string, logPath: string): Promise<void> {
-  p.log.step(`Installing systemd user unit: fidelios.service`);
+async function installLinux(
+  fideliosBin: string,
+  logPath: string,
+  mode: ServiceMode,
+  repoDir: string | undefined,
+): Promise<void> {
+  p.log.step(`Installing systemd user unit: fidelios.service (${mode} mode)`);
 
   await fsp.mkdir(path.dirname(logPath), { recursive: true });
   await fsp.mkdir(SYSTEMD_UNIT_DIR, { recursive: true });
 
-  const unit = buildSystemdUnit(fideliosBin, logPath);
+  const unit = buildSystemdUnit(fideliosBin, logPath, { mode, repoDir });
   await fsp.writeFile(SYSTEMD_UNIT_PATH, unit, "utf8");
   p.log.message(pc.dim(`Unit written: ${SYSTEMD_UNIT_PATH}`));
+  if (mode === "dev") {
+    p.log.message(pc.dim(`Dev-mode repo: ${repoDir}`));
+  }
 
   const spinner = p.spinner();
   spinner.start("Enabling and starting service...");
@@ -252,6 +409,98 @@ async function installLinux(fideliosBin: string, logPath: string): Promise<void>
 
   p.log.message(pc.dim(`Logs: tail -f ${logPath}`));
   p.outro(pc.green("FideliOS service installed. It will start automatically on login."));
+}
+
+// ── switch ───────────────────────────────────────────────────────────────────
+
+export async function serviceSwitch(options: { mode: ServiceMode; repoDir?: string }): Promise<void> {
+  p.intro(pc.bgCyan(pc.black(` fidelios service switch → ${options.mode} `)));
+
+  const platform = detectPlatform();
+  if (platform === "unsupported") {
+    p.log.error("Service mode is only supported on macOS and Linux.");
+    process.exit(1);
+  }
+
+  const platformArtifactExists = platform === "macos" ? fs.existsSync(PLIST_PATH) : fs.existsSync(SYSTEMD_UNIT_PATH);
+  if (!platformArtifactExists) {
+    p.log.warn("No service currently installed — running `fidelios service install` instead.");
+    await serviceInstall(options);
+    return;
+  }
+
+  const previous = readServiceModeState();
+  let resolvedRepoDir: string | undefined;
+  if (options.mode === "dev") {
+    const found = resolveDevRepoDir(options.repoDir ?? previous?.repoDir);
+    if (!found) {
+      p.log.error(
+        `Could not locate a FideliOS monorepo. Pass --repo <path> or cd into the repo and re-run.`,
+      );
+      process.exit(1);
+    }
+    resolvedRepoDir = found;
+  }
+
+  const nodeBin = resolveBinary("node");
+  const fideliosBin = resolveBinary("fidelios");
+  const logPath = resolveLogPath();
+
+  if (platform === "macos") {
+    // Rewrite plist, reload, kickstart.
+    try {
+      execFileSync("launchctl", ["unload", PLIST_PATH], { stdio: "ignore" });
+    } catch {
+      // not loaded — fine
+    }
+    const plist = buildPlist(nodeBin, fideliosBin, logPath, {
+      mode: options.mode,
+      repoDir: resolvedRepoDir,
+    });
+    await fsp.writeFile(PLIST_PATH, plist, "utf8");
+    p.log.message(pc.dim(`Rewrote ${PLIST_PATH}`));
+    try {
+      execFileSync("launchctl", ["load", PLIST_PATH]);
+    } catch (err) {
+      p.log.error(`launchctl load failed: ${String(err)}`);
+      process.exit(1);
+    }
+    const uid = typeof process.getuid === "function" ? process.getuid() : null;
+    if (uid !== null) {
+      try {
+        execFileSync("launchctl", ["kickstart", "-k", `gui/${uid}/${LAUNCHD_LABEL}`], { stdio: "ignore" });
+      } catch {
+        p.log.warn("Could not kickstart — check `fidelios service status`.");
+      }
+    }
+  } else {
+    const unit = buildSystemdUnit(fideliosBin, logPath, {
+      mode: options.mode,
+      repoDir: resolvedRepoDir,
+    });
+    await fsp.writeFile(SYSTEMD_UNIT_PATH, unit, "utf8");
+    p.log.message(pc.dim(`Rewrote ${SYSTEMD_UNIT_PATH}`));
+    try {
+      execFileSync("systemctl", ["--user", "daemon-reload"], { stdio: "ignore" });
+      execFileSync("systemctl", ["--user", "restart", "fidelios"], { stdio: "ignore" });
+    } catch (err) {
+      p.log.error(`systemctl restart failed: ${String(err)}`);
+      process.exit(1);
+    }
+  }
+
+  await writeServiceModeState({
+    mode: options.mode,
+    ...(resolvedRepoDir ? { repoDir: resolvedRepoDir } : {}),
+  });
+
+  if (options.mode === "dev") {
+    p.log.success(pc.green(`Switched to dev mode. Server runs via ${resolvedRepoDir}/scripts/dev-runner.mjs watch.`));
+    p.log.message(pc.dim("The Auto-Restart Dev Server When Idle toggle in Settings → Experimental now applies."));
+  } else {
+    p.log.success(pc.green(`Switched to release mode (published fidelios binary).`));
+  }
+  p.outro("Done.");
 }
 
 // ── uninstall ────────────────────────────────────────────────────────────────
@@ -336,6 +585,16 @@ export async function serviceStatus(): Promise<void> {
     await statusMacOS();
   } else {
     await statusLinux();
+  }
+
+  const modeState = readServiceModeState();
+  if (modeState) {
+    const modeLabel = modeState.mode === "dev" ? pc.yellow("dev (hot-reload)") : pc.cyan("release");
+    p.log.success(`Mode: ${modeLabel}`);
+    if (modeState.mode === "dev" && modeState.repoDir) {
+      p.log.message(pc.dim(`Dev-mode repo: ${modeState.repoDir}`));
+    }
+    p.log.message(pc.dim("Switch with: fidelios service dev | fidelios service release"));
   }
 
   // Check port connectivity

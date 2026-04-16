@@ -15,13 +15,29 @@ The `claude_local` adapter runs Anthropic's Claude Code CLI locally. It supports
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `cwd` | string | Yes | Working directory for the agent process (absolute path; created automatically if missing when permissions allow) |
-| `model` | string | No | Claude model to use (e.g. `claude-opus-4-6`) |
+| `model` | string | No | Claude model to use (see [Supported models](#supported-models) below — defaults to the Claude Code CLI's default when unset) |
 | `promptTemplate` | string | No | Prompt used for all runs |
 | `env` | object | No | Environment variables (supports secret refs) |
 | `timeoutSec` | number | No | Process timeout (0 = no timeout) |
 | `graceSec` | number | No | Grace period before force-kill |
 | `maxTurnsPerRun` | number | No | Max agentic turns per heartbeat (defaults to `300`) |
 | `dangerouslySkipPermissions` | boolean | No | Skip permission prompts (dev only) |
+
+## Supported models
+
+The adapter's model list mirrors whatever the installed Claude Code CLI exposes.
+As of FideliOS 0.0.29 the dropdown shows:
+
+| Model ID | Label |
+|----------|-------|
+| `claude-opus-4-7` | Claude Opus 4.7 |
+| `claude-opus-4-6` | Claude Opus 4.6 |
+| `claude-sonnet-4-6` | Claude Sonnet 4.6 |
+| `claude-haiku-4-6` | Claude Haiku 4.6 |
+
+Leave `model` unset to defer to the Claude Code CLI's default (recommended for
+most agents). Explicit overrides are useful when you want to pin a specific
+model for cost or capability reasons.
 
 ## Prompt Templates
 

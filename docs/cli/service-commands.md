@@ -25,8 +25,28 @@ Once installed, the server:
 Registers FideliOS with the OS process manager and starts it immediately.
 
 ```sh
-fidelios service install
+fidelios service install          # release mode (default — published binary)
+fidelios service install --dev    # dev mode (runs dev-runner.mjs from your repo)
 ```
+
+### Release vs Dev mode
+
+| Mode | Runs | `Auto-Restart When Idle` toggle | When to use |
+|------|------|----------------------------------|-------------|
+| `release` | `/opt/homebrew/bin/fidelios run` from `$HOME` — the published CLI | No-op | Normal operation — using FideliOS as a tool |
+| `dev` | `node <repo>/scripts/dev-runner.mjs watch` from the repo root | Honored — agents in Company FideliOS can edit source without crashing their own runs | Debugging FideliOS itself with agents in Company `FideliOS` |
+
+Switch between modes later without uninstalling:
+
+```sh
+fidelios service dev       # shortcut for `fidelios service switch dev`
+fidelios service release   # shortcut for `fidelios service switch release`
+fidelios service switch dev --repo ~/some-other-checkout
+```
+
+The CLI remembers the selected mode in
+`~/.fidelios/instances/default/service-mode.json` so subsequent
+`fidelios service status` calls show what's running.
 
 <Tabs>
   <Tab title="macOS">

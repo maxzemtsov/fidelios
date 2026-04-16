@@ -1,7 +1,9 @@
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildPlist, buildServicePath, buildSystemdUnit } from "../commands/service.js";
+import { buildPlist, buildServicePath, buildSystemdUnit, resolveDevRepoDir } from "../commands/service.js";
+
+const REPO_ROOT = path.resolve(__dirname, "../../..");
 
 describe("service: buildServicePath", () => {
   it("includes node dir, common adapter locations, and system dirs", () => {
@@ -68,5 +70,71 @@ describe("service: buildSystemdUnit (Linux)", () => {
     expect(pathLine).toBeDefined();
     expect(pathLine!).toContain("/opt/homebrew/bin");
     expect(pathLine!).toContain("/.claude/local/bin");
+  });
+});
+
+describe("service: dev mode plist", () => {
+  const plist = buildPlist(
+    "/opt/homebrew/bin/node",
+    "/opt/homebrew/bin/fidelios",
+    "/tmp/fidelios.log",
+    { mode: "dev", repoDir: "/Users/alice/fidelios" },
+  );
+
+  it("runs dev-runner.mjs instead of the published binary", () => {
+    expect(plist).toContain("/Users/alice/fidelios/scripts/dev-runner.mjs");
+    expect(plist).toContain("<string>watch</string>");
+    expect(plist).not.toContain("/opt/homebrew/bin/fidelios</string>");
+  });
+
+  it("sets WorkingDirectory to the repo root", () => {
+    expect(plist).toMatch(/<key>WorkingDirectory<\/key>\s*<string>\/Users\/alice\/fidelios<\/string>/);
+  });
+
+  it("exposes FIDELIOS_SERVICE_MODE=dev so the running server can introspect it", () => {
+    expect(plist).toMatch(/<key>FIDELIOS_SERVICE_MODE<\/key>\s*<string>dev<\/string>/);
+    expect(plist).toMatch(/<key>NODE_ENV<\/key>\s*<string>development<\/string>/);
+  });
+
+  it("keeps RunAtLoad + KeepAlive true so dev services still survive reboots and crashes", () => {
+    expect(plist).toMatch(/<key>RunAtLoad<\/key>\s*<true\/>/);
+    expect(plist).toMatch(/<key>KeepAlive<\/key>\s*<true\/>/);
+  });
+
+  it("throws without a repoDir (guards against silently installing a broken plist)", () => {
+    expect(() => buildPlist("/opt/homebrew/bin/node", "/opt/homebrew/bin/fidelios", "/tmp/log", { mode: "dev" }))
+      .toThrow(/dev mode plist requires repoDir/);
+  });
+});
+
+describe("service: dev mode systemd unit", () => {
+  const unit = buildSystemdUnit("/usr/bin/fidelios", "/tmp/fidelios.log", {
+    mode: "dev",
+    repoDir: "/home/alice/fidelios",
+  });
+
+  it("invokes dev-runner.mjs via node", () => {
+    expect(unit).toMatch(/ExecStart=.+node \/home\/alice\/fidelios\/scripts\/dev-runner\.mjs watch/);
+  });
+
+  it("uses the repo dir as WorkingDirectory and flags mode via env", () => {
+    expect(unit).toContain("WorkingDirectory=/home/alice/fidelios");
+    expect(unit).toContain("Environment=FIDELIOS_SERVICE_MODE=dev");
+    expect(unit).toContain("Environment=NODE_ENV=development");
+  });
+});
+
+describe("resolveDevRepoDir", () => {
+  it("finds the current checkout from the tests' own location", () => {
+    const result = resolveDevRepoDir(undefined);
+    expect(result).toBe(REPO_ROOT);
+  });
+
+  it("validates an explicit --repo argument", () => {
+    expect(resolveDevRepoDir(REPO_ROOT)).toBe(REPO_ROOT);
+  });
+
+  it("returns null for a path that is not a fidelios checkout", () => {
+    expect(resolveDevRepoDir(os.tmpdir())).toBeNull();
   });
 });
