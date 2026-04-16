@@ -1,6 +1,6 @@
 {
   "name": "@fideliosai/plugin-telegram-gateway",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "FideliOS plugin that routes agent events to a Telegram supergroup and routes bot replies back as issue comments",
   "type": "module",
   "private": true,
@@ -9,11 +9,12 @@
   },
   "fideliosPlugin": {
     "manifest": "./dist/manifest.js",
-    "worker": "./dist/worker.js"
+    "worker": "./dist/worker.js",
+    "ui": "./dist/ui/"
   },
   "scripts": {
     "prebuild": "node ../../../../scripts/ensure-plugin-build-deps.mjs",
-    "build": "tsc",
+    "build": "tsc && node ./scripts/build-ui.mjs",
     "clean": "rm -rf dist",
     "typecheck": "pnpm --filter @fideliosai/plugin-sdk build && tsc --noEmit"
   },
@@ -22,6 +23,14 @@
   },
   "devDependencies": {
     "@types/node": "^24.6.0",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "esbuild": "^0.27.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "react": ">=18"
   }
 }

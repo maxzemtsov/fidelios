@@ -25,6 +25,17 @@ const manifest: FideliOSPluginManifestV1 = {
   ],
   entrypoints: {
     worker: "./dist/worker.js",
+    ui: "./dist/ui",
+  },
+  ui: {
+    slots: [
+      {
+        type: "settingsPage",
+        id: "telegram-gateway-settings",
+        displayName: "Telegram Gateway Settings",
+        exportName: "TelegramGatewaySettingsPage",
+      },
+    ],
   },
   instanceConfigSchema: {
     type: "object",

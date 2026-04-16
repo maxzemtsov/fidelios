@@ -22,6 +22,17 @@ const manifest = {
     ],
     entrypoints: {
         worker: "./dist/worker.js",
+        ui: "./dist/ui",
+    },
+    ui: {
+        slots: [
+            {
+                type: "settingsPage",
+                id: "telegram-gateway-settings",
+                displayName: "Telegram Gateway Settings",
+                exportName: "TelegramGatewaySettingsPage",
+            },
+        ],
     },
     instanceConfigSchema: {
         type: "object",
@@ -60,3 +71,4 @@ const manifest = {
     ],
 };
 export default manifest;
+//# sourceMappingURL=manifest.js.map

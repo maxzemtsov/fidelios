@@ -73,7 +73,28 @@ async function sendMessage(
 // Topic routing
 // ---------------------------------------------------------------------------
 
-function resolveTopicId(routing: TopicRouting, companyId: string, key: string, defaultTopicId: number): number {
+const TOPICS_STATE_KEY = "tg-topics";
+
+const TOPIC_DEFINITIONS = [
+  { key: "tasks", name: "Tasks" },
+  { key: "approvals", name: "Approvals" },
+  { key: "hiring", name: "Hiring" },
+  { key: "system", name: "System" },
+] as const;
+
+type TopicKey = typeof TOPIC_DEFINITIONS[number]["key"];
+type TopicMap = Record<TopicKey, number>;
+
+async function getSavedTopics(ctx: PluginContext, companyId: string): Promise<TopicMap | null> {
+  const raw = await ctx.state.get({ scopeKind: "company", scopeId: companyId, stateKey: TOPICS_STATE_KEY });
+  return raw as TopicMap | null;
+}
+
+function resolveTopicId(routing: TopicRouting, companyId: string, key: string, defaultTopicId: number, savedTopics: TopicMap | null): number {
+  // State-stored topics (created via UI) take precedence over config JSON routing
+  if (savedTopics && key in savedTopics) {
+    return (savedTopics as Record<string, number>)[key]!;
+  }
   return routing[companyId]?.[key] ?? defaultTopicId;
 }
 
@@ -195,6 +216,119 @@ const plugin = definePlugin({
     currentContext = ctx;
     ctx.logger.info(`${PLUGIN_ID} setup`);
 
+    // ---- Data handlers (UI) — registered unconditionally ----
+    ctx.data.register("plugin-status", async (params) => {
+      const companyId = typeof params.companyId === "string" ? params.companyId : "";
+      const cfg = (await ctx.config.get()) as unknown as TelegramConfig | null;
+      const savedTopics = companyId ? await getSavedTopics(ctx, companyId) : null;
+      return {
+        config: cfg ? { chatId: cfg.chatId, defaultTopicId: cfg.defaultTopicId, topicRouting: cfg.topicRouting } : {},
+        topics: savedTopics,
+      };
+    });
+
+    // ---- Action handlers (UI) ----
+    ctx.actions.register("create-topics", async (params) => {
+      const companyId = typeof params.companyId === "string" ? params.companyId : "";
+      if (!companyId) throw new Error("companyId is required");
+      const cfg = (await ctx.config.get()) as unknown as TelegramConfig | null;
+      if (!cfg?.botToken || !cfg?.chatId) {
+        return { ok: false, error: "Plugin is not configured (botToken and chatId required)" };
+      }
+
+      const topicMap: Record<string, number> = {};
+      const errors: string[] = [];
+      let effectiveChatId = cfg.chatId;
+      let migratedChatId: string | undefined;
+
+      for (const def of TOPIC_DEFINITIONS) {
+        try {
+          let result = await telegramRequest(ctx, cfg.botToken, "createForumTopic", {
+            chat_id: effectiveChatId,
+            name: def.name,
+          }) as { ok: boolean; result?: { message_thread_id: number }; description?: string; parameters?: { migrate_to_chat_id?: number } };
+
+          // When Topics/Forum mode is enabled on a regular group, Telegram upgrades it to a
+          // supergroup and the chat ID changes.  The API returns the new ID in
+          // parameters.migrate_to_chat_id.  Detect this, switch IDs, and retry.
+          if (!result.ok && result.parameters?.migrate_to_chat_id) {
+            const newChatId = String(result.parameters.migrate_to_chat_id);
+            ctx.logger.info(`${PLUGIN_ID}: group migrated to supergroup, retrying with new chat ID`, {
+              oldChatId: effectiveChatId,
+              newChatId,
+            });
+            effectiveChatId = newChatId;
+            migratedChatId = newChatId;
+
+            result = await telegramRequest(ctx, cfg.botToken, "createForumTopic", {
+              chat_id: effectiveChatId,
+              name: def.name,
+            }) as { ok: boolean; result?: { message_thread_id: number }; description?: string; parameters?: { migrate_to_chat_id?: number } };
+          }
+
+          if (result.ok && result.result?.message_thread_id) {
+            topicMap[def.key] = result.result.message_thread_id;
+          } else {
+            errors.push(`${def.name}: ${result.description ?? "unknown error"}`);
+          }
+        } catch (err) {
+          errors.push(`${def.name}: ${err instanceof Error ? err.message : String(err)}`);
+        }
+      }
+
+      if (Object.keys(topicMap).length === 0) {
+        return { ok: false, error: errors.join("; ") };
+      }
+
+      await ctx.state.set({ scopeKind: "company", scopeId: companyId, stateKey: TOPICS_STATE_KEY }, topicMap);
+      ctx.logger.info(`${PLUGIN_ID}: created ${Object.keys(topicMap).length} topics for company ${companyId}`);
+
+      return {
+        ok: true,
+        topics: topicMap,
+        ...(migratedChatId ? { newChatId: migratedChatId } : {}),
+        ...(errors.length > 0 ? { errors } : {}),
+      };
+    });
+
+    ctx.actions.register("test-connection", async (_params) => {
+      const cfg = (await ctx.config.get()) as unknown as TelegramConfig | null;
+      if (!cfg?.botToken || !cfg?.chatId) {
+        return { ok: false, error: "Plugin is not configured (botToken and chatId required)" };
+      }
+
+      try {
+        const meResult = await telegramRequest(ctx, cfg.botToken, "getMe", {}) as {
+          ok: boolean;
+          result?: { username?: string; first_name?: string };
+          description?: string;
+        };
+        if (!meResult.ok) {
+          return { ok: false, error: meResult.description ?? "getMe failed" };
+        }
+        const botName = meResult.result?.username ?? meResult.result?.first_name ?? "Bot";
+
+        const chatResult = await telegramRequest(ctx, cfg.botToken, "getChat", { chat_id: cfg.chatId }) as {
+          ok: boolean;
+          result?: { title?: string; is_forum?: boolean };
+          description?: string;
+        };
+        if (!chatResult.ok) {
+          return { ok: false, error: chatResult.description ?? "getChat failed" };
+        }
+
+        return {
+          ok: true,
+          botName,
+          chatTitle: chatResult.result?.title ?? cfg.chatId,
+          forumEnabled: chatResult.result?.is_forum === true,
+        };
+      } catch (err) {
+        return { ok: false, error: err instanceof Error ? err.message : String(err) };
+      }
+    });
+
+    // ---- Event subscriptions (only when fully configured) ----
     const raw = await ctx.config.get();
     const config = raw as unknown as TelegramConfig | null;
     if (!config?.botToken || !config?.chatId) {
@@ -221,7 +355,8 @@ const plugin = definePlugin({
         if (!cfg) return;
         const formatted = formatEvent(event);
         if (!formatted) return;
-        const topicId = resolveTopicId(routing, event.companyId, formatted.topicKey, cfg.defaultTopicId);
+        const savedTopics = await getSavedTopics(ctx, event.companyId);
+        const topicId = resolveTopicId(routing, event.companyId, formatted.topicKey, cfg.defaultTopicId, savedTopics);
         const sent = await sendMessage(ctx, cfg, formatted.text, topicId);
         if (sent?.message_id && event.entityId && event.entityType) {
           await saveMessageMapping(ctx, sent.message_id, event.entityType, event.entityId, event.companyId);

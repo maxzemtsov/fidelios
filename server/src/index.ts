@@ -411,12 +411,20 @@ export async function startServer(): Promise<StartedServer> {
     }
   
     const embeddedConnectionString = `postgres://fidelios:fidelios@127.0.0.1:${port}/fidelios`;
+    // Auto-apply migrations on every embedded-postgres startup — previously only
+    // first-run triggered auto-apply, so upgrading the npm package left users on
+    // a stale schema. Opt out with FIDELIOS_MIGRATION_AUTO_APPLY=false.
+    const autoApplyEnv = process.env.FIDELIOS_MIGRATION_AUTO_APPLY?.toLowerCase().trim();
+    const autoApplyDisabled = autoApplyEnv === "false" || autoApplyEnv === "0" || autoApplyEnv === "no";
     const shouldAutoApplyFirstRunMigrations = !clusterAlreadyInitialized || dbStatus === "created";
+    const shouldAutoApplyMigrations = !autoApplyDisabled;
     if (shouldAutoApplyFirstRunMigrations) {
       logger.info("Detected first-run embedded PostgreSQL setup; applying pending migrations automatically");
+    } else if (shouldAutoApplyMigrations) {
+      logger.info("Applying any pending migrations for embedded PostgreSQL (auto-apply enabled)");
     }
     migrationSummary = await ensureMigrations(embeddedConnectionString, "Embedded PostgreSQL", {
-      autoApply: shouldAutoApplyFirstRunMigrations,
+      autoApply: shouldAutoApplyFirstRunMigrations || shouldAutoApplyMigrations,
     });
   
     db = createDb(embeddedConnectionString);
@@ -510,6 +518,20 @@ export async function startServer(): Promise<StartedServer> {
   
   const listenPort = await detectPort(config.port);
   if (listenPort !== config.port) {
+    // Fail fast in non-interactive contexts so users (and CI, and launchd) see
+    // the real cause instead of FideliOS quietly binding to 3101/3102/...
+    const nonInteractive =
+      process.env.NON_INTERACTIVE === "true" ||
+      process.env.CI === "true" ||
+      process.env.FIDELIOS_FAIL_ON_PORT_CONFLICT === "true" ||
+      !process.stdout.isTTY;
+    if (nonInteractive && process.env.FIDELIOS_ALLOW_PORT_BUMP !== "true") {
+      logger.error(
+        `Port ${config.port} is already in use. Refusing to bump to ${listenPort} because this shell is non-interactive. ` +
+          `Free the port (lsof -ti:${config.port} | xargs kill -9) or set FIDELIOS_ALLOW_PORT_BUMP=true to keep the legacy bump behaviour.`,
+      );
+      process.exit(1);
+    }
     config.port = listenPort;
   }
   if (resolvedEmbeddedPostgresPort !== null && resolvedEmbeddedPostgresPort !== config.embeddedPostgresPort) {

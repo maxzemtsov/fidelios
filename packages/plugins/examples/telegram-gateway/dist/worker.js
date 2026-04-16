@@ -39,7 +39,22 @@ async function sendMessage(ctx, config, text, topicId) {
 // ---------------------------------------------------------------------------
 // Topic routing
 // ---------------------------------------------------------------------------
-function resolveTopicId(routing, companyId, key, defaultTopicId) {
+const TOPICS_STATE_KEY = "tg-topics";
+const TOPIC_DEFINITIONS = [
+    { key: "tasks", name: "Tasks" },
+    { key: "approvals", name: "Approvals" },
+    { key: "hiring", name: "Hiring" },
+    { key: "system", name: "System" },
+];
+async function getSavedTopics(ctx, companyId) {
+    const raw = await ctx.state.get({ scopeKind: "company", scopeId: companyId, stateKey: TOPICS_STATE_KEY });
+    return raw;
+}
+function resolveTopicId(routing, companyId, key, defaultTopicId, savedTopics) {
+    // State-stored topics (created via UI) take precedence over config JSON routing
+    if (savedTopics && key in savedTopics) {
+        return savedTopics[key];
+    }
     return routing[companyId]?.[key] ?? defaultTopicId;
 }
 function parseTopicRouting(raw) {
@@ -53,15 +68,17 @@ function parseTopicRouting(raw) {
     }
 }
 // ---------------------------------------------------------------------------
-// State helpers
+// State helpers — map Telegram message IDs back to FideliOS entities
 // ---------------------------------------------------------------------------
 const MSG_MAP_KEY = "tg-message-map";
 async function saveMessageMapping(ctx, telegramMessageId, entityType, entityId, companyId) {
-    const current = await ctx.state.get({
+    const raw = await ctx.state.get({
         scopeKind: "instance",
         stateKey: MSG_MAP_KEY,
-    }) ?? {};
+    });
+    const current = raw ?? {};
     current[String(telegramMessageId)] = { entityType, entityId, companyId };
+    // Keep map bounded to last 1000 messages
     const keys = Object.keys(current);
     if (keys.length > 1000) {
         const oldest = keys.slice(0, keys.length - 1000);
@@ -71,10 +88,11 @@ async function saveMessageMapping(ctx, telegramMessageId, entityType, entityId, 
     await ctx.state.set({ scopeKind: "instance", stateKey: MSG_MAP_KEY }, current);
 }
 async function lookupMessage(ctx, telegramMessageId) {
-    const map = await ctx.state.get({
+    const raw = await ctx.state.get({
         scopeKind: "instance",
         stateKey: MSG_MAP_KEY,
     });
+    const map = raw;
     return map?.[String(telegramMessageId)] ?? null;
 }
 // ---------------------------------------------------------------------------
@@ -134,7 +152,103 @@ const plugin = definePlugin({
     async setup(ctx) {
         currentContext = ctx;
         ctx.logger.info(`${PLUGIN_ID} setup`);
-        const config = await ctx.config.get();
+        // ---- Data handlers (UI) — registered unconditionally ----
+        ctx.data.register("plugin-status", async (params) => {
+            const companyId = typeof params.companyId === "string" ? params.companyId : "";
+            const cfg = (await ctx.config.get());
+            const savedTopics = companyId ? await getSavedTopics(ctx, companyId) : null;
+            return {
+                config: cfg ? { chatId: cfg.chatId, defaultTopicId: cfg.defaultTopicId, topicRouting: cfg.topicRouting } : {},
+                topics: savedTopics,
+            };
+        });
+        // ---- Action handlers (UI) ----
+        ctx.actions.register("create-topics", async (params) => {
+            const companyId = typeof params.companyId === "string" ? params.companyId : "";
+            if (!companyId)
+                throw new Error("companyId is required");
+            const cfg = (await ctx.config.get());
+            if (!cfg?.botToken || !cfg?.chatId) {
+                return { ok: false, error: "Plugin is not configured (botToken and chatId required)" };
+            }
+            const topicMap = {};
+            const errors = [];
+            let effectiveChatId = cfg.chatId;
+            let migratedChatId;
+            for (const def of TOPIC_DEFINITIONS) {
+                try {
+                    let result = await telegramRequest(ctx, cfg.botToken, "createForumTopic", {
+                        chat_id: effectiveChatId,
+                        name: def.name,
+                    });
+                    // When Topics/Forum mode is enabled on a regular group, Telegram upgrades it to a
+                    // supergroup and the chat ID changes.  The API returns the new ID in
+                    // parameters.migrate_to_chat_id.  Detect this, switch IDs, and retry.
+                    if (!result.ok && result.parameters?.migrate_to_chat_id) {
+                        const newChatId = String(result.parameters.migrate_to_chat_id);
+                        ctx.logger.info(`${PLUGIN_ID}: group migrated to supergroup, retrying with new chat ID`, {
+                            oldChatId: effectiveChatId,
+                            newChatId,
+                        });
+                        effectiveChatId = newChatId;
+                        migratedChatId = newChatId;
+                        result = await telegramRequest(ctx, cfg.botToken, "createForumTopic", {
+                            chat_id: effectiveChatId,
+                            name: def.name,
+                        });
+                    }
+                    if (result.ok && result.result?.message_thread_id) {
+                        topicMap[def.key] = result.result.message_thread_id;
+                    }
+                    else {
+                        errors.push(`${def.name}: ${result.description ?? "unknown error"}`);
+                    }
+                }
+                catch (err) {
+                    errors.push(`${def.name}: ${err instanceof Error ? err.message : String(err)}`);
+                }
+            }
+            if (Object.keys(topicMap).length === 0) {
+                return { ok: false, error: errors.join("; ") };
+            }
+            await ctx.state.set({ scopeKind: "company", scopeId: companyId, stateKey: TOPICS_STATE_KEY }, topicMap);
+            ctx.logger.info(`${PLUGIN_ID}: created ${Object.keys(topicMap).length} topics for company ${companyId}`);
+            return {
+                ok: true,
+                topics: topicMap,
+                ...(migratedChatId ? { newChatId: migratedChatId } : {}),
+                ...(errors.length > 0 ? { errors } : {}),
+            };
+        });
+        ctx.actions.register("test-connection", async (_params) => {
+            const cfg = (await ctx.config.get());
+            if (!cfg?.botToken || !cfg?.chatId) {
+                return { ok: false, error: "Plugin is not configured (botToken and chatId required)" };
+            }
+            try {
+                const meResult = await telegramRequest(ctx, cfg.botToken, "getMe", {});
+                if (!meResult.ok) {
+                    return { ok: false, error: meResult.description ?? "getMe failed" };
+                }
+                const botName = meResult.result?.username ?? meResult.result?.first_name ?? "Bot";
+                const chatResult = await telegramRequest(ctx, cfg.botToken, "getChat", { chat_id: cfg.chatId });
+                if (!chatResult.ok) {
+                    return { ok: false, error: chatResult.description ?? "getChat failed" };
+                }
+                return {
+                    ok: true,
+                    botName,
+                    chatTitle: chatResult.result?.title ?? cfg.chatId,
+                    forumEnabled: chatResult.result?.is_forum === true,
+                };
+            }
+            catch (err) {
+                return { ok: false, error: err instanceof Error ? err.message : String(err) };
+            }
+        });
+        // ---- Event subscriptions (only when fully configured) ----
+        const raw = await ctx.config.get();
+        const config = raw;
         if (!config?.botToken || !config?.chatId) {
             ctx.logger.warn(`${PLUGIN_ID}: botToken and chatId required — not subscribing to events`);
             return;
@@ -158,7 +272,8 @@ const plugin = definePlugin({
                 const formatted = formatEvent(event);
                 if (!formatted)
                     return;
-                const topicId = resolveTopicId(routing, event.companyId, formatted.topicKey, cfg.defaultTopicId);
+                const savedTopics = await getSavedTopics(ctx, event.companyId);
+                const topicId = resolveTopicId(routing, event.companyId, formatted.topicKey, cfg.defaultTopicId, savedTopics);
                 const sent = await sendMessage(ctx, cfg, formatted.text, topicId);
                 if (sent?.message_id && event.entityId && event.entityType) {
                     await saveMessageMapping(ctx, sent.message_id, event.entityType, event.entityId, event.companyId);
@@ -190,7 +305,7 @@ const plugin = definePlugin({
                 errors.push("topicRouting must be valid JSON");
             }
         }
-        return errors.length > 0 ? { valid: false, errors } : { valid: true };
+        return errors.length > 0 ? { ok: false, errors } : { ok: true };
     },
     async onWebhook(input) {
         if (input.endpointKey !== "telegram-update") {
@@ -200,6 +315,7 @@ const plugin = definePlugin({
         const config = currentConfig;
         if (!ctx || !config)
             return;
+        // Parse Telegram update
         const update = input.parsedBody;
         if (!update)
             return;
@@ -216,10 +332,11 @@ const plugin = definePlugin({
         const originalMessageId = replyTo.message_id;
         if (!originalMessageId)
             return;
-        // Look up the FideliOS entity for this Telegram message
+        // Look up what FideliOS entity this reply corresponds to
         const entry = await lookupMessage(ctx, originalMessageId);
         if (!entry || entry.entityType !== "issue")
             return;
+        // Post the reply back to FideliOS as a comment on the issue
         const from = message.from;
         const senderName = from ? String(from.first_name ?? from.username ?? "Telegram user") : "Telegram user";
         const commentBody = `**${senderName} via Telegram:** ${text}`;
@@ -238,3 +355,4 @@ const plugin = definePlugin({
 });
 export default plugin;
 runWorker(plugin, import.meta.url);
+//# sourceMappingURL=worker.js.map
