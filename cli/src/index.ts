@@ -22,6 +22,7 @@ import { loadFideliOSEnvFile } from "./config/env.js";
 import { registerWorktreeCommands } from "./commands/worktree.js";
 import { registerPluginCommands } from "./commands/client/plugin.js";
 import { registerClientAuthCommands } from "./commands/client/auth.js";
+import { serviceInstall, serviceUninstall, serviceStatus } from "./commands/service.js";
 
 const program = new Command();
 const DATA_DIR_OPTION_HELP =
@@ -155,6 +156,23 @@ registerActivityCommands(program);
 registerDashboardCommands(program);
 registerWorktreeCommands(program);
 registerPluginCommands(program);
+
+const service = program.command("service").description("Manage the FideliOS background service");
+
+service
+  .command("install")
+  .description("Register FideliOS with the OS process manager and start it immediately")
+  .action(serviceInstall);
+
+service
+  .command("uninstall")
+  .description("Stop and remove the background service (data is preserved)")
+  .action(serviceUninstall);
+
+service
+  .command("status")
+  .description("Report whether the service is installed, running, and accepting connections")
+  .action(serviceStatus);
 
 const auth = program.command("auth").description("Authentication and bootstrap utilities");
 
