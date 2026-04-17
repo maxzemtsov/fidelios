@@ -2,7 +2,9 @@
 # FideliOS zero-knowledge Linux installer
 # Usage: curl -fsSL https://fidelios.nl/install-linux.sh | bash
 #        curl -fsSL https://fidelios.nl/install-linux.sh | bash -s -- --yes
-set -euo pipefail
+# Note: deliberately NOT using `set -u` — nvm.sh, .nvm/nvm-exec, and some
+#       distro bashrc files rely on unset variables and would crash us.
+set -eo pipefail
 
 # ── Arg parsing ──────────────────────────────────────────────────────────────
 YES=false

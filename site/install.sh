@@ -2,7 +2,9 @@
 # FideliOS zero-knowledge macOS installer
 # Usage: curl -fsSL https://fidelios.nl/install.sh | bash -s -- --yes
 #        curl -fsSL https://fidelios.nl/install.sh | bash        (non-interactive: auto-proceeds)
-set -euo pipefail
+# Note: deliberately NOT using `set -u` — nvm.sh and Homebrew's shellenv
+#       rely on unset variables and would crash us mid-install.
+set -eo pipefail
 
 # ── Arg parsing ──────────────────────────────────────────────────────────────
 YES=false
