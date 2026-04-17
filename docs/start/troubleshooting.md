@@ -7,6 +7,28 @@ If the installer failed or FideliOS won't start, check this page before anything
 
 ## Install-time errors
 
+### I have an Intel Mac — is `/usr/local/bin/brew` normal?
+
+Yes. On Intel Macs (x86_64, 2020 and earlier), Homebrew installs to
+`/usr/local/` — not `/opt/homebrew/` like it does on Apple Silicon
+(M1 / M2 / M3 / M4). Both paths are official and fully supported.
+
+FideliOS handles this automatically:
+
+- `install.sh` sources `brew shellenv` from whichever prefix the
+  Homebrew installer chose (so `brew`, `node`, and `npm` are on `PATH`
+  in the same install session).
+- The launchd service `PATH` (written by `fidelios service install`)
+  includes **both** `/opt/homebrew/bin` and `/usr/local/bin`, so
+  adapter CLIs (`claude`, `codex`, `gh`, `git`) resolve regardless of
+  which Mac you're on.
+- `@embedded-postgres/darwin-x64` (Intel native) is published
+  alongside `@embedded-postgres/darwin-arm64` — the embedded database
+  runs natively on both architectures, no Rosetta.
+
+You don't need to do anything. If the installer finishes and
+`fidelios --version` works, you're good.
+
 ### `command not found: fidelios` after install
 
 The `npm install -g` step put the binary somewhere not on your `PATH`.
