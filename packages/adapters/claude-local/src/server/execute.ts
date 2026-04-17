@@ -324,6 +324,15 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const effort = asString(config.effort, "");
   const chrome = asBoolean(config.chrome, false);
   const maxTurns = asNumber(config.maxTurnsPerRun, 0);
+  const fallbackModel = asString(config.fallbackModel, "");
+  const maxBudgetUsd = asNumber(config.maxBudgetUsd, 0);
+  // `betas` is a space- or comma-separated string of beta header names
+  // (e.g. "advisor-tool-2026-03-01, task-budgets-2026-03-13").
+  // Passed through to Claude Code CLI's --betas flag. API-key users only.
+  const betas = asString(config.betas, "")
+    .split(/[\s,]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
   // Default to true for headless FideliOS agent runs — agents must be able to
   // execute bash commands, read files, and use tools without interactive approval.
   const dangerouslySkipPermissions = asBoolean(config.dangerouslySkipPermissions, true);
@@ -434,6 +443,9 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     if (model) args.push("--model", model);
     if (effort) args.push("--effort", effort);
     if (maxTurns > 0) args.push("--max-turns", String(maxTurns));
+    if (fallbackModel) args.push("--fallback-model", fallbackModel);
+    if (maxBudgetUsd > 0) args.push("--max-budget-usd", String(maxBudgetUsd));
+    if (betas.length > 0) args.push("--betas", ...betas);
     if (effectiveInstructionsFilePath) {
       args.push("--append-system-prompt-file", effectiveInstructionsFilePath);
     }

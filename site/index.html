@@ -355,8 +355,8 @@
           </div>
           <div class="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col">
             <div class="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center mb-4 text-xl">📉</div>
-            <h3 class="font-semibold text-lg text-slate-900 dark:text-white mb-2">Knows when your AI is cheap</h3>
-            <p class="text-sm text-slate-600 dark:text-slate-400">Per-company peak-hour rules throttle non-urgent work to off-peak windows, while urgent tasks run immediately. Every agent has a budget cap and a live spend dashboard — no surprise bills on the first of the month.</p>
+            <h3 class="font-semibold text-lg text-slate-900 dark:text-white mb-2">Smarter output at a fraction of the cost</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Built-in support for Anthropic's new <strong>advisor tool</strong> — Sonnet executes while Opus 4.7 advises on strategy, for 30-50% cost reduction vs Opus-solo. Plus peak-hour throttling and per-agent budget caps with live spend dashboards. No surprise bills.</p>
           </div>
         </div>
       </div>
@@ -503,6 +503,36 @@
             </summary>
             <div class="px-5 pb-5 pt-1 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
               The installer asks: <em>"Keep FideliOS running automatically, even after you close Terminal or restart?"</em> Pick <strong>Yes</strong> — it sets up a background service so your AI team keeps working 24/7. If you said No, you can change your mind later: <a href="https://docs.fidelios.nl/start/keep-running" class="text-brand-600 dark:text-brand-400 hover:underline">Keep FideliOS running →</a>
+            </div>
+          </details>
+
+          <details class="group bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+            <summary class="flex items-center gap-3 px-5 py-4 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+              <svg class="chevron w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+              <span class="font-medium text-slate-800 dark:text-slate-200">Why not just use Anthropic's Claude Managed Agents?</span>
+            </summary>
+            <div class="px-5 pb-5 pt-1 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              Anthropic's new <a href="https://claude.com/blog/claude-managed-agents" class="text-brand-600 dark:text-brand-400 hover:underline">Managed Agents</a> run single agents on Anthropic's infrastructure — you pay $0.08/session-hour on top of token costs, and your prompts + tool results go through their sandbox. Great for a solo developer building one agent at a time.
+              <br><br>
+              FideliOS is the <strong>company-shape</strong> of the same idea: 5-50 agents in an org chart, with budgets, approval gates, Telegram remote control, peak-hour throttling — all running on <strong>your</strong> Mac / VM. Session hours are free (it's your electricity). Data never leaves your machine. Mix-and-match Claude, OpenAI, Gemini, and local models in the same company.
+              <br><br>
+              Short answer: use Managed Agents for single agents on Anthropic's cloud. Use FideliOS when you want a self-hosted company of agents you control end-to-end.
+            </div>
+          </details>
+
+          <details class="group bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+            <summary class="flex items-center gap-3 px-5 py-4 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+              <svg class="chevron w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+              <span class="font-medium text-slate-800 dark:text-slate-200">Can I use Opus 4.7's advisor tool / task budgets / fast mode?</span>
+            </summary>
+            <div class="px-5 pb-5 pt-1 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              Yes. Every <a href="https://docs.fidelios.nl/adapters/claude-local" class="text-brand-600 dark:text-brand-400 hover:underline">Claude agent</a> in FideliOS exposes these Anthropic beta features as plain config fields:
+              <ul class="mt-2 ml-4 list-disc space-y-1">
+                <li><strong>effort</strong>: <code class="text-xs bg-slate-100 dark:bg-slate-800 px-1 rounded">low / medium / high / max</code> — trade speed for quality per-agent</li>
+                <li><strong>betas</strong>: <code class="text-xs bg-slate-100 dark:bg-slate-800 px-1 rounded">advisor-tool-2026-03-01</code> pairs Sonnet+Opus for 30-50% cheaper agentic runs; <code class="text-xs bg-slate-100 dark:bg-slate-800 px-1 rounded">task-budgets-2026-03-13</code> lets Opus 4.7 self-pace</li>
+                <li><strong>maxBudgetUsd</strong>: hard spend cap per run</li>
+                <li><strong>fallbackModel</strong>: auto-switch if your primary model is overloaded</li>
+              </ul>
             </div>
           </details>
 
