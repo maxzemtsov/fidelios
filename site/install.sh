@@ -119,11 +119,39 @@ fi
 # ── Step 3: Node.js ───────────────────────────────────────────────────────────
 header "📦 Checking Node.js…"
 
+INSTALLED_NODE_VIA_NVM=false
+
 # Helper: load nvm into the current shell session if available
 _load_nvm() {
   export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
   # shellcheck disable=SC1091
   [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+}
+
+# Write nvm-loader into the user's shell rc files so a fresh terminal session
+# can reach node + globally-installed fidelios. nvm's own installer writes to
+# ~/.bashrc only, which zsh (the default shell on modern macOS) doesn't read.
+_persist_nvm_to_shell_rc() {
+  local nvm_block
+  nvm_block='
+# Added by FideliOS installer — load nvm so node + fidelios are on PATH
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"'
+  for profile in "$HOME/.zshrc" "$HOME/.zprofile" "$HOME/.bashrc" "$HOME/.bash_profile"; do
+    # Only touch zsh rc when user's shell is zsh (avoid polluting bash-only setups
+    # with zsh-only files we just created — and vice versa).
+    case "$profile" in
+      *zshrc|*zprofile) [[ "$SHELL" == */zsh ]] || continue ;;
+      *bashrc|*bash_profile) [[ "$SHELL" == */bash ]] || continue ;;
+    esac
+    [ -e "$profile" ] || touch "$profile"
+    if ! grep -qF 'NVM_DIR=' "$profile" 2>/dev/null; then
+      printf '%s\n' "$nvm_block" >> "$profile"
+      info "Added nvm loader to $profile"
+      PATH_UPDATED=true
+    fi
+  done
 }
 
 if command -v node &>/dev/null; then
@@ -161,6 +189,7 @@ else
   nvm install --lts
   nvm use --lts
   success "Node.js installed ($(node --version))"
+  INSTALLED_NODE_VIA_NVM=true
 fi
 
 # ── Step 4: FideliOS CLI ──────────────────────────────────────────────────────
@@ -202,6 +231,15 @@ fi
 npm install -g fidelios@latest
 NEW_VERSION="$(fidelios --version 2>/dev/null || echo 'installed')"
 success "FideliOS CLI ready ($NEW_VERSION)"
+
+# If we installed Node via nvm, persist the nvm loader into the user's shell
+# rc so `fidelios` resolves in fresh terminal sessions. (nvm's own installer
+# writes to ~/.bashrc only; zsh — default shell on modern macOS — ignores
+# that, so without this block users get `command not found: fidelios` after
+# reopening Terminal.)
+if $INSTALLED_NODE_VIA_NVM; then
+  _persist_nvm_to_shell_rc
+fi
 
 # ── Step 5: Onboarding ────────────────────────────────────────────────────────
 header "🚀 Starting FideliOS setup…"

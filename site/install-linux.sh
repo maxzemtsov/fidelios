@@ -78,10 +78,36 @@ success "$DISTRO_NAME detected"
 # ── Step 2: Node.js ──────────────────────────────────────────────────────────
 header "📦 Checking Node.js…"
 
+INSTALLED_NODE_VIA_NVM=false
+
 _load_nvm() {
   export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
   # shellcheck disable=SC1091
   [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+}
+
+# Write nvm-loader into user's rc files so fresh shells can reach node +
+# fidelios. nvm's own installer only touches ~/.bashrc, leaving zsh users
+# (default shell on modern macOS, common on desktops) without PATH setup.
+_persist_nvm_to_shell_rc() {
+  local nvm_block
+  nvm_block='
+# Added by FideliOS installer — load nvm so node + fidelios are on PATH
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"'
+  for profile in "$HOME/.zshrc" "$HOME/.zprofile" "$HOME/.bashrc" "$HOME/.bash_profile"; do
+    case "$profile" in
+      *zshrc|*zprofile) [[ "$SHELL" == */zsh ]] || continue ;;
+      *bashrc|*bash_profile) [[ "$SHELL" == */bash ]] || continue ;;
+    esac
+    [ -e "$profile" ] || touch "$profile"
+    if ! grep -qF 'NVM_DIR=' "$profile" 2>/dev/null; then
+      printf '%s\n' "$nvm_block" >> "$profile"
+      info "Added nvm loader to $profile"
+      PATH_UPDATED=true
+    fi
+  done
 }
 
 check_node_major() {
@@ -141,6 +167,7 @@ else
   nvm install --lts
   nvm use --lts
   success "Node.js installed ($(node --version))"
+  INSTALLED_NODE_VIA_NVM=true
 fi
 
 # ── Step 3: FideliOS CLI ─────────────────────────────────────────────────────
@@ -178,6 +205,12 @@ else
 fi
 npm install -g fidelios@latest
 success "FideliOS CLI ready ($(fidelios --version 2>/dev/null || echo 'installed'))"
+
+# Persist nvm loader into user's shell rc when we installed Node via nvm —
+# otherwise fresh shells won't find the nvm-managed node + fidelios.
+if $INSTALLED_NODE_VIA_NVM; then
+  _persist_nvm_to_shell_rc
+fi
 
 # ── Step 4: Onboarding ───────────────────────────────────────────────────────
 header "🚀 Starting FideliOS setup…"
