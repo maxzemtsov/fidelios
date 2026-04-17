@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FideliOS — Your AI workforce, one command away</title>
-  <meta name="description" content="FideliOS orchestrates autonomous AI agents that run your company. Install in one command on macOS, Linux, or Windows.">
+  <title>FideliOS — Run a company without hiring one</title>
+  <meta name="description" content="FideliOS is your always-on AI team. It plans, writes, ships, and reports — while you sleep. You manage everything from Telegram, no Terminal needed after setup.">
   <link rel="icon" href="/favicon.ico" sizes="48x48">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="/favicon-96x96.png" type="image/png" sizes="96x96">
@@ -14,16 +14,26 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="FideliOS">
-  <meta property="og:title" content="FideliOS — Your AI workforce, one command away">
-  <meta property="og:description" content="Orchestrate autonomous AI agents that ship code, manage ops, and run your company.">
+  <meta property="og:title" content="FideliOS — Run a company without hiring one">
+  <meta property="og:description" content="Your always-on AI team. Plans, writes, ships, and reports — while you sleep. Manage everything from Telegram.">
   <meta property="og:type" content="website">
   <meta property="og:image" content="/web-app-manifest-512x512.png">
+  <script>
+    // Theme boot — before Tailwind to avoid FOUC. Defaults to light.
+    (function() {
+      var saved = localStorage.getItem('fidelios-theme');
+      var system = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var theme = saved || (system ? 'dark' : 'light');
+      if (theme === 'dark') document.documentElement.classList.add('dark');
+    })();
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           fontFamily: {
@@ -39,6 +49,7 @@
               500: '#6366f1',
               600: '#4f46e5',
               700: '#4338ca',
+              800: '#3730a3',
             },
           },
         },
@@ -46,15 +57,21 @@
     }
   </script>
   <style>
+    :root {
+      --bg-from: #f8fafc;
+      --bg-mid: #ffffff;
+    }
+    html.dark {
+      --bg-from: #0b0f1a;
+      --bg-mid: #0f1524;
+    }
     body {
-      background: linear-gradient(180deg, #f8fafc 0%, #ffffff 40%, #f8fafc 100%);
+      background: linear-gradient(180deg, var(--bg-from) 0%, var(--bg-mid) 40%, var(--bg-from) 100%);
       min-height: 100vh;
     }
-    .card-hover {
-      transition: box-shadow 0.25s ease, transform 0.25s ease;
-    }
+    .card-hover { transition: box-shadow 0.25s ease, transform 0.25s ease; }
     .card-hover:hover {
-      box-shadow: 0 8px 30px rgba(99, 102, 241, 0.10), 0 2px 8px rgba(0,0,0,0.04);
+      box-shadow: 0 10px 30px rgba(99, 102, 241, 0.12), 0 2px 8px rgba(0,0,0,0.05);
       transform: translateY(-2px);
     }
     details[open] summary .chevron { transform: rotate(90deg); }
@@ -69,199 +86,469 @@
     .code-block::-webkit-scrollbar-track { background: transparent; }
     .code-block::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(24px); }
+      from { opacity: 0; transform: translateY(18px); }
       to   { opacity: 1; transform: translateY(0); }
     }
     .fade-up { animation: fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
-    .fade-up-1 { animation-delay: 0.08s; }
-    .fade-up-2 { animation-delay: 0.18s; }
-    .fade-up-3 { animation-delay: 0.28s; }
-    .fade-up-4 { animation-delay: 0.38s; }
-    .fade-up-5 { animation-delay: 0.48s; }
+    .fade-up-1 { animation-delay: 0.06s; }
+    .fade-up-2 { animation-delay: 0.14s; }
+    .fade-up-3 { animation-delay: 0.22s; }
+    .fade-up-4 { animation-delay: 0.3s; }
+    .fade-up-5 { animation-delay: 0.38s; }
     /* Subtle gradient orb behind hero */
     .hero-glow {
       position: absolute;
-      width: 600px;
-      height: 600px;
+      width: 640px;
+      height: 640px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(99,102,241,0.10) 0%, transparent 70%);
       top: 50%;
       left: 50%;
       transform: translate(-50%, -55%);
       pointer-events: none;
       z-index: 0;
     }
-    @media (max-width: 640px) {
-      .hero-glow { width: 360px; height: 360px; }
+    @media (max-width: 640px) { .hero-glow { width: 360px; height: 360px; } }
+    .featured-card {
+      background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(79,70,229,0.04));
+      border-color: rgba(99,102,241,0.25);
+    }
+    html.dark .featured-card {
+      background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(79,70,229,0.08));
+      border-color: rgba(129,140,248,0.35);
     }
   </style>
 </head>
-<body class="font-sans text-slate-700 antialiased overflow-x-hidden">
+<body class="font-sans text-slate-700 dark:text-slate-200 antialiased overflow-x-hidden">
 
-  <!-- Hero -->
-  <main class="relative min-h-[100dvh] flex flex-col items-center justify-center px-5 sm:px-8 py-20">
-    <div class="hero-glow" aria-hidden="true"></div>
-
-    <div class="relative z-10 w-full max-w-4xl mx-auto text-center">
-
-      <!-- Wordmark -->
-      <div class="fade-up mb-5">
-        <h1 class="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-slate-900">
-          Fideli<span class="text-brand-500">OS</span>
-        </h1>
+  <!-- Top Nav -->
+  <nav class="sticky top-0 z-40 backdrop-blur-md bg-white/70 dark:bg-slate-900/70 border-b border-slate-200/60 dark:border-slate-800/60">
+    <div class="max-w-6xl mx-auto px-5 sm:px-8 h-14 flex items-center justify-between">
+      <a href="#" class="flex items-center gap-2">
+        <img src="/favicon.svg" alt="" class="w-6 h-6">
+        <span class="font-bold text-slate-800 dark:text-slate-100">FideliOS</span>
+      </a>
+      <div class="flex items-center gap-4 sm:gap-6 text-sm">
+        <a href="https://docs.fidelios.nl" class="hidden sm:inline text-slate-600 hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-300 transition-colors">Docs</a>
+        <a href="https://github.com/fideliosai/fidelios" class="hidden sm:inline text-slate-600 hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-300 transition-colors">GitHub</a>
+        <a href="#install" class="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-4 py-1.5 rounded-lg shadow-sm transition-colors">Install</a>
+        <button onclick="toggleTheme()" aria-label="Toggle dark mode" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+          <svg class="w-4 h-4 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+          <svg class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        </button>
       </div>
+    </div>
+  </nav>
 
-      <!-- Tagline -->
-      <p class="fade-up fade-up-1 text-lg sm:text-xl lg:text-2xl text-slate-500 mb-6 max-w-lg mx-auto leading-relaxed">
-        Your AI workforce, one command away
-      </p>
+  <main>
+    <!-- ─── HERO ─────────────────────────────────────────────────────────── -->
+    <section class="relative pt-14 pb-10 sm:pt-20 sm:pb-14 px-5 sm:px-8">
+      <div class="hero-glow"></div>
+      <div class="max-w-4xl mx-auto text-center relative z-10">
+        <h1 class="fade-up text-[34px] sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-5 leading-[1.1]">
+          Run a company <span class="text-brand-600 dark:text-brand-400">without hiring one.</span>
+        </h1>
+        <p class="fade-up fade-up-1 text-lg sm:text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-8 leading-relaxed">
+          FideliOS is your always-on AI team. It <span class="font-semibold">plans, writes, ships, and reports</span> — while you sleep. You manage everything from Telegram. No Terminal needed after setup.
+        </p>
 
-      <!-- Subtitle -->
-      <p class="fade-up fade-up-2 text-sm sm:text-base text-slate-400 mb-10 max-w-md mx-auto">
-        Orchestrate autonomous agents that ship code, manage ops, and run your company.
-      </p>
+        <!-- CTAs -->
+        <div class="fade-up fade-up-2 flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
+          <a href="#install" class="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white text-base font-semibold px-6 py-3 rounded-xl shadow-md transition-colors">
+            Start free in 2 minutes
+          </a>
+          <a href="#demo" class="w-full sm:w-auto border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-brand-400 hover:text-brand-600 dark:hover:text-brand-300 text-base font-semibold px-6 py-3 rounded-xl transition-colors">
+            Watch 90-second demo →
+          </a>
+        </div>
 
-      <!-- Demo Video -->
-      <div class="fade-up fade-up-3 mb-14 max-w-2xl mx-auto">
-        <div class="rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-white">
+        <!-- "Works with" logo strip (social proof via authority) -->
+        <div class="fade-up fade-up-3 mb-5">
+          <p class="text-[11px] uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500 mb-3">Works with your existing AI keys</p>
+          <div class="flex flex-wrap items-center justify-center gap-6 sm:gap-8 opacity-80">
+            <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Claude Code</span>
+            <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">OpenAI Codex</span>
+            <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Gemini CLI</span>
+            <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Cursor</span>
+            <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">OpenCode</span>
+            <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Pi</span>
+            <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Hermes</span>
+          </div>
+        </div>
+
+        <!-- Trust line -->
+        <div class="fade-up fade-up-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+          <span class="inline-flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Open source · MIT
+          </span>
+          <span class="inline-flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Runs on your own Mac/PC
+          </span>
+          <span class="inline-flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Your data never leaves it
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── DEMO VIDEO ───────────────────────────────────────────────────── -->
+    <section id="demo" class="px-5 sm:px-8 pt-2 pb-14 sm:pb-20">
+      <div class="max-w-3xl mx-auto">
+        <div class="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-lg bg-white dark:bg-slate-900">
           <video
             id="demo-video"
             src="demo.mp4"
-            class="w-full"
+            class="w-full block"
             controls
             preload="auto"
             playsinline
             muted
+            loop
           ></video>
         </div>
+        <p class="text-center text-sm text-slate-500 dark:text-slate-400 mt-4">
+          90 seconds — from install to your first AI employee.
+        </p>
       </div>
+    </section>
 
-      <!-- Install Cards -->
-      <div class="fade-up fade-up-4 grid gap-5 sm:grid-cols-3 mb-16 max-w-3xl mx-auto">
-
-        <!-- macOS -->
-        <div class="card-hover bg-white border border-slate-200 rounded-2xl p-5 shadow-sm min-w-0">
-          <div class="flex items-center gap-2 mb-3">
-            <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-            <span class="text-sm font-semibold text-slate-600">macOS</span>
+    <!-- ─── PROBLEM STRIP ────────────────────────────────────────────────── -->
+    <section class="px-5 sm:px-8 py-14 border-t border-slate-200/70 dark:border-slate-800/70">
+      <div class="max-w-4xl mx-auto">
+        <h2 class="text-center text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-10">
+          You have more ideas than hours.
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div class="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+            <div class="text-3xl mb-2">💸</div>
+            <h3 class="font-semibold text-slate-900 dark:text-white mb-1">Hiring costs more than you make</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400">One engineer costs €8,000/month. A content writer, €3,000. Your first idea hasn't paid for either yet.</p>
           </div>
-          <div class="relative group">
-            <pre class="code-block bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-[13px] text-slate-600 overflow-x-auto text-left leading-relaxed"><code id="cmd-mac">curl -fsSL https://fidelios.nl/install.sh | bash -s -- --yes</code></pre>
-            <button onclick="copyCmd('cmd-mac', this)" class="copy-btn absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-brand-500 hover:border-brand-200 shadow-sm" title="Copy to clipboard">
-              <svg class="w-4 h-4 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-              <svg class="w-4 h-4 check-icon hidden text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-            </button>
+          <div class="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+            <div class="text-3xl mb-2">🔌</div>
+            <h3 class="font-semibold text-slate-900 dark:text-white mb-1">Your tools don't talk to each other</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400">ChatGPT writes. Notion stores. Zapier patches. You're the glue — and the glue burns out by Friday.</p>
+          </div>
+          <div class="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+            <div class="text-3xl mb-2">📱</div>
+            <h3 class="font-semibold text-slate-900 dark:text-white mb-1">Work lives on your laptop</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400">You have five windows open to approve one task. Your day-job takes your attention, and the side-project dies quietly.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── HOW IT WORKS ─────────────────────────────────────────────────── -->
+    <section class="px-5 sm:px-8 py-16 border-t border-slate-200/70 dark:border-slate-800/70">
+      <div class="max-w-4xl mx-auto">
+        <h2 class="text-center text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-3">
+          Three steps. That's all.
+        </h2>
+        <p class="text-center text-slate-600 dark:text-slate-400 mb-12 max-w-xl mx-auto">
+          No prompt engineering. No "API keys" hunting. No cron jobs. If you can text a friend, you can run an AI company.
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="relative bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-6">
+            <div class="absolute -top-3 -left-3 w-9 h-9 rounded-full bg-brand-600 text-white font-bold flex items-center justify-center shadow-md">1</div>
+            <h3 class="font-semibold text-lg text-slate-900 dark:text-white mb-2">Hire</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Pick the roles you need — CEO, writer, engineer, analyst. Templates are ready, no prompt-writing required.</p>
+          </div>
+          <div class="relative bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-6">
+            <div class="absolute -top-3 -left-3 w-9 h-9 rounded-full bg-brand-600 text-white font-bold flex items-center justify-center shadow-md">2</div>
+            <h3 class="font-semibold text-lg text-slate-900 dark:text-white mb-2">Brief</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Tell them the goal — one sentence. They break it into tasks, assign themselves, and start working.</p>
+          </div>
+          <div class="relative bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-6">
+            <div class="absolute -top-3 -left-3 w-9 h-9 rounded-full bg-brand-600 text-white font-bold flex items-center justify-center shadow-md">3</div>
+            <h3 class="font-semibold text-lg text-slate-900 dark:text-white mb-2">Control</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Approve big decisions from Telegram with a 👍. Watch live activity in a dashboard on your phone.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── AUDIENCE CARDS ───────────────────────────────────────────────── -->
+    <section class="px-5 sm:px-8 py-16 border-t border-slate-200/70 dark:border-slate-800/70">
+      <div class="max-w-5xl mx-auto">
+        <h2 class="text-center text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-3">
+          What will you automate?
+        </h2>
+        <p class="text-center text-slate-600 dark:text-slate-400 mb-12 max-w-2xl mx-auto">
+          Four common setups. Pick the one closest to what you want — you can add or switch roles later.
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <!-- Founder -->
+          <article class="card-hover bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-6">
+            <div class="flex items-start gap-3 mb-3">
+              <span class="text-2xl">🚀</span>
+              <div>
+                <h3 class="font-semibold text-lg text-slate-900 dark:text-white">Ship your first product without a team</h3>
+                <p class="text-xs uppercase tracking-wider text-brand-600 dark:text-brand-400 mt-1">For founders</p>
+              </div>
+            </div>
+            <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Hire a CEO, a developer, a designer, a marketer. They build your MVP, set up landing pages, and start looking for first users — while you keep your day-job.</p>
+            <p class="text-xs text-slate-500 dark:text-slate-500 italic">Example: <span class="not-italic font-semibold">"Build and launch a habit-tracking iOS app. Budget $50."</span></p>
+          </article>
+
+          <!-- Creator / Featured -->
+          <article class="card-hover featured-card border rounded-2xl p-6 relative">
+            <span class="absolute top-4 right-4 text-[10px] font-bold uppercase tracking-[0.12em] bg-brand-600 text-white px-2 py-0.5 rounded-full">Most popular</span>
+            <div class="flex items-start gap-3 mb-3">
+              <span class="text-2xl">✍️</span>
+              <div>
+                <h3 class="font-semibold text-lg text-slate-900 dark:text-white">A 24/7 editorial team, approved from your phone</h3>
+                <p class="text-xs uppercase tracking-wider text-brand-600 dark:text-brand-400 mt-1">For creators & SMM</p>
+              </div>
+            </div>
+            <p class="text-sm text-slate-700 dark:text-slate-300 mb-4">Your writers draft, your editors polish, your scheduler posts. You glance at Telegram during coffee, approve what matters with a 👍, and move on with your day.</p>
+            <p class="text-xs text-slate-600 dark:text-slate-400 italic">Example: <span class="not-italic font-semibold">"Write 5 LinkedIn posts a day about our product launch. Tone: confident, friendly."</span></p>
+          </article>
+
+          <!-- Jarvis -->
+          <article class="card-hover bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-6">
+            <div class="flex items-start gap-3 mb-3">
+              <span class="text-2xl">🤖</span>
+              <div>
+                <h3 class="font-semibold text-lg text-slate-900 dark:text-white">One AI team. One Telegram chat. Everything else handled.</h3>
+                <p class="text-xs uppercase tracking-wider text-brand-600 dark:text-brand-400 mt-1">For the Jarvis-users</p>
+              </div>
+            </div>
+            <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Email triage, calendar, research, follow-ups, ops. No more juggling ChatGPT, Notion, Zapier, and five tabs of half-written drafts. One chat — everything lives there.</p>
+            <p class="text-xs text-slate-500 dark:text-slate-500 italic">Example: <span class="not-italic font-semibold">"Every morning, summarise my inbox and pending invoices. Ping me if anything's urgent."</span></p>
+          </article>
+
+          <!-- Project owner -->
+          <article class="card-hover bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-6">
+            <div class="flex items-start gap-3 mb-3">
+              <span class="text-2xl">🧭</span>
+              <div>
+                <h3 class="font-semibold text-lg text-slate-900 dark:text-white">Agents run the side-project while you're at your day-job</h3>
+                <p class="text-xs uppercase tracking-wider text-brand-600 dark:text-brand-400 mt-1">For project owners</p>
+              </div>
+            </div>
+            <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Your Etsy shop, podcast, newsletter, coaching practice — whatever the side gig, the AI team handles the admin loop. You wake up to progress, not a to-do list.</p>
+            <p class="text-xs text-slate-500 dark:text-slate-500 italic">Example: <span class="not-italic font-semibold">"Manage the course launch. Draft emails, schedule posts, answer FAQs. Escalate payments issues."</span></p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── WHY FIDELIOS — 3 verified differentiators ─────────────────────── -->
+    <section class="px-5 sm:px-8 py-16 border-t border-slate-200/70 dark:border-slate-800/70">
+      <div class="max-w-5xl mx-auto">
+        <h2 class="text-center text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-3">
+          What's different here.
+        </h2>
+        <p class="text-center text-slate-600 dark:text-slate-400 mb-12 max-w-2xl mx-auto">
+          We're not the first tool in this space. Here's what FideliOS does that we haven't found anywhere else.
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col">
+            <div class="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center mb-4 text-xl">💬</div>
+            <h3 class="font-semibold text-lg text-slate-900 dark:text-white mb-2">Telegram control room, out of the box</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Your agents post updates, you approve with 👍, every action is logged. Same dashboard in your pocket as on your laptop — and unlike browser tools, you get push notifications for free.</p>
+          </div>
+          <div class="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col">
+            <div class="w-10 h-10 rounded-lg bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center mb-4 text-xl">⚙️</div>
+            <h3 class="font-semibold text-lg text-slate-900 dark:text-white mb-2">One command to run forever</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400"><code class="text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">fidelios service install</code> sets up the right background service on macOS, Linux, or Windows. Your AI team starts with your computer, restarts on crash, and keeps working while you sleep. No Docker wrangling.</p>
+          </div>
+          <div class="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col">
+            <div class="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center mb-4 text-xl">📉</div>
+            <h3 class="font-semibold text-lg text-slate-900 dark:text-white mb-2">Knows when your AI is cheap</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Per-company peak-hour rules throttle non-urgent work to off-peak windows, while urgent tasks run immediately. Every agent has a budget cap and a live spend dashboard — no surprise bills on the first of the month.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── INSTALL ──────────────────────────────────────────────────────── -->
+    <section id="install" class="px-5 sm:px-8 py-16 border-t border-slate-200/70 dark:border-slate-800/70">
+      <div class="max-w-4xl mx-auto">
+        <h2 class="text-center text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-3">
+          Ready? Start in under 2 minutes.
+        </h2>
+        <p class="text-center text-slate-600 dark:text-slate-400 mb-10 max-w-xl mx-auto">
+          Paste one line. The installer handles the rest — Node, dependencies, background service if you want it.
+        </p>
+
+        <div class="grid gap-5 sm:grid-cols-3 mb-6">
+          <!-- macOS -->
+          <div class="card-hover bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm min-w-0">
+            <div class="flex items-center gap-2 mb-3">
+              <svg class="w-5 h-5 text-slate-400 dark:text-slate-500" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+              <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">macOS</span>
+            </div>
+            <div class="relative group">
+              <pre class="code-block bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 rounded-xl px-4 py-3 text-[13px] text-slate-600 dark:text-slate-300 overflow-x-auto text-left leading-relaxed"><code id="cmd-mac">curl -fsSL https://fidelios.nl/install.sh | bash -s -- --yes</code></pre>
+              <button onclick="copyCmd('cmd-mac', this)" class="copy-btn absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-brand-500 hover:border-brand-200 shadow-sm" title="Copy to clipboard">
+                <svg class="w-4 h-4 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                <svg class="w-4 h-4 check-icon hidden text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Linux -->
+          <div class="card-hover bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm min-w-0">
+            <div class="flex items-center gap-2 mb-3">
+              <svg class="w-5 h-5 text-slate-400 dark:text-slate-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.368 1.884 1.43.868.134 1.703-.272 2.191-.574.163-.135.543-.331.763-.53.55-.466.353-.665.101-.929a6.7 6.7 0 01-.347-.315c-.239-.25-.45-.535-.649-.842-.541-.879-.49-1.058-.49-1.058l.894-.369s.267-.178.267-.465c0-.2-.091-.4-.2-.6a3.4 3.4 0 00-.412-.53c-.37-.378-.535-.535-.668-.8-.377-.737-.4-1.485-.267-2.2.135-.8.4-1.6.67-2.327.4-1.069.136-2.138-.134-2.939-.331-1.067-.864-1.87-1.202-3.003-.34-1.135-.47-2.535-.204-4.27A5.42 5.42 0 0012.504 0z"/></svg>
+              <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Linux</span>
+            </div>
+            <div class="relative group">
+              <pre class="code-block bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 rounded-xl px-4 py-3 text-[13px] text-slate-600 dark:text-slate-300 overflow-x-auto text-left leading-relaxed"><code id="cmd-linux">curl -fsSL https://fidelios.nl/install-linux.sh | bash</code></pre>
+              <button onclick="copyCmd('cmd-linux', this)" class="copy-btn absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-brand-500 hover:border-brand-200 shadow-sm" title="Copy to clipboard">
+                <svg class="w-4 h-4 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                <svg class="w-4 h-4 check-icon hidden text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Windows -->
+          <div class="card-hover bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm min-w-0">
+            <div class="flex items-center gap-2 mb-3">
+              <svg class="w-5 h-5 text-slate-400 dark:text-slate-500" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
+              <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">Windows</span>
+            </div>
+            <div class="relative group">
+              <pre class="code-block bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 rounded-xl px-4 py-3 text-[13px] text-slate-600 dark:text-slate-300 overflow-x-auto text-left leading-relaxed"><code id="cmd-win">iwr -useb https://fidelios.nl/install.ps1 | iex</code></pre>
+              <button onclick="copyCmd('cmd-win', this)" class="copy-btn absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-brand-500 hover:border-brand-200 shadow-sm" title="Copy to clipboard">
+                <svg class="w-4 h-4 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                <svg class="w-4 h-4 check-icon hidden text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- Linux -->
-        <div class="card-hover bg-white border border-slate-200 rounded-2xl p-5 shadow-sm min-w-0">
-          <div class="flex items-center gap-2 mb-3">
-            <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.368 1.884 1.43.868.134 1.703-.272 2.191-.574.163-.135.543-.331.763-.53.55-.466.353-.665.101-.929a6.7 6.7 0 01-.347-.315c-.239-.25-.45-.535-.649-.842-.541-.879-.49-1.058-.49-1.058l.894-.369s.267-.178.267-.465c0-.2-.091-.4-.2-.6a3.4 3.4 0 00-.412-.53c-.37-.378-.535-.535-.668-.8-.377-.737-.4-1.485-.267-2.2.135-.8.4-1.6.67-2.327.4-1.069.136-2.138-.134-2.939-.331-1.067-.864-1.87-1.202-3.003-.34-1.135-.47-2.535-.204-4.27A5.42 5.42 0 0012.504 0z"/></svg>
-            <span class="text-sm font-semibold text-slate-600">Linux</span>
-          </div>
-          <div class="relative group">
-            <pre class="code-block bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-[13px] text-slate-600 overflow-x-auto text-left leading-relaxed"><code id="cmd-linux">curl -fsSL https://fidelios.nl/install-linux.sh | bash</code></pre>
-            <button onclick="copyCmd('cmd-linux', this)" class="copy-btn absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-brand-500 hover:border-brand-200 shadow-sm" title="Copy to clipboard">
-              <svg class="w-4 h-4 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-              <svg class="w-4 h-4 check-icon hidden text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-            </button>
-          </div>
+        <div class="text-center">
+          <a href="https://docs.fidelios.nl/start/first-time-mac" class="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Never used Terminal? Step-by-step guide →
+          </a>
         </div>
+      </div>
+    </section>
 
-        <!-- Windows -->
-        <div class="card-hover bg-white border border-slate-200 rounded-2xl p-5 shadow-sm min-w-0">
-          <div class="flex items-center gap-2 mb-3">
-            <svg class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
-            <span class="text-sm font-semibold text-slate-600">Windows</span>
-          </div>
-          <div class="relative group">
-            <pre class="code-block bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-[13px] text-slate-600 overflow-x-auto text-left leading-relaxed"><code id="cmd-win">iwr -useb https://fidelios.nl/install.ps1 | iex</code></pre>
-            <button onclick="copyCmd('cmd-win', this)" class="copy-btn absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-brand-500 hover:border-brand-200 shadow-sm" title="Copy to clipboard">
-              <svg class="w-4 h-4 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-              <svg class="w-4 h-4 check-icon hidden text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-            </button>
-          </div>
+    <!-- ─── FAQ ──────────────────────────────────────────────────────────── -->
+    <section class="px-5 sm:px-8 py-16 border-t border-slate-200/70 dark:border-slate-800/70">
+      <div class="max-w-3xl mx-auto">
+        <h2 class="text-center text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-10">
+          Common questions
+        </h2>
+        <div class="space-y-3">
+
+          <details class="group bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+            <summary class="flex items-center gap-3 px-5 py-4 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+              <svg class="chevron w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+              <span class="font-medium text-slate-800 dark:text-slate-200">Will my data be safe?</span>
+            </summary>
+            <div class="px-5 pb-5 pt-1 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              Yes. FideliOS runs entirely on your own computer (or your own cloud VM if you prefer). There's no FideliOS cloud, no data upload, no telemetry. Your agents talk to Claude / OpenAI / etc. directly via your keys — we never see the content. <a href="https://docs.fidelios.nl/deploy/secrets" class="text-brand-600 dark:text-brand-400 hover:underline">Privacy details →</a>
+            </div>
+          </details>
+
+          <details class="group bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+            <summary class="flex items-center gap-3 px-5 py-4 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+              <svg class="chevron w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+              <span class="font-medium text-slate-800 dark:text-slate-200">What if an agent makes a bad decision?</span>
+            </summary>
+            <div class="px-5 pb-5 pt-1 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              Three layers of guardrails: (1) <strong>approval gates</strong> — hiring new agents, publishing content, or spending over a threshold always ping you for a 👍 first; (2) <strong>budget caps</strong> — every agent has a hard spending limit per day/month; (3) <strong>full audit log</strong> — every action is recorded, so you can see exactly what happened and undo it.
+            </div>
+          </details>
+
+          <details class="group bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+            <summary class="flex items-center gap-3 px-5 py-4 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+              <svg class="chevron w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+              <span class="font-medium text-slate-800 dark:text-slate-200">Do I need coding skills?</span>
+            </summary>
+            <div class="px-5 pb-5 pt-1 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              No. If you can open Terminal (Cmd+Space, type "Terminal") and paste one line, you can install FideliOS. From then on everything happens in a web dashboard or Telegram. <a href="https://docs.fidelios.nl/start/first-time-mac" class="text-brand-600 dark:text-brand-400 hover:underline">First time on a Mac? →</a>
+            </div>
+          </details>
+
+          <details class="group bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+            <summary class="flex items-center gap-3 px-5 py-4 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+              <svg class="chevron w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+              <span class="font-medium text-slate-800 dark:text-slate-200">How much does it cost?</span>
+            </summary>
+            <div class="px-5 pb-5 pt-1 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              FideliOS itself is free and open source — no subscription, no "pro tier". You pay the AI provider you choose (Anthropic, OpenAI, Google) for their API usage. Typical side-project: <strong>$5–20 per month</strong>. A one-person content operation runs around $30–60/month. Set a cap so it never surprises you.
+            </div>
+          </details>
+
+          <details class="group bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+            <summary class="flex items-center gap-3 px-5 py-4 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+              <svg class="chevron w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+              <span class="font-medium text-slate-800 dark:text-slate-200">Can I really run this from my phone?</span>
+            </summary>
+            <div class="px-5 pb-5 pt-1 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              Yes. Two ways: (1) <strong>Telegram bot</strong> — your agents message you updates, you reply in chat to approve or adjust priorities; (2) <strong>mobile web dashboard</strong> — same UI as on your laptop, optimised for touch, works in any phone browser.
+            </div>
+          </details>
+
+          <details class="group bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+            <summary class="flex items-center gap-3 px-5 py-4 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+              <svg class="chevron w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+              <span class="font-medium text-slate-800 dark:text-slate-200">Can I cancel anytime?</span>
+            </summary>
+            <div class="px-5 pb-5 pt-1 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              There's nothing to cancel — FideliOS is open source and runs on your machine. To uninstall: <code class="text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">fidelios uninstall</code>. Your data stays in <code class="text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">~/.fidelios/</code> until you delete that too.
+            </div>
+          </details>
+
+          <details class="group bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+            <summary class="flex items-center gap-3 px-5 py-4 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+              <svg class="chevron w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+              <span class="font-medium text-slate-800 dark:text-slate-200">What happens when I close Terminal?</span>
+            </summary>
+            <div class="px-5 pb-5 pt-1 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              The installer asks: <em>"Keep FideliOS running automatically, even after you close Terminal or restart?"</em> Pick <strong>Yes</strong> — it sets up a background service so your AI team keeps working 24/7. If you said No, you can change your mind later: <a href="https://docs.fidelios.nl/start/keep-running" class="text-brand-600 dark:text-brand-400 hover:underline">Keep FideliOS running →</a>
+            </div>
+          </details>
+
         </div>
-
       </div>
+    </section>
 
-      <!-- FAQ -->
-      <div class="fade-up fade-up-5 max-w-2xl mx-auto text-left space-y-3">
-        <details class="group bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-          <summary class="flex items-center gap-3 px-6 py-4 cursor-pointer select-none hover:bg-slate-50 transition-colors">
-            <svg class="chevron w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-            <span class="font-medium text-slate-700">What does this install?</span>
-          </summary>
-          <div class="px-6 pb-5 pt-2 border-t border-slate-100 space-y-4">
-            <div>
-              <h4 class="text-sm font-semibold text-brand-600 mb-1.5">macOS</h4>
-              <ul class="text-sm text-slate-500 space-y-1 list-disc list-inside">
-                <li>Homebrew (if not already installed)</li>
-                <li>Node.js via Homebrew</li>
-                <li>FideliOS CLI (<code class="text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded text-xs">npm install -g fidelios</code>)</li>
-              </ul>
-            </div>
-            <div>
-              <h4 class="text-sm font-semibold text-brand-600 mb-1.5">Linux</h4>
-              <ul class="text-sm text-slate-500 space-y-1 list-disc list-inside">
-                <li>Node.js LTS via nvm (in <code class="text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded text-xs">~/.nvm</code>, no sudo)</li>
-                <li>FideliOS CLI (<code class="text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded text-xs">npm install -g fidelios</code>)</li>
-                <li>Runs FideliOS on port 3100</li>
-              </ul>
-            </div>
-            <div>
-              <h4 class="text-sm font-semibold text-brand-600 mb-1.5">Windows</h4>
-              <ul class="text-sm text-slate-500 space-y-1 list-disc list-inside">
-                <li>Node.js LTS via winget (or nvm-windows fallback)</li>
-                <li>FideliOS CLI (<code class="text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded text-xs">npm install -g fidelios</code>)</li>
-                <li>Runs FideliOS on port 3100</li>
-              </ul>
-            </div>
-          </div>
-        </details>
-
-        <details class="group bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-          <summary class="flex items-center gap-3 px-6 py-4 cursor-pointer select-none hover:bg-slate-50 transition-colors">
-            <svg class="chevron w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-            <span class="font-medium text-slate-700">How does it work?</span>
-          </summary>
-          <div class="px-6 pb-5 pt-2 border-t border-slate-100">
-            <p class="text-sm text-slate-500 leading-relaxed">
-              FideliOS runs a control plane that coordinates autonomous AI agents. Each agent has a role, tools, and instructions. You define your company structure, assign tasks, and agents execute them — writing code, managing deployments, handling ops, and more.
-            </p>
-          </div>
-        </details>
-
-        <details class="group bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-          <summary class="flex items-center gap-3 px-6 py-4 cursor-pointer select-none hover:bg-slate-50 transition-colors">
-            <svg class="chevron w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-            <span class="font-medium text-slate-700">Is it free?</span>
-          </summary>
-          <div class="px-6 pb-5 pt-2 border-t border-slate-100">
-            <p class="text-sm text-slate-500 leading-relaxed">
-              FideliOS is open source and free to self-host. You bring your own LLM API keys. The platform itself has no license fees.
-            </p>
-          </div>
-        </details>
+    <!-- ─── FINAL CTA ────────────────────────────────────────────────────── -->
+    <section class="px-5 sm:px-8 py-20 border-t border-slate-200/70 dark:border-slate-800/70">
+      <div class="max-w-2xl mx-auto text-center">
+        <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-4">
+          Your first AI employee is two minutes away.
+        </h2>
+        <p class="text-slate-600 dark:text-slate-400 mb-7">
+          Free forever. Open source. Runs on your own computer. Your first hire doesn't even know you don't have a company yet.
+        </p>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <a href="#install" class="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white text-base font-semibold px-6 py-3 rounded-xl shadow-md transition-colors">
+            Start free in 2 minutes
+          </a>
+          <a href="https://github.com/fideliosai/fidelios" class="w-full sm:w-auto border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-brand-400 hover:text-brand-600 dark:hover:text-brand-300 text-base font-semibold px-6 py-3 rounded-xl transition-colors">
+            Browse the code on GitHub
+          </a>
+        </div>
       </div>
-
-    </div>
+    </section>
   </main>
 
   <!-- Footer -->
-  <footer class="border-t border-slate-200 bg-white/60 backdrop-blur-sm py-8 px-5 sm:px-8">
-    <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-400">
-      <span>&copy; 2026 FideliOS</span>
+  <footer class="border-t border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/40 backdrop-blur-sm py-8 px-5 sm:px-8">
+    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500 dark:text-slate-400">
+      <div class="flex items-center gap-2">
+        <img src="/favicon.svg" alt="" class="w-4 h-4 opacity-70">
+        <span>&copy; 2026 FideliOS</span>
+      </div>
       <div class="flex items-center gap-6">
-        <a href="https://github.com/maxzemtsov/fidelios" class="hover:text-brand-500 transition-colors">GitHub</a>
+        <a href="https://github.com/fideliosai/fidelios" class="hover:text-brand-500 transition-colors">GitHub</a>
         <a href="https://docs.fidelios.nl" class="hover:text-brand-500 transition-colors">Docs</a>
+        <a href="/credits.html" class="hover:text-brand-500 transition-colors">Credits</a>
       </div>
     </div>
   </footer>
 
-  <!-- Copy-to-clipboard -->
+  <!-- Scripts -->
   <script>
+    // ── Copy-to-clipboard ─────────────────────────────────────────────────
     function copyCmd(id, btn) {
       const text = document.getElementById(id).textContent;
       navigator.clipboard.writeText(text).then(() => {
@@ -276,10 +563,16 @@
       });
     }
 
-    // Autoplay video after 2 seconds
+    // ── Theme toggle ──────────────────────────────────────────────────────
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('fidelios-theme', isDark ? 'dark' : 'light');
+    }
+
+    // ── Autoplay demo video after 2 seconds ───────────────────────────────
     setTimeout(() => {
       const video = document.getElementById('demo-video');
-      if (video) video.play().catch(() => {});
+      if (video) video.play().catch(() => { /* autoplay blocked — user will hit play */ });
     }, 2000);
   </script>
 

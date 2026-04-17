@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Credits — FideliOS</title>
+  <meta name="description" content="Open-source libraries and upstream projects that FideliOS builds on.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/site.webmanifest">
+  <script>
+    (function() {
+      var saved = localStorage.getItem('fidelios-theme');
+      var system = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var theme = saved || (system ? 'dark' : 'light');
+      if (theme === 'dark') document.documentElement.classList.add('dark');
+    })();
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'] },
+          colors: {
+            brand: { 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' },
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    body {
+      background: linear-gradient(180deg, #f8fafc 0%, #ffffff 40%, #f8fafc 100%);
+    }
+    html.dark body {
+      background: linear-gradient(180deg, #0b0f1a 0%, #0f1524 40%, #0b0f1a 100%);
+    }
+  </style>
+</head>
+<body class="font-sans text-slate-700 dark:text-slate-200 antialiased min-h-screen">
+
+  <nav class="sticky top-0 z-40 backdrop-blur-md bg-white/70 dark:bg-slate-900/70 border-b border-slate-200/60 dark:border-slate-800/60">
+    <div class="max-w-3xl mx-auto px-5 sm:px-8 h-14 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2">
+        <img src="/favicon.svg" alt="" class="w-6 h-6">
+        <span class="font-bold text-slate-800 dark:text-slate-100">FideliOS</span>
+      </a>
+      <a href="/" class="text-sm text-slate-600 hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-500 transition-colors">← Back to home</a>
+    </div>
+  </nav>
+
+  <main class="max-w-3xl mx-auto px-5 sm:px-8 py-16">
+    <h1 class="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-3">Credits</h1>
+    <p class="text-slate-600 dark:text-slate-400 mb-12 leading-relaxed">
+      FideliOS stands on a lot of open-source shoulders. These are the projects we build directly on — thank you.
+    </p>
+
+    <section class="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 mb-8">
+      <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-3">Upstream project</h2>
+      <p class="text-slate-700 dark:text-slate-300 leading-relaxed mb-4">
+        FideliOS began as a fork of
+        <a href="https://github.com/paperclipai/paperclip" class="text-brand-600 dark:text-brand-500 hover:underline font-semibold">Paperclip</a>
+        (MIT). We thank the Paperclip team for the foundation — the UI, the data model, the adapter protocol and the many polish passes that came before the fork.
+      </p>
+      <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+        What FideliOS adds on top:
+      </p>
+      <ul class="list-disc pl-6 mt-2 space-y-1 text-slate-700 dark:text-slate-300">
+        <li>Telegram gateway plugin (bidirectional agent chat + approvals)</li>
+        <li>One-command background service for macOS, Linux, and Windows (<code class="text-sm bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">fidelios service install</code> with launchd / systemd / Scheduled Task)</li>
+        <li>Three-OS installer flow (<code class="text-sm bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">install.sh</code> / <code class="text-sm bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">install-linux.sh</code> / <code class="text-sm bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">install.ps1</code>), verified end-to-end on fresh AWS instances</li>
+        <li>Peak-hour throttling for cost-aware scheduling</li>
+        <li>Process-tree-aware <code class="text-sm bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">fidelios stop</code> and <code class="text-sm bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">fidelios uninstall</code></li>
+        <li>The <code class="text-sm bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">hermes-local</code> adapter</li>
+      </ul>
+      <p class="text-slate-700 dark:text-slate-300 leading-relaxed mt-4">
+        Most other things you see — the multi-adapter protocol, cost monitoring, budgets, the dev-server auto-restart toggle, the embedded PostgreSQL — are shared heritage. We try to stay MIT-transparent about that.
+      </p>
+    </section>
+
+    <section class="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 mb-8">
+      <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">Core libraries</h2>
+      <ul class="space-y-2 text-slate-700 dark:text-slate-300">
+        <li><a class="text-brand-600 dark:text-brand-500 hover:underline" href="https://nodejs.org">Node.js</a> — runtime</li>
+        <li><a class="text-brand-600 dark:text-brand-500 hover:underline" href="https://www.postgresql.org">PostgreSQL</a> (via <a class="text-brand-600 dark:text-brand-500 hover:underline" href="https://www.npmjs.com/package/embedded-postgres">embedded-postgres</a>) — database</li>
+        <li><a class="text-brand-600 dark:text-brand-500 hover:underline" href="https://orm.drizzle.team">Drizzle ORM</a> — schema + migrations</li>
+        <li><a class="text-brand-600 dark:text-brand-500 hover:underline" href="https://react.dev">React</a> + <a class="text-brand-600 dark:text-brand-500 hover:underline" href="https://vite.dev">Vite</a> — web UI</li>
+        <li><a class="text-brand-600 dark:text-brand-500 hover:underline" href="https://tailwindcss.com">Tailwind CSS</a> — styling</li>
+        <li><a class="text-brand-600 dark:text-brand-500 hover:underline" href="https://github.com/colinhacks/zod">Zod</a> — runtime validation</li>
+        <li><a class="text-brand-600 dark:text-brand-500 hover:underline" href="https://getpino.io">pino</a> — logging</li>
+        <li><a class="text-brand-600 dark:text-brand-500 hover:underline" href="https://github.com/better-auth/better-auth">better-auth</a> — authentication</li>
+      </ul>
+    </section>
+
+    <section class="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 mb-8">
+      <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">Agent runtimes we support</h2>
+      <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+        FideliOS doesn't ship AI models — it orchestrates whatever agent CLIs you have installed. Credits to the teams building the ones we support:
+      </p>
+      <ul class="mt-4 space-y-2 text-slate-700 dark:text-slate-300">
+        <li><a class="text-brand-600 dark:text-brand-500 hover:underline" href="https://claude.com/claude-code">Claude Code</a> (Anthropic)</li>
+        <li><a class="text-brand-600 dark:text-brand-500 hover:underline" href="https://github.com/openai/codex">OpenAI Codex CLI</a></li>
+        <li><a class="text-brand-600 dark:text-brand-500 hover:underline" href="https://github.com/google/generative-ai-docs">Gemini CLI</a></li>
+        <li><a class="text-brand-600 dark:text-brand-500 hover:underline" href="https://cursor.com">Cursor</a></li>
+        <li><a class="text-brand-600 dark:text-brand-500 hover:underline" href="https://opencode.ai">OpenCode</a></li>
+        <li><a class="text-brand-600 dark:text-brand-500 hover:underline" href="https://pi.ai">Pi</a> (Inflection)</li>
+        <li><a class="text-brand-600 dark:text-brand-500 hover:underline" href="https://github.com/NousResearch">Hermes</a> (Nous Research)</li>
+      </ul>
+    </section>
+
+    <section class="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 mb-8">
+      <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">License</h2>
+      <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+        FideliOS is distributed under the <a class="text-brand-600 dark:text-brand-500 hover:underline" href="https://github.com/fideliosai/fidelios/blob/main/LICENSE">MIT License</a>, matching our upstream. See the full text in the repository.
+      </p>
+    </section>
+
+    <p class="text-center text-sm text-slate-500 dark:text-slate-400 mt-12">
+      Missing attribution? Open an issue at <a class="text-brand-600 dark:text-brand-500 hover:underline" href="https://github.com/fideliosai/fidelios/issues">github.com/fideliosai/fidelios</a>.
+    </p>
+  </main>
+</body>
+</html>
