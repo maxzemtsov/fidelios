@@ -20,17 +20,11 @@ You don't need to know anything about development. FideliOS installs with one co
     When it's done, keep the Terminal window open and continue to [Open FideliOS](#open-fidelios) below.
   </Tab>
   <Tab title="Linux">
-    Open a terminal and run **one** of these:
-
-    **Docker (recommended)** — no Node.js needed:
+    Open a terminal and run:
     ```sh
     curl -fsSL https://fidelios.nl/install-linux.sh | bash
     ```
-
-    **Node.js CLI** — gives you the `fidelios` command:
-    ```sh
-    curl -fsSL https://fidelios.nl/install.sh | bash
-    ```
+    Installs Node.js LTS via nvm (no sudo) and the FideliOS CLI.
   </Tab>
   <Tab title="Windows">
     1. Press the Windows key, type **PowerShell**, press `Enter`.
@@ -51,18 +45,9 @@ On **macOS** and **Windows** the installer asks whether to start FideliOS right 
 
 If you closed the installer or want to start it manually later:
 
-<Tabs>
-  <Tab title="macOS / Windows / Linux (CLI)">
-    ```sh
-    fidelios run
-    ```
-  </Tab>
-  <Tab title="Linux (Docker)">
-    ```sh
-    docker start fidelios
-    ```
-  </Tab>
-</Tabs>
+```sh
+fidelios run
+```
 
 ## Open FideliOS
 
@@ -75,18 +60,15 @@ The first time you open it, a setup wizard walks you through creating your first
 By default FideliOS runs in the foreground of the terminal. To make it start automatically at login and survive closing your terminal window:
 
 <Tabs>
-  <Tab title="macOS / Linux (CLI)">
+  <Tab title="macOS / Linux">
     ```sh
     fidelios service install
     fidelios service status
     ```
-    See [Service Commands](/cli/service-commands) for dev/release mode options and the background-service details.
-  </Tab>
-  <Tab title="Linux (Docker)">
-    The Docker container already restarts automatically (`--restart unless-stopped`). No extra step needed.
+    See [Service Commands](/cli/service-commands) for dev/release mode options.
   </Tab>
   <Tab title="Windows">
-    Native background service on Windows is planned. For now keep PowerShell open, or wrap the CLI with [nssm](https://nssm.cc/) / Task Scheduler.
+    Native background service on Windows is planned. For now keep PowerShell open, or wrap the CLI with [nssm](https://nssm.cc/) or Task Scheduler.
   </Tab>
 </Tabs>
 

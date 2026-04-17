@@ -19,7 +19,7 @@ Any provider with a Linux VM works. Examples below use Ubuntu 24.04 LTS.
 
 ## Step 1 — Provision a VM
 
-Create a new VM running Ubuntu 22.04+ LTS. Note your VM's public IP address — you'll need it in a moment.
+Create a new VM running Ubuntu 22.04+ LTS. Note your VM's public IP — you'll need it in a moment.
 
 SSH into it:
 
@@ -27,29 +27,15 @@ SSH into it:
 ssh ubuntu@<your-vm-ip>
 ```
 
-## Step 2 — Pick an install path
-
-Two paths work on cloud VMs. Pick one.
-
-### Path A — Docker (simplest)
+## Step 2 — Install FideliOS
 
 ```sh
 curl -fsSL https://fidelios.nl/install-linux.sh | bash
 ```
 
-This installs Docker Engine, pulls `ghcr.io/fideliosai/fidelios:latest`, and runs FideliOS as a container named `fidelios` listening on port 3100. The container uses `--restart unless-stopped` so it survives reboots.
+This installs Node.js LTS via nvm (in `~/.nvm`, no sudo) and `npm install -g fidelios`. You get the full CLI: `fidelios run`, `fidelios service install`, `fidelios doctor`.
 
-You do **not** get a `fidelios` CLI on this path — all control happens through `docker ...` commands or the web UI.
-
-### Path B — Node.js CLI (more control)
-
-```sh
-curl -fsSL https://fidelios.nl/install.sh | bash
-```
-
-This installs Node.js LTS via nvm and `npm install -g fidelios`. You get the full CLI: `fidelios run`, `fidelios service install`, `fidelios doctor`, etc.
-
-For cloud deployments the CLI path is usually better because systemd gives you finer control than Docker's restart policy.
+If nvm-install complains about missing curl, the script installs it via your distro's package manager (`apt-get`, `dnf`, or `yum`) — that's the only step that uses sudo.
 
 ## Step 3 — Open port 3100
 
@@ -57,7 +43,7 @@ FideliOS listens on port 3100. Open that port in your provider's firewall so you
 
 | Provider | Where |
 |----------|-------|
-| AWS EC2 | Security Group → inbound rules → Custom TCP port 3100 from your IP |
+| AWS EC2 | Security Group → inbound → Custom TCP 3100 from your IP |
 | Azure | Network security group → inbound rule port 3100 |
 | DigitalOcean | Networking → Firewalls → TCP inbound 3100 |
 | Hetzner | Firewall → add rule TCP 3100 |
@@ -66,17 +52,11 @@ FideliOS listens on port 3100. Open that port in your provider's firewall so you
 
 By default FideliOS only accepts connections from `127.0.0.1`. To expose it beyond the VM:
 
-### If you installed via Docker (Path A)
-
-Already done — the container maps `0.0.0.0:3100` on the host.
-
-### If you installed via CLI (Path B)
-
 ```sh
 HOST=0.0.0.0 fidelios run
 ```
 
-Or for the background service, regenerate the plist/systemd unit with `HOST`:
+Or for the background service, set `HOST` before installing:
 
 ```sh
 HOST=0.0.0.0 fidelios service install
@@ -84,34 +64,22 @@ HOST=0.0.0.0 fidelios service install
 
 ## Step 5 — Run as a background service
 
-### Docker path
-
-Already handled by `--restart unless-stopped`. Confirm:
-
-```sh
-docker inspect fidelios --format '{{.HostConfig.RestartPolicy.Name}}'
-# -> unless-stopped
-```
-
-### CLI path
-
 ```sh
 fidelios service install
 fidelios service status
 ```
 
-The CLI sets up a systemd user unit (`~/.config/systemd/user/fidelios.service`) with `Restart=always` and a `PATH` that includes `~/.claude/local/bin`, `~/.cargo/bin`, and common adapter locations.
+This writes a systemd user unit (`~/.config/systemd/user/fidelios.service`) with `Restart=always` and a `PATH` that includes `~/.claude/local/bin`, `~/.cargo/bin`, and common adapter locations.
 
-Check it is running:
+Confirm it's up:
 
 ```sh
 curl http://localhost:3100/api/health
-# -> {"status":"ok","version":"0.0.31",...}
 ```
 
 ## Step 6 — Private access with Tailscale (recommended)
 
-Exposing port 3100 to the internet works but is not ideal. A better option is to use Tailscale so only devices on your private network can reach FideliOS.
+Exposing port 3100 to the internet works but isn't ideal. A better option is Tailscale so only devices on your private network can reach FideliOS.
 
 1. Install Tailscale on the VM — follow the [Tailscale Linux install docs](https://tailscale.com/kb/1031/install-linux)
 2. Join your tailnet: `sudo tailscale up`
@@ -119,19 +87,9 @@ Exposing port 3100 to the internet works but is not ideal. A better option is to
 4. Close port 3100 in your cloud firewall (only allow Tailscale traffic)
 5. Access FideliOS via the Tailscale IP: `http://<tailscale-ip>:3100`
 
-See [Tailscale Private Access](/deploy/tailscale-private-access) for allowed hostnames and MagicDNS setup.
+See [Tailscale Private Access](/deploy/tailscale-private-access) for allowed hostnames and MagicDNS.
 
 ## Where your data lives
-
-### Docker path
-
-| Data | Location |
-|------|----------|
-| All runtime state | Docker named volume `fidelios` |
-
-Inspect the host path: `docker volume inspect fidelios`.
-
-### CLI path
 
 | Data | Location |
 |------|----------|
@@ -141,7 +99,21 @@ Inspect the host path: `docker volume inspect fidelios`.
 | Logs | `~/.fidelios/instances/default/logs` |
 | Service log | `~/.fidelios/instances/default/fidelios.log` |
 
-Back up the appropriate dir before resizing or destroying the VM.
+Back up this directory before resizing or destroying the VM.
+
+## Running as a container (advanced)
+
+A `ghcr.io/fideliosai/fidelios` image is published for Kubernetes and docker-compose deployments. Manual pull:
+
+```sh
+docker run -d --name fidelios \
+  -p 3100:3100 \
+  --restart unless-stopped \
+  -v fidelios-data:/root/.fidelios \
+  ghcr.io/fideliosai/fidelios:latest
+```
+
+For a single-VM install the CLI path above is simpler and gives you the full CLI.
 
 ## What's Next
 

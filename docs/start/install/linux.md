@@ -5,18 +5,14 @@ summary: Get FideliOS running on Linux
 
 Get FideliOS running on Linux with a single command.
 
-There are two install paths:
-
-1. **Docker** (default, recommended) — one command, no Node.js required.
-2. **Node.js CLI** (advanced) — same command as macOS, runs directly on your system.
-
 ## Prerequisites
 
-- Ubuntu 22.04+, Debian 12+, Fedora 39+, or any modern systemd-based distribution
-- `curl` installed (`sudo apt install curl` / `sudo dnf install curl`)
-- A user account with `sudo` access
+- Ubuntu 22.04+, Debian 12+, Fedora 39+, or any modern Linux distribution
+- `curl` installed (the installer installs it for you if missing)
 
-## Docker install (default)
+You do **not** need Docker, sudo, or a system-wide Node install — FideliOS installs Node.js into your home directory via `nvm` and the CLI via user-local npm.
+
+## Install
 
 Open a terminal and run:
 
@@ -26,77 +22,74 @@ curl -fsSL https://fidelios.nl/install-linux.sh | bash
 
 The script:
 
-1. Installs Docker Engine if it is not already present
-2. Pulls `ghcr.io/fideliosai/fidelios:latest` from GitHub Container Registry
-3. Runs FideliOS as a container named `fidelios` bound to port `3100`
-4. Starts your browser at `http://localhost:3100`
+1. Installs `curl` (if missing) via your distro's package manager — needs sudo only for this step
+2. Installs Node.js LTS via `nvm` into `~/.nvm` — no sudo
+3. Redirects npm's global prefix to `~/.npm-global` if the default prefix isn't writable
+4. Installs the `fidelios` CLI (`npm install -g fidelios@latest`)
+5. Runs the interactive setup wizard — or `fidelios onboard --yes` in non-interactive shells
 
-Your data lives in the container's `~/.fidelios/` volume and persists across restarts.
-
-### Managing the container
-
-```sh
-docker ps                      # see FideliOS running
-docker stop fidelios           # stop
-docker start fidelios          # start again
-docker logs -f fidelios        # follow logs
-docker rm -f fidelios          # remove (data is preserved — see below)
-```
-
-The container uses a named volume for `~/.fidelios/`, so removing the container
-does **not** delete your companies, agents, or database.
-
-### Updating
+## Start FideliOS
 
 ```sh
-docker pull ghcr.io/fideliosai/fidelios:latest
-docker rm -f fidelios
-curl -fsSL https://fidelios.nl/install-linux.sh | bash
-```
-
-## Node.js CLI install (advanced)
-
-If you already have Node.js 20+ installed and want to run FideliOS directly
-(no Docker), use the macOS installer — it works on Linux too:
-
-```sh
-curl -fsSL https://fidelios.nl/install.sh | bash
-```
-
-Or install manually:
-
-```sh
-npm install -g fidelios@latest
-fidelios onboard
 fidelios run
 ```
 
-This path gives you the full `fidelios` CLI (`fidelios service install`,
-`fidelios stop`, `fidelios doctor`, etc.) and uses the monorepo's dev-runner
-if you are working from a checkout.
+Then open [http://127.0.0.1:3100](http://127.0.0.1:3100) in your browser.
 
-### Run as a background service (CLI install only)
+The first time you open it, a setup wizard walks you through creating your first company and hiring your first agent.
+
+## Stop and Restart
+
+Press `Ctrl+C` in the terminal to stop FideliOS.
+
+To start it again:
+
+```sh
+fidelios run
+```
+
+Your data is preserved between restarts in `~/.fidelios/`.
+
+## Run as a Background Service
+
+To keep FideliOS running after you close the terminal and have it start automatically at login:
 
 ```sh
 fidelios service install
+```
+
+This writes a systemd user unit to `~/.config/systemd/user/fidelios.service` and runs `systemctl --user enable --now fidelios`.
+
+Check the service:
+
+```sh
 fidelios service status
 tail -f ~/.fidelios/instances/default/fidelios.log
 ```
 
-See [Service Commands](/cli/service-commands) for full details including the
-`--dev` / `--release` mode switch for contributors.
+Remove the service:
 
-## Where your data lives
+```sh
+fidelios service uninstall
+```
 
-**Docker install:**
+See [Service Commands](/cli/service-commands) for dev/release mode options.
 
-| Data | Location |
-|------|----------|
-| All runtime state | Docker named volume `fidelios` |
+## Running in Docker (advanced)
 
-Run `docker volume inspect fidelios` to find the host path.
+A `fidelios` container is available at `ghcr.io/fideliosai/fidelios`. This is intended for containerised deployments (Kubernetes, docker-compose, corp platforms). For a single-user desktop or laptop install, the Node+CLI path above is simpler and gives you the full CLI.
 
-**CLI install:**
+```sh
+docker run -d --name fidelios \
+  -p 3100:3100 \
+  --restart unless-stopped \
+  -v fidelios-data:/root/.fidelios \
+  ghcr.io/fideliosai/fidelios:latest
+```
+
+The image is published from the main branch (`:nightly`, `:latest`, `:X.Y.Z`). If `docker pull` returns `manifest unknown` the image may still be private — ask your FideliOS admin to flip the package visibility to Public at GitHub Container Registry.
+
+## Where Your Data Lives
 
 | Data | Location |
 |------|----------|
@@ -104,6 +97,7 @@ Run `docker volume inspect fidelios` to find the host path.
 | Database | `~/.fidelios/instances/default/db` |
 | Secrets key | `~/.fidelios/instances/default/secrets/master.key` |
 | Logs | `~/.fidelios/instances/default/logs` |
+| Service log | `~/.fidelios/instances/default/fidelios.log` |
 
 ## What's Next
 
