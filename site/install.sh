@@ -111,7 +111,19 @@ else
     exit 1
   fi
   info "Installing Homebrew…"
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  # NONINTERACTIVE=1 suppresses Homebrew's own prompts (user already confirmed above).
+  # </dev/tty lets sudo prompt for a password through the terminal even when stdin is a pipe.
+  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" </dev/tty || {
+    error "Homebrew installation failed."
+    echo ""
+    echo -e "  Common causes:"
+    echo -e "  • User ${BOLD}$(whoami)${RESET} is not a macOS Administrator — ask the Mac owner to grant admin rights"
+    echo -e "  • Sudo access was denied or timed out"
+    echo ""
+    echo -e "  Install Homebrew manually: ${BOLD}https://brew.sh${RESET}"
+    echo -e "  Then re-run: ${BOLD}curl -fsSL https://fidelios.nl/install.sh | bash -s -- --yes${RESET}"
+    exit 1
+  }
   # Add brew to PATH in the current session — Apple Silicon installs to
   # /opt/homebrew, Intel installs to /usr/local. Brew's own installer writes
   # shellenv into ~/.zprofile but only for NEW sessions, so we need to
