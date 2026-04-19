@@ -106,24 +106,21 @@ else
   echo -e "  Homebrew is the macOS package manager used to install Node.js."
   echo -e "  ${DIM}See https://brew.sh for more info.${RESET}"
   echo ""
-  if ! ask "Install Homebrew now?"; then
-    error "Homebrew is required. Aborting."
-    exit 1
+  if ask "Install Homebrew now?"; then
+    info "Installing Homebrew…"
+    # Redirect stdin from /dev/tty so Homebrew sees a real TTY and sudo can prompt
+    # for a password even when this script is piped through curl.
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" </dev/tty || {
+      warn "Homebrew installation failed — continuing without it."
+      echo ""
+      echo -e "  ${DIM}Common reasons: not enough disk space (Xcode CLT needs ~10 GB), sudo denied.${RESET}"
+      echo -e "  ${DIM}Node.js will be installed via nvm instead (no sudo, no extra disk space).${RESET}"
+      echo ""
+    }
+  else
+    warn "Skipping Homebrew — Node.js will be installed via nvm instead."
+    echo ""
   fi
-  info "Installing Homebrew…"
-  # Redirect stdin from /dev/tty so Homebrew sees a real TTY and sudo can prompt
-  # for a password even when this script is piped through curl.
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" </dev/tty || {
-    error "Homebrew installation failed."
-    echo ""
-    echo -e "  Common causes:"
-    echo -e "  • User ${BOLD}$(whoami)${RESET} is not a macOS Administrator — ask the Mac owner to grant admin rights"
-    echo -e "  • Sudo access was denied or timed out"
-    echo ""
-    echo -e "  Install Homebrew manually: ${BOLD}https://brew.sh${RESET}"
-    echo -e "  Then re-run: ${BOLD}curl -fsSL https://fidelios.nl/install.sh | bash -s -- --yes${RESET}"
-    exit 1
-  }
   # Add brew to PATH in the current session — Apple Silicon installs to
   # /opt/homebrew, Intel installs to /usr/local. Brew's own installer writes
   # shellenv into ~/.zprofile but only for NEW sessions, so we need to
