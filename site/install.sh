@@ -111,9 +111,9 @@ else
     exit 1
   fi
   info "Installing Homebrew…"
-  # NONINTERACTIVE=1 suppresses Homebrew's own prompts (user already confirmed above).
-  # </dev/tty lets sudo prompt for a password through the terminal even when stdin is a pipe.
-  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" </dev/tty || {
+  # Redirect stdin from /dev/tty so Homebrew sees a real TTY and sudo can prompt
+  # for a password even when this script is piped through curl.
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" </dev/tty || {
     error "Homebrew installation failed."
     echo ""
     echo -e "  Common causes:"
