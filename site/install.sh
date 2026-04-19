@@ -96,44 +96,7 @@ if [[ "$SHELL" == */bash ]]; then
   echo ""
 fi
 
-# ── Step 2: Homebrew ──────────────────────────────────────────────────────────
-header "🍺 Checking Homebrew…"
-if command -v brew &>/dev/null; then
-  success "Homebrew already installed ($(brew --version | head -1))"
-else
-  warn "Homebrew is not installed."
-  echo ""
-  echo -e "  Homebrew is the macOS package manager used to install Node.js."
-  echo -e "  ${DIM}See https://brew.sh for more info.${RESET}"
-  echo ""
-  if ask "Install Homebrew now?"; then
-    info "Installing Homebrew…"
-    # Redirect stdin from /dev/tty so Homebrew sees a real TTY and sudo can prompt
-    # for a password even when this script is piped through curl.
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" </dev/tty || {
-      warn "Homebrew installation failed — continuing without it."
-      echo ""
-      echo -e "  ${DIM}Common reasons: not enough disk space (Xcode CLT needs ~10 GB), sudo denied.${RESET}"
-      echo -e "  ${DIM}Node.js will be installed via nvm instead (no sudo, no extra disk space).${RESET}"
-      echo ""
-    }
-  else
-    warn "Skipping Homebrew — Node.js will be installed via nvm instead."
-    echo ""
-  fi
-  # Add brew to PATH in the current session — Apple Silicon installs to
-  # /opt/homebrew, Intel installs to /usr/local. Brew's own installer writes
-  # shellenv into ~/.zprofile but only for NEW sessions, so we need to
-  # source it manually here.
-  if [[ -f /opt/homebrew/bin/brew ]]; then
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-  elif [[ -f /usr/local/bin/brew ]]; then
-    eval "$(/usr/local/bin/brew shellenv)"
-  fi
-  success "Homebrew installed"
-fi
-
-# ── Step 3: Node.js ───────────────────────────────────────────────────────────
+# ── Step 2: Node.js ───────────────────────────────────────────────────────────
 header "📦 Checking Node.js…"
 
 INSTALLED_NODE_VIA_NVM=false
