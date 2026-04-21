@@ -18,6 +18,7 @@ import {
   ensureAbsoluteDirectory,
   ensureCommandResolvable,
   ensurePathInEnv,
+  linkDirWithFallback,
   renderTemplate,
   runChildProcess,
 } from "@fideliosai/adapter-utils/server-utils";
@@ -69,7 +70,7 @@ async function buildSkillsDir(config: Record<string, unknown>, agentId?: string)
   await fs.mkdir(target, { recursive: true });
   for (const entry of availableEntries) {
     if (!desiredNames.has(entry.key)) continue;
-    await fs.symlink(entry.source, path.join(target, entry.runtimeName));
+    await linkDirWithFallback(entry.source, path.join(target, entry.runtimeName));
   }
 
   skillsDirCache.set(cacheKey, { dir: tmp, hash: desiredKeys });

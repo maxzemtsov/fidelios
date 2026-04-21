@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import type { AdapterExecutionContext } from "@fideliosai/adapter-utils";
+import { linkFileWithFallback } from "@fideliosai/adapter-utils/server-utils";
 
 const TRUTHY_ENV_RE = /^(1|true|yes|on)$/i;
 const COPIED_SHARED_FILES = ["config.json", "config.toml", "instructions.md"] as const;
@@ -42,14 +43,28 @@ async function ensureParentDir(target: string): Promise<void> {
   await fs.mkdir(path.dirname(target), { recursive: true });
 }
 
-async function ensureSymlink(target: string, source: string): Promise<void> {
+async function ensureSymlink(
+  target: string,
+  source: string,
+  onLog: AdapterExecutionContext["onLog"],
+): Promise<void> {
   const existing = await fs.lstat(target).catch(() => null);
   if (!existing) {
     await ensureParentDir(target);
-    await fs.symlink(source, target);
+    const method = await linkFileWithFallback(source, target);
+    if (method === "copy") {
+      await onLog(
+        "stdout",
+        `[fidelios] Windows symlink/hardlink permission denied; copied "${path.basename(target)}" instead. If Codex rotates the token, re-run the agent to refresh the copy.\n`,
+      );
+    }
     return;
   }
 
+  // Existing regular file/hardlink/copy — leave it in place. On Windows
+  // where we fell back to a copy on first seed, we don't aggressively
+  // refresh it here; users can re-run if the token rotates. This matches
+  // the previous behaviour for POSIX symlinks that already point at source.
   if (!existing.isSymbolicLink()) {
     return;
   }
@@ -61,7 +76,13 @@ async function ensureSymlink(target: string, source: string): Promise<void> {
   if (resolvedLinkedPath === source) return;
 
   await fs.unlink(target);
-  await fs.symlink(source, target);
+  const method = await linkFileWithFallback(source, target);
+  if (method === "copy") {
+    await onLog(
+      "stdout",
+      `[fidelios] Windows symlink/hardlink permission denied; copied "${path.basename(target)}" instead.\n`,
+    );
+  }
 }
 
 async function ensureCopiedFile(target: string, source: string): Promise<void> {
@@ -86,7 +107,7 @@ export async function prepareManagedCodexHome(
   for (const name of SYMLINKED_SHARED_FILES) {
     const source = path.join(sourceHome, name);
     if (!(await pathExists(source))) continue;
-    await ensureSymlink(path.join(targetHome, name), source);
+    await ensureSymlink(path.join(targetHome, name), source, onLog);
   }
 
   for (const name of COPIED_SHARED_FILES) {

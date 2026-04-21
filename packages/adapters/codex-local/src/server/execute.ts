@@ -14,6 +14,7 @@ import {
   ensureCommandResolvable,
   ensureFideliOSSkillSymlink,
   ensurePathInEnv,
+  linkDirWithFallback,
   readFideliOSRuntimeSkillEntries,
   resolveFideliOSDesiredSkillNames,
   renderTemplate,
@@ -179,7 +180,7 @@ export async function ensureCodexSkillsInjected(
           if (linkSkill) {
             await linkSkill(entry.source, target);
           } else {
-            await fs.symlink(entry.source, target);
+            await linkDirWithFallback(entry.source, target);
           }
           await onLog(
             "stdout",
