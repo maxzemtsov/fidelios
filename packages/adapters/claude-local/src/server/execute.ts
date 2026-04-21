@@ -603,12 +603,16 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
   try {
     const initial = await runAttempt(sessionId ?? null);
+    const isUnknownSessionFromRaw = (proc: RunProcessResult) => {
+      const combined = [proc.stdout, proc.stderr].join("\n");
+      return /no rollout found for thread|thread\/resume.*failed|no conversation found with session id|unknown session/i.test(combined);
+    };
     if (
       sessionId &&
       !initial.proc.timedOut &&
       (initial.proc.exitCode ?? 0) !== 0 &&
-      initial.parsed &&
-      isClaudeUnknownSessionError(initial.parsed)
+      ((initial.parsed && isClaudeUnknownSessionError(initial.parsed)) ||
+        (!initial.parsed && isUnknownSessionFromRaw(initial.proc)))
     ) {
       await onLog(
         "stdout",
