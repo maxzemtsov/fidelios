@@ -193,6 +193,14 @@ done
 rm -rf "$REPO_ROOT/server/packages/plugins/examples"
 mkdir -p "$REPO_ROOT/server/packages/plugins"
 cp -r "$REPO_ROOT/packages/plugins/examples" "$REPO_ROOT/server/packages/plugins/examples"
+# The copy above brings each example's local node_modules/@fideliosai/* along.
+# Those nested package.json files still carry the workspace-dev `exports`
+# pointing at `./src/*.ts`. npm normally rewrites `exports` via `publishConfig`
+# at publish time, but since we are copying directly we have to simulate that
+# step here — otherwise Node 24+ crashes with
+# ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING when a user activates a plugin.
+node "$REPO_ROOT/scripts/sanitize-bundled-plugin-deps.mjs" \
+  "$REPO_ROOT/server/packages/plugins/examples"
 release_info "  ✓ Workspace build complete (including bundled plugin examples)"
 
 release_info ""
