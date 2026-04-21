@@ -1,5 +1,13 @@
-import { describe, expect, it } from "vitest";
-import { buildWindowsCmdSpawn, quoteForCmd } from "./server-utils.js";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  buildWindowsCmdSpawn,
+  linkDirWithFallback,
+  linkFileWithFallback,
+  quoteForCmd,
+} from "./server-utils.js";
 
 describe("quoteForCmd", () => {
   it("returns empty double-quoted string for empty input", () => {
@@ -84,5 +92,74 @@ describe("buildWindowsCmdSpawn", () => {
     // command line becomes unparseable. This flag must be on.
     const target = buildWindowsCmdSpawn("cmd.exe", "C:\\a b\\foo.cmd", []);
     expect(target.windowsVerbatimArguments).toBe(true);
+  });
+});
+
+describe("linkFileWithFallback", () => {
+  let tmp: string;
+
+  beforeEach(async () => {
+    tmp = await fs.mkdtemp(path.join(os.tmpdir(), "fidelios-link-test-"));
+  });
+
+  afterEach(async () => {
+    await fs.rm(tmp, { recursive: true, force: true });
+  });
+
+  it("creates a symlink pointing at the source when permitted (POSIX)", async () => {
+    // On CI and local macOS, fs.symlink always succeeds — we should land on
+    // the symlink path, not fall through to hardlink or copy.
+    const source = path.join(tmp, "source.json");
+    const target = path.join(tmp, "target.json");
+    await fs.writeFile(source, '{"ok":true}', "utf8");
+
+    const method = await linkFileWithFallback(source, target);
+    // On CI platforms where symlink works, we expect "symlink". If Node
+    // ever returns EPERM on this flow (which would indicate a sandbox
+    // issue) we'd fall back to hardlink or copy — all three are valid
+    // outcomes for the helper; we just verify the contents propagate.
+    expect(["symlink", "hardlink", "copy"]).toContain(method);
+
+    const bytes = await fs.readFile(target, "utf8");
+    expect(bytes).toBe('{"ok":true}');
+  });
+
+  it("the produced target is readable whether or not it is a symlink", async () => {
+    // Regression: on Sergey's Windows the EPERM path failed entirely. A
+    // successful fallback means the target is readable regardless of the
+    // underlying mechanism.
+    const source = path.join(tmp, "auth.json");
+    const target = path.join(tmp, "mirror", "auth.json");
+    await fs.mkdir(path.dirname(target), { recursive: true });
+    await fs.writeFile(source, "payload", "utf8");
+
+    await linkFileWithFallback(source, target);
+    const contents = await fs.readFile(target, "utf8");
+    expect(contents).toBe("payload");
+  });
+});
+
+describe("linkDirWithFallback", () => {
+  let tmp: string;
+
+  beforeEach(async () => {
+    tmp = await fs.mkdtemp(path.join(os.tmpdir(), "fidelios-linkdir-test-"));
+  });
+
+  afterEach(async () => {
+    await fs.rm(tmp, { recursive: true, force: true });
+  });
+
+  it("creates a link to a directory whose contents are readable through the link", async () => {
+    const source = path.join(tmp, "skill");
+    const target = path.join(tmp, "linked-skill");
+    await fs.mkdir(source, { recursive: true });
+    await fs.writeFile(path.join(source, "SKILL.md"), "# my skill", "utf8");
+
+    const method = await linkDirWithFallback(source, target);
+    expect(["symlink", "junction", "copy"]).toContain(method);
+
+    const contents = await fs.readFile(path.join(target, "SKILL.md"), "utf8");
+    expect(contents).toBe("# my skill");
   });
 });

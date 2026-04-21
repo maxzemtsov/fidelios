@@ -136,7 +136,10 @@ export async function ensureCursorSkillsInjected(
       `[fidelios] Removed maintainer-only Cursor skill "${skillName}" from ${skillsHome}\n`,
     );
   }
-  const linkSkill = options.linkSkill ?? ((source: string, target: string) => fs.symlink(source, target));
+  // When no custom linker is provided, fall through to the shared default
+  // used by ensureFideliOSSkillSymlink, which includes the Windows fallback
+  // chain (symlink → junction → recursive copy).
+  const linkSkill = options.linkSkill;
   for (const entry of skillsEntries) {
     const target = path.join(skillsHome, entry.runtimeName);
     try {

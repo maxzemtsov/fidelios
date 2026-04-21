@@ -663,11 +663,85 @@ export function writeFideliOSSkillSyncPreference(
   return next;
 }
 
+/**
+ * Which mechanism was used to create a link from source → target.
+ * `symlink` is always preferred; the others are Windows fallbacks for
+ * unprivileged users without Developer Mode enabled, where `fs.symlink`
+ * returns EPERM.
+ */
+export type LinkMethod = "symlink" | "junction" | "hardlink" | "copy";
+
+function isSymlinkPermError(err: unknown): boolean {
+  const code = (err as NodeJS.ErrnoException).code;
+  return code === "EPERM" || code === "EACCES" || code === "ENOSYS";
+}
+
+/**
+ * Create a link to a directory with a platform-aware fallback chain.
+ *
+ * - POSIX: `fs.symlink(source, target)` — always works
+ * - Windows with admin / Developer Mode: same as POSIX
+ * - Windows unprivileged: `fs.symlink(source, target, "junction")` —
+ *   junctions don't require elevation for local NTFS paths
+ * - Last resort: recursive copy via `fs.cp`
+ *
+ * Returns which method actually succeeded.
+ */
+export async function linkDirWithFallback(
+  source: string,
+  target: string,
+): Promise<LinkMethod> {
+  try {
+    await fs.symlink(source, target, "junction");
+    return process.platform === "win32" ? "junction" : "symlink";
+  } catch (err) {
+    if (!isSymlinkPermError(err)) throw err;
+  }
+  await fs.cp(source, target, { recursive: true });
+  return "copy";
+}
+
+/**
+ * Create a link to a file with a platform-aware fallback chain.
+ *
+ * - POSIX: `fs.symlink` — always works
+ * - Windows with admin / Developer Mode: same as POSIX
+ * - Windows unprivileged: `fs.link` (hardlink) — doesn't require
+ *   elevation for local NTFS files on the same volume
+ * - Last resort: `fs.copyFile` (semantically different — changes to
+ *   the source after copy won't propagate; acceptable for seeding)
+ *
+ * Returns which method actually succeeded.
+ */
+export async function linkFileWithFallback(
+  source: string,
+  target: string,
+): Promise<LinkMethod> {
+  try {
+    await fs.symlink(source, target);
+    return "symlink";
+  } catch (err) {
+    if (!isSymlinkPermError(err)) throw err;
+  }
+  try {
+    await fs.link(source, target);
+    return "hardlink";
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException).code;
+    if (code !== "EPERM" && code !== "EACCES" && code !== "EXDEV" && code !== "ENOSYS") {
+      throw err;
+    }
+  }
+  await fs.copyFile(source, target);
+  return "copy";
+}
+
 export async function ensureFideliOSSkillSymlink(
   source: string,
   target: string,
-  linkSkill: (source: string, target: string) => Promise<void> = (linkSource, linkTarget) =>
-    fs.symlink(linkSource, linkTarget),
+  linkSkill: (source: string, target: string) => Promise<void> = async (linkSource, linkTarget) => {
+    await linkDirWithFallback(linkSource, linkTarget);
+  },
 ): Promise<"created" | "repaired" | "skipped"> {
   const existing = await fs.lstat(target).catch(() => null);
   if (!existing) {
