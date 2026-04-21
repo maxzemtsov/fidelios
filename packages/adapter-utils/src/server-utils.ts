@@ -24,6 +24,15 @@ interface RunningProcess {
 interface SpawnTarget {
   command: string;
   args: string[];
+  /**
+   * When true, tells Node's spawn to pass args to Windows verbatim without
+   * re-applying its default command-line escaping. Required when we invoke
+   * cmd.exe ourselves and have already built a fully-quoted command line —
+   * otherwise Node converts internal `"` to `\"`, producing malformed input
+   * (e.g. `codex.CMD\"`) that CMD can't parse when the .cmd path contains
+   * whitespace such as `C:\Users\Sergey F\...\codex.CMD`.
+   */
+  windowsVerbatimArguments?: boolean;
 }
 
 type ChildProcessWithEvents = ChildProcess & {
@@ -269,10 +278,35 @@ async function resolveCommandPath(command: string, cwd: string, env: NodeJS.Proc
   return null;
 }
 
-function quoteForCmd(arg: string) {
+/** @internal exported for unit tests */
+export function quoteForCmd(arg: string) {
   if (!arg.length) return '""';
   const escaped = arg.replace(/"/g, '""');
   return /[\s"&<>|^()]/.test(escaped) ? `"${escaped}"` : escaped;
+}
+
+/**
+ * Build a spawn target that invokes a Windows .cmd/.bat through cmd.exe.
+ *
+ * Uses `cmd /d /s /c ""<exe>" <args>"` with an outer pair of quotes so
+ * cmd.exe's `/s /c` quote-stripping rule (documented in `cmd /?`) removes
+ * only the outer quotes and leaves the inner quotes around a path with
+ * whitespace intact. Must be paired with `windowsVerbatimArguments: true`
+ * at spawn time so Node doesn't re-escape the already-quoted command line.
+ *
+ * @internal exported for unit tests
+ */
+export function buildWindowsCmdSpawn(
+  shell: string,
+  executable: string,
+  args: string[],
+): SpawnTarget {
+  const commandLine = [quoteForCmd(executable), ...args.map(quoteForCmd)].join(" ");
+  return {
+    command: shell,
+    args: ["/d", "/s", "/c", `"${commandLine}"`],
+    windowsVerbatimArguments: true,
+  };
 }
 
 async function resolveSpawnTarget(
@@ -290,11 +324,7 @@ async function resolveSpawnTarget(
 
   if (/\.(cmd|bat)$/i.test(executable)) {
     const shell = env.ComSpec || process.env.ComSpec || "cmd.exe";
-    const commandLine = [quoteForCmd(executable), ...args.map(quoteForCmd)].join(" ");
-    return {
-      command: shell,
-      args: ["/d", "/s", "/c", commandLine],
-    };
+    return buildWindowsCmdSpawn(shell, executable, args);
   }
 
   return { command: executable, args };
@@ -757,6 +787,7 @@ export async function runChildProcess(
           cwd: opts.cwd,
           env: mergedEnv,
           shell: false,
+          windowsVerbatimArguments: target.windowsVerbatimArguments === true,
           stdio: [opts.stdin != null ? "pipe" : "ignore", "pipe", "pipe"],
         }) as ChildProcessWithEvents;
         const startedAt = new Date().toISOString();
