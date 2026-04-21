@@ -102,7 +102,12 @@ function badge(color: string): CSSProperties {
 // ---------------------------------------------------------------------------
 
 interface TelegramConfig {
-  botToken?: string;
+  /**
+   * Boolean flag reflecting whether a bot token is saved server-side. The
+   * actual token value is never sent to the UI — the worker redacts it in
+   * the `plugin-status` handler to avoid leaking secrets into the browser.
+   */
+  hasBotToken?: boolean;
   chatId?: string;
   defaultTopicId?: number;
   topicRouting?: string;
@@ -218,7 +223,7 @@ export function TelegramGatewaySettingsPage({ context: _context }: PluginSetting
 
   const config = data?.config ?? null;
   const topics = data?.topics ?? null;
-  const hasConfig = Boolean(config?.botToken && config?.chatId);
+  const hasConfig = Boolean(config?.hasBotToken && config?.chatId);
 
   return (
     <div style={containerStyle}>
@@ -233,7 +238,7 @@ export function TelegramGatewaySettingsPage({ context: _context }: PluginSetting
           ) : hasConfig ? (
             <span style={badge("#22c55e")}>Configured</span>
           ) : (
-            <span style={badge("#f97316")}>Not configured — set botToken and chatId in plugin settings</span>
+            <span style={badge("#f97316")}>Not configured — fill in Telegram Bot Token and Chat ID in the form below, then click Save Configuration</span>
           )}
           <button
             style={buttonStyle}

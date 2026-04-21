@@ -225,8 +225,17 @@ const plugin = definePlugin({
       const companyId = typeof params.companyId === "string" ? params.companyId : "";
       const cfg = (await ctx.config.get()) as unknown as TelegramConfig | null;
       const savedTopics = companyId ? await getSavedTopics(ctx, companyId) : null;
+      // Never leak the bot token to the UI — return a boolean flag instead so
+      // the settings page can still decide whether the plugin is configured.
       return {
-        config: cfg ? { chatId: cfg.chatId, defaultTopicId: cfg.defaultTopicId, topicRouting: cfg.topicRouting } : {},
+        config: cfg
+          ? {
+              hasBotToken: Boolean(cfg.botToken),
+              chatId: cfg.chatId,
+              defaultTopicId: cfg.defaultTopicId,
+              topicRouting: cfg.topicRouting,
+            }
+          : {},
         topics: savedTopics,
       };
     });
