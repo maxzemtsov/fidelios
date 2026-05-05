@@ -2,7 +2,6 @@ import type { AdapterConfigFieldsProps } from "../types";
 import {
   Field,
   DraftInput,
-  help,
 } from "../../components/agent-config-primitives";
 import { ChoosePathButton } from "../../components/PathInstructionsModal";
 
@@ -22,23 +21,6 @@ export function HermesLocalConfigFields({
 }: AdapterConfigFieldsProps) {
   return (
     <>
-      <Field label="Model" hint={help.model}>
-        <DraftInput
-          value={
-            isCreate
-              ? values!.model ?? ""
-              : eff("adapterConfig", "model", String(config.model ?? ""))
-          }
-          onCommit={(v) =>
-            isCreate
-              ? set!({ model: v || undefined })
-              : mark("adapterConfig", "model", v || undefined)
-          }
-          immediate
-          className={inputClass}
-          placeholder="e.g. openai/gpt-4o, anthropic/claude-sonnet-4-6"
-        />
-      </Field>
       {!hideInstructionsFile && (
         <Field label="Agent instructions file" hint={instructionsFileHint}>
           <div className="flex items-center gap-2">
