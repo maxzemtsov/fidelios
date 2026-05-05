@@ -1,4 +1,11 @@
 export type { Company, PeakHoursConfig, PeakHoursWindow } from "./company.js";
+export {
+  TASK_KINDS,
+  type TaskKind,
+  type ModelRoutingPredicate,
+  type ModelRoutingRule,
+  type ModelRoutingDecision,
+} from "./model-routing.js";
 export type { InstanceExperimentalSettings, InstanceGeneralSettings, InstanceSettings } from "./instance.js";
 export type {
   CompanySkillSourceType,

@@ -59,6 +59,9 @@ import {
   resolveSessionCompactionPolicy,
   type SessionCompactionPolicy,
 } from "@fideliosai/adapter-utils";
+import { applyModelRoutingDecision, resolveModelRouting } from "./model-router.js";
+import type { TaskKind, AgentRole } from "@fideliosai/shared";
+import { TASK_KINDS } from "@fideliosai/shared";
 
 const MAX_LIVE_LOG_CHUNK_BYTES = 8 * 1024;
 const HEARTBEAT_MAX_CONCURRENT_RUNS_DEFAULT = 1;
@@ -599,6 +602,34 @@ function deriveCommentId(
     readNonEmptyString(payload?.commentId) ??
     null
   );
+}
+
+/**
+ * Per-task model routing wake-context helpers (FID-14).
+ *
+ * `taskKind` and `forceModel` flow through the wake context snapshot. They
+ * can be set explicitly on a wake request (`wakeAgentSchema.payload`) or
+ * propagated from automation (e.g. comment-mentioned wakes can default to
+ * `taskKind: "comment"`).
+ */
+function extractTaskKindFromContext(
+  contextSnapshot: Record<string, unknown> | null | undefined,
+): TaskKind | null {
+  const raw = readNonEmptyString(contextSnapshot?.taskKind);
+  if (!raw) return null;
+  return (TASK_KINDS as readonly string[]).includes(raw) ? (raw as TaskKind) : null;
+}
+
+function extractForceModelFromContext(
+  contextSnapshot: Record<string, unknown> | null | undefined,
+): string | null {
+  return readNonEmptyString(contextSnapshot?.forceModel);
+}
+
+function extractForceEffortFromContext(
+  contextSnapshot: Record<string, unknown> | null | undefined,
+): string | null {
+  return readNonEmptyString(contextSnapshot?.forceEffort);
 }
 
 function enrichWakeContextSnapshot(input: {
@@ -2074,6 +2105,20 @@ export function heartbeatService(db: Db) {
     const mergedConfig = issueAssigneeOverrides?.adapterConfig
       ? { ...workspaceManagedConfig, ...issueAssigneeOverrides.adapterConfig }
       : workspaceManagedConfig;
+
+    // Per-task model routing (FID-14): pick a different model/effort based on
+    // wake-time signals (taskKind, forceModel). Mutates mergedConfig in place
+    // so every adapter that already reads config.model / config.effort
+    // benefits without per-adapter changes.
+    const routingDecision = resolveModelRouting({
+      config: mergedConfig,
+      taskKind: extractTaskKindFromContext(context),
+      agentRole: (agent.role as AgentRole | null) ?? null,
+      forceModel: extractForceModelFromContext(context),
+      forceEffort: extractForceEffortFromContext(context),
+    });
+    applyModelRoutingDecision(mergedConfig, routingDecision);
+
     const { config: resolvedConfig, secretKeys } = await secretsSvc.resolveAdapterConfigForRuntime(
       agent.companyId,
       mergedConfig,
@@ -2663,8 +2708,21 @@ export function heartbeatService(db: Db) {
               ? "timed_out"
               : "failed";
 
+      // FID-14 telemetry: log which routing rule fired (if any), the
+      // requested effort, and the input task kind. Lifted out so it can be
+      // attached to usageJson regardless of whether usage data was reported.
+      const routingTelemetry: Record<string, unknown> = routingDecision
+        ? {
+            routingSource: routingDecision.source,
+            routingRuleMatched: routingDecision.matchedRuleIndex,
+            routingTaskKind: routingDecision.taskKind,
+            requestedModel: routingDecision.model,
+            ...(routingDecision.effort !== undefined ? { requestedEffort: routingDecision.effort } : {}),
+          }
+        : {};
+
       const usageJson =
-        normalizedUsage || adapterResult.costUsd != null
+        normalizedUsage || adapterResult.costUsd != null || routingDecision
           ? ({
               ...(normalizedUsage ?? {}),
               ...(rawUsage ? {
@@ -2686,6 +2744,7 @@ export function heartbeatService(db: Db) {
               model: readNonEmptyString(adapterResult.model) ?? "unknown",
               ...(adapterResult.costUsd != null ? { costUsd: adapterResult.costUsd } : {}),
               billingType: normalizeLedgerBillingType(adapterResult.billingType),
+              ...routingTelemetry,
             } as Record<string, unknown>)
           : null;
 

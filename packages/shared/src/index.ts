@@ -319,6 +319,20 @@ export type {
 } from "./types/index.js";
 
 export {
+  TASK_KINDS,
+  type TaskKind,
+  type ModelRoutingPredicate,
+  type ModelRoutingRule,
+  type ModelRoutingDecision,
+} from "./types/index.js";
+
+export {
+  modelRoutingPredicateSchema,
+  modelRoutingRuleSchema,
+  modelRoutingSchema,
+} from "./validators/model-routing.js";
+
+export {
   instanceGeneralSettingsSchema,
   patchInstanceGeneralSettingsSchema,
   type PatchInstanceGeneralSettings,

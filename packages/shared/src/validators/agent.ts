@@ -6,6 +6,7 @@ import {
   AGENT_STATUSES,
 } from "../constants.js";
 import { envConfigSchema } from "./secret.js";
+import { modelRoutingSchema } from "./model-routing.js";
 
 export const agentPermissionsSchema = z.object({
   canCreateAgents: z.boolean().optional().default(false),
@@ -32,14 +33,31 @@ export type UpsertAgentInstructionsFile = z.infer<typeof upsertAgentInstructions
 
 const adapterConfigSchema = z.record(z.unknown()).superRefine((value, ctx) => {
   const envValue = value.env;
-  if (envValue === undefined) return;
-  const parsed = envConfigSchema.safeParse(envValue);
-  if (!parsed.success) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "adapterConfig.env must be a map of valid env bindings",
-      path: ["env"],
-    });
+  if (envValue !== undefined) {
+    const parsed = envConfigSchema.safeParse(envValue);
+    if (!parsed.success) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "adapterConfig.env must be a map of valid env bindings",
+        path: ["env"],
+      });
+    }
+  }
+
+  // Validate per-task model routing rules (FID-14). Stored inside
+  // adapterConfig so existing serialization, secret resolution, and
+  // issue-level overrides keep working without per-adapter changes.
+  const routingValue = value.modelRouting;
+  if (routingValue !== undefined) {
+    const parsed = modelRoutingSchema.safeParse(routingValue);
+    if (!parsed.success) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "adapterConfig.modelRouting must be a list of { when, model, effort? } rules",
+        path: ["modelRouting"],
+      });
+    }
   }
 });
 
