@@ -298,12 +298,31 @@ export async function execute(ctx) {
     };
     if (ctx.runId)
         env.FIDELIOS_RUN_ID = ctx.runId;
-    const taskId = cfgString(ctx.config?.taskId);
+    const taskId = cfgString(ctx.context?.taskId) || cfgString(ctx.context?.issueId) || cfgString(ctx.config?.taskId);
     if (taskId)
         env.FIDELIOS_TASK_ID = taskId;
+    const wakeReason = cfgString(ctx.context?.wakeReason);
+    if (wakeReason)
+        env.FIDELIOS_WAKE_REASON = wakeReason;
+    const wakeCommentId = cfgString(ctx.context?.wakeCommentId) || cfgString(ctx.context?.commentId);
+    if (wakeCommentId)
+        env.FIDELIOS_WAKE_COMMENT_ID = wakeCommentId;
+    const approvalId = cfgString(ctx.context?.approvalId);
+    if (approvalId)
+        env.FIDELIOS_APPROVAL_ID = approvalId;
+    const approvalStatus = cfgString(ctx.context?.approvalStatus);
+    if (approvalStatus)
+        env.FIDELIOS_APPROVAL_STATUS = approvalStatus;
+    const linkedIssueIds = cfgString(ctx.context?.linkedIssueIds);
+    if (linkedIssueIds)
+        env.FIDELIOS_LINKED_ISSUE_IDS = linkedIssueIds;
     const userEnv = config.env;
+    const hasExplicitApiKey = typeof userEnv?.FIDELIOS_API_KEY === "string" && userEnv.FIDELIOS_API_KEY.trim().length > 0;
     if (userEnv && typeof userEnv === "object") {
         Object.assign(env, userEnv);
+    }
+    if (!hasExplicitApiKey && ctx.authToken) {
+        env.FIDELIOS_API_KEY = ctx.authToken;
     }
     // ── Resolve working directory ──────────────────────────────────────────
     const cwd = cfgString(config.cwd) || cfgString(ctx.config?.workspaceDir) || ".";

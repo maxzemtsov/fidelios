@@ -17,7 +17,6 @@ import {
   Gem,
   MousePointer2,
   Sparkles,
-  Terminal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { OpenCodeLogoIcon } from "./OpenCodeLogoIcon";
@@ -28,7 +27,6 @@ type AdvancedAdapterType =
   | "codex_local"
   | "gemini_local"
   | "opencode_local"
-  | "pi_local"
   | "cursor"
   | "openclaw_gateway"
   | "hermes_local";
@@ -71,12 +69,6 @@ const ADVANCED_ADAPTER_OPTIONS: Array<{
     label: "Hermes Agent",
     icon: HermesIcon,
     desc: "Local multi-provider agent",
-  },
-  {
-    value: "pi_local",
-    label: "Pi",
-    icon: Terminal,
-    desc: "Local Pi agent",
   },
   {
     value: "cursor",
