@@ -1819,6 +1819,7 @@ export function agentRoutes(db: Db) {
     const touchesAdapterConfiguration =
       Object.prototype.hasOwnProperty.call(patchData, "adapterType") ||
       Object.prototype.hasOwnProperty.call(patchData, "adapterConfig");
+    let runtimeResetReason: "adapter_swap" | "model_change" | null = null;
     if (touchesAdapterConfiguration) {
       const existingAdapterConfig = asRecord(existing.adapterConfig) ?? {};
       const changingAdapterType =
@@ -1855,6 +1856,24 @@ export function agentRoutes(db: Db) {
         { strictMode: strictSecretsMode },
       );
       patchData.adapterConfig = syncInstructionsBundleConfigFromFilePath(existing, normalizedEffectiveAdapterConfig);
+
+      // FID-17: clear runtime session when the adapter swap or codex_local model/effort change
+      // would otherwise leak a stale sessionId/threadId into a different runtime.
+      if (changingAdapterType) {
+        runtimeResetReason = "adapter_swap";
+      } else if (
+        requestedAdapterType === "codex_local" &&
+        existing.adapterType === "codex_local"
+      ) {
+        const effectiveAdapterConfigForCompare = asRecord(patchData.adapterConfig) ?? {};
+        const oldModel = asNonEmptyString(existingAdapterConfig.model);
+        const newModel = asNonEmptyString(effectiveAdapterConfigForCompare.model);
+        const oldEffort = asNonEmptyString(existingAdapterConfig.modelReasoningEffort);
+        const newEffort = asNonEmptyString(effectiveAdapterConfigForCompare.modelReasoningEffort);
+        if (newModel !== oldModel || newEffort !== oldEffort) {
+          runtimeResetReason = "model_change";
+        }
+      }
     }
     if (touchesAdapterConfiguration && requestedAdapterType === "opencode_local") {
       const effectiveAdapterConfig = asRecord(patchData.adapterConfig) ?? {};
@@ -1876,6 +1895,21 @@ export function agentRoutes(db: Db) {
     if (!agent) {
       res.status(404).json({ error: "Agent not found" });
       return;
+    }
+
+    if (runtimeResetReason) {
+      await heartbeat.resetRuntimeSession(agent.id);
+      await logActivity(db, {
+        companyId: agent.companyId,
+        actorType: actor.actorType,
+        actorId: actor.actorId,
+        agentId: actor.agentId,
+        runId: actor.runId,
+        action: "agent.runtime_session_reset",
+        entityType: "agent",
+        entityId: agent.id,
+        details: { reason: runtimeResetReason, source: "agent_patch" },
+      });
     }
 
     await logActivity(db, {
