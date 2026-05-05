@@ -12,6 +12,7 @@ interface TelegramConfig {
   chatId: string;
   defaultTopicId: number;
   topicRouting?: string;
+  ceoTopicId?: number;
 }
 
 interface TopicRouting {
@@ -26,6 +27,7 @@ interface TopicRouting {
 
 let currentContext: PluginContext | null = null;
 let currentConfig: TelegramConfig | null = null;
+let currentCompanyId: string | null = null;
 
 // ---------------------------------------------------------------------------
 // Telegram API helpers
@@ -158,6 +160,50 @@ async function lookupMessage(
 }
 
 // ---------------------------------------------------------------------------
+// CEO topic helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns true when an incoming Telegram message belongs to the configured
+ * Board-CEO topic. A topic message always carries `message_thread_id`; the
+ * general chat (no topic) has it absent or equal to 1.
+ */
+export function isCeoTopicMessage(
+  messageThreadId: number | undefined,
+  ceoTopicId: number | undefined,
+): boolean {
+  if (!ceoTopicId || !messageThreadId) return false;
+  return messageThreadId === ceoTopicId;
+}
+
+/**
+ * Extract displayable text from a Telegram message object.
+ * Prefers `text` (plain messages), falls back to `caption` (media messages).
+ */
+export function extractMessageText(
+  message: Record<string, unknown>,
+): string | undefined {
+  const text = message.text;
+  if (typeof text === "string" && text.trim()) return text.trim();
+  const caption = message.caption;
+  if (typeof caption === "string" && caption.trim()) return caption.trim();
+  return undefined;
+}
+
+/** Find the first agent with role "ceo" in the given company. */
+async function findCeoAgent(
+  ctx: PluginContext,
+  companyId: string,
+): Promise<{ id: string } | null> {
+  try {
+    const agents = await ctx.agents.list({ companyId, limit: 50 });
+    return agents.find((a) => (a as unknown as { role: string }).role === "ceo") ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Event formatting
 // ---------------------------------------------------------------------------
 
@@ -219,6 +265,15 @@ const plugin = definePlugin({
   async setup(ctx: PluginContext) {
     currentContext = ctx;
     ctx.logger.info(`${PLUGIN_ID} setup`);
+
+    // Resolve and cache the company this plugin instance serves. A plugin is
+    // installed per company, so list() returns exactly one entry.
+    try {
+      const companies = await ctx.companies.list({ limit: 1 });
+      if (companies[0]) currentCompanyId = companies[0].id;
+    } catch {
+      ctx.logger.warn(`${PLUGIN_ID}: could not resolve companyId during setup`);
+    }
 
     // ---- Data handlers (UI) — registered unconditionally ----
     ctx.data.register("plugin-status", async (params) => {
@@ -416,10 +471,59 @@ const plugin = definePlugin({
     const message = update.message as Record<string, unknown> | undefined;
     if (!message) return;
 
-    const text = message.text as string | undefined;
+    const messageThreadId = message.message_thread_id as number | undefined;
+
+    // -----------------------------------------------------------------------
+    // CEO topic: new messages (not necessarily replies) create tasks assigned
+    // to the CEO agent and immediately invoke a CEO heartbeat.
+    // -----------------------------------------------------------------------
+    if (isCeoTopicMessage(messageThreadId, config.ceoTopicId)) {
+      const body = extractMessageText(message);
+      if (!body) return; // nothing actionable (e.g. sticker, photo without caption)
+
+      const from = message.from as Record<string, unknown> | undefined;
+      const senderName = from
+        ? String(from.first_name ?? from.username ?? "Board")
+        : "Board";
+
+      const companyId = currentCompanyId ?? "";
+
+      const ceoAgent = await findCeoAgent(ctx, companyId);
+      if (!ceoAgent) {
+        ctx.logger.warn(`${PLUGIN_ID}: CEO topic message received but no CEO agent found`);
+        return;
+      }
+
+      // Title: first 120 chars of the message body
+      const title = body.length > 120 ? `${body.slice(0, 117)}…` : body;
+      const description = `_Sent by ${senderName} via Telegram (Board-CEO topic)._\n\n${body}`;
+
+      try {
+        const issue = await ctx.issues.create({
+          companyId,
+          title,
+          description,
+          assigneeAgentId: ceoAgent.id,
+        });
+        ctx.logger.info(`${PLUGIN_ID}: created CEO task ${issue.id} from Board-CEO topic message`);
+
+        await ctx.agents.invoke(ceoAgent.id, companyId, {
+          prompt: `New task from Board via Telegram: ${title}`,
+          reason: "board-ceo-topic-message",
+        });
+        ctx.logger.info(`${PLUGIN_ID}: invoked CEO agent for task ${issue.id}`);
+      } catch (err) {
+        ctx.logger.error(`${PLUGIN_ID}: failed to create CEO task or invoke CEO`, { err });
+      }
+      return;
+    }
+
+    // -----------------------------------------------------------------------
+    // Regular flow: reply to a known bot message → post as issue comment
+    // -----------------------------------------------------------------------
+    const text = extractMessageText(message);
     if (!text) return;
 
-    // Only handle replies to our bot messages
     const replyTo = message.reply_to_message as Record<string, unknown> | undefined;
     if (!replyTo) return;
 
@@ -446,6 +550,7 @@ const plugin = definePlugin({
   async onShutdown() {
     currentContext = null;
     currentConfig = null;
+    currentCompanyId = null;
   },
 });
 
