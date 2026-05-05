@@ -3,7 +3,7 @@ name: PR
 on:
   pull_request:
     branches:
-      - master
+      - main
 
 concurrency:
   group: pr-${{ github.event.pull_request.number }}
@@ -119,12 +119,6 @@ jobs:
 
       - name: Build
         run: pnpm build
-
-      - name: Release canary dry run
-        run: |
-          git checkout -B master HEAD
-          git checkout -- pnpm-lock.yaml
-          ./scripts/release.sh canary --skip-verify --dry-run
 
   e2e:
     needs: [policy]
