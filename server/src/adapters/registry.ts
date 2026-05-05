@@ -78,6 +78,15 @@ import {
   agentConfigurationDoc as hermesAgentConfigurationDoc,
   models as hermesModels,
 } from "@fideliosai/adapter-hermes-local";
+import {
+  execute as ollamaExecute,
+  testEnvironment as ollamaTestEnvironment,
+  sessionCodec as ollamaSessionCodec,
+  listOllamaModels,
+} from "@fideliosai/adapter-ollama-local/server";
+import {
+  agentConfigurationDoc as ollamaAgentConfigurationDoc,
+} from "@fideliosai/adapter-ollama-local";
 import { processAdapter } from "./process/index.js";
 import { httpAdapter } from "./http/index.js";
 
@@ -193,6 +202,19 @@ const hermesLocalAdapter: ServerAdapterModule = {
   installCommand: "pip install hermes-agent",
 };
 
+const ollamaLocalAdapter: ServerAdapterModule = {
+  type: "ollama_local",
+  execute: ollamaExecute,
+  testEnvironment: ollamaTestEnvironment,
+  sessionCodec: ollamaSessionCodec,
+  sessionManagement: getAdapterSessionManagement("ollama_local") ?? undefined,
+  models: [],
+  listModels: listOllamaModels,
+  supportsLocalAgentJwt: true,
+  agentConfigurationDoc: ollamaAgentConfigurationDoc,
+  installCommand: "https://ollama.com/download",
+};
+
 const adaptersByType = new Map<string, ServerAdapterModule>(
   [
     claudeLocalAdapter,
@@ -203,6 +225,7 @@ const adaptersByType = new Map<string, ServerAdapterModule>(
     geminiLocalAdapter,
     openclawGatewayAdapter,
     hermesLocalAdapter,
+    ollamaLocalAdapter,
     processAdapter,
     httpAdapter,
   ].map((a) => [a.type, a]),

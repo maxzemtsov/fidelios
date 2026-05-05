@@ -43,6 +43,7 @@
     "@fideliosai/adapter-gemini-local": "workspace:*",
     "@fideliosai/adapter-opencode-local": "workspace:*",
     "@fideliosai/adapter-pi-local": "workspace:*",
+    "@fideliosai/adapter-ollama-local": "workspace:*",
     "@fideliosai/adapter-openclaw-gateway": "workspace:*",
     "@fideliosai/adapter-utils": "workspace:*",
     "@fideliosai/db": "workspace:*",
