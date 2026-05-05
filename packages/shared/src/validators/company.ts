@@ -10,6 +10,7 @@ export const peakHoursConfigSchema = z.object({
   enabled: z.boolean(),
   windows: z.array(peakHoursWindowSchema),
   policy: z.literal("skip"),
+  bypassUntil: z.string().datetime().nullable().optional(),
 });
 
 export const updateCompanyPeakHoursSchema = z.object({
