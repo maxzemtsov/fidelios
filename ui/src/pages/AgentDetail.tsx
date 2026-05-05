@@ -877,14 +877,19 @@ export function AgentDetail() {
                 Copy Agent ID
               </button>
               <button
-                className="flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded hover:bg-accent/50"
+                className="flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded hover:bg-accent/50 disabled:opacity-60"
+                disabled={resetTaskSession.isPending}
                 onClick={() => {
+                  const confirmed = window.confirm(
+                    `Clear all CLI sessions for ${agent.name}?\n\nThis wipes the stored session/thread id for the agent's adapter. The next run will start a fresh conversation. Use this when an agent is stuck with a corrupted session or a dangling thread after an adapter swap.`,
+                  );
+                  if (!confirmed) return;
                   resetTaskSession.mutate(null);
                   setMoreOpen(false);
                 }}
               >
                 <RotateCcw className="h-3 w-3" />
-                Reset Sessions
+                {resetTaskSession.isPending ? "Clearing…" : "Clear Session"}
               </button>
               <button
                 className="flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded hover:bg-accent/50 text-destructive"
