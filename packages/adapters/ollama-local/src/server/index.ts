@@ -15,5 +15,18 @@ export {
   DEFAULT_HOST,
   CLOUD_HOST,
   DEFAULT_TIMEOUT_SEC,
+  DEFAULT_MAX_TURNS,
 } from "./config.js";
-export type { OllamaConfig, ThinkOption } from "./config.js";
+export type { OllamaConfig, ThinkOption, OllamaTierName } from "./config.js";
+export {
+  getQuotaWindows,
+  acquireConcurrencySlot,
+  buildConcurrencyKey,
+  requiresConcurrencyCap,
+  parseTier,
+  tierCap,
+  TIER_CAPS,
+  DEFAULT_TIER,
+} from "./concurrency.js";
+export { FIDELIOS_TOOLS, executeTool } from "./tools.js";
+export type { OllamaToolCall, OllamaToolDef, ToolExecContext } from "./tools.js";
