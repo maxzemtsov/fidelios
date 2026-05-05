@@ -5,6 +5,7 @@ export default defineConfig({
     projects: [
       "packages/db",
       "packages/adapters/opencode-local",
+      "packages/adapters/ollama-local",
       "packages/plugins/examples/telegram-gateway",
       "server",
       "ui",

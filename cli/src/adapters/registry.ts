@@ -5,6 +5,7 @@ import { printCursorStreamEvent } from "@fideliosai/adapter-cursor-local/cli";
 import { printGeminiStreamEvent } from "@fideliosai/adapter-gemini-local/cli";
 import { printOpenCodeStreamEvent } from "@fideliosai/adapter-opencode-local/cli";
 import { printPiStreamEvent } from "@fideliosai/adapter-pi-local/cli";
+import { printOllamaStreamEvent } from "@fideliosai/adapter-ollama-local/cli";
 import { printOpenClawGatewayStreamEvent } from "@fideliosai/adapter-openclaw-gateway/cli";
 import { processCLIAdapter } from "./process/index.js";
 import { httpCLIAdapter } from "./http/index.js";
@@ -29,6 +30,11 @@ const piLocalCLIAdapter: CLIAdapterModule = {
   formatStdoutEvent: printPiStreamEvent,
 };
 
+const ollamaLocalCLIAdapter: CLIAdapterModule = {
+  type: "ollama_local",
+  formatStdoutEvent: printOllamaStreamEvent,
+};
+
 const cursorLocalCLIAdapter: CLIAdapterModule = {
   type: "cursor",
   formatStdoutEvent: printCursorStreamEvent,
@@ -50,6 +56,7 @@ const adaptersByType = new Map<string, CLIAdapterModule>(
     codexLocalCLIAdapter,
     openCodeLocalCLIAdapter,
     piLocalCLIAdapter,
+    ollamaLocalCLIAdapter,
     cursorLocalCLIAdapter,
     geminiLocalCLIAdapter,
     openclawGatewayCLIAdapter,
