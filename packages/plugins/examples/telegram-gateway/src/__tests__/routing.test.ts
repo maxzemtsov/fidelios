@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseTopicRouting, resolveTopicId } from "../worker.js";
+import { parseTopicRouting, resolveTopicId, isCeoTopicMessage, extractMessageText } from "../worker.js";
 
 // FID-1: Automated test to verify Telegram plugin routes to correct topic/group
 // for every (companyId, key) combination across the three-source precedence
@@ -48,7 +48,7 @@ describe("resolveTopicId — precedence", () => {
   });
 
   it("UI-saved topics win over config JSON for the same key", () => {
-    const savedTopics = { tasks: 777, approvals: 888, hiring: 999, system: 1000 };
+    const savedTopics = { tasks: 777, approvals: 888, hiring: 999, system: 1000, ceo: 1001 };
     expect(resolveTopicId(configRouting, COMPANY_FIDELIOS, "tasks", DEFAULT_TOPIC, savedTopics)).toBe(777);
     expect(resolveTopicId(configRouting, COMPANY_FIDELIOS, "approvals", DEFAULT_TOPIC, savedTopics)).toBe(888);
   });
@@ -65,10 +65,50 @@ describe("resolveTopicId — precedence", () => {
   });
 
   it("handles mixed saved topics — saved keys win, missing keys fall through", () => {
-    const savedTopics = { tasks: 777, approvals: 888, hiring: 999, system: 1000 };
+    const savedTopics = { tasks: 777, approvals: 888, hiring: 999, system: 1000, ceo: 1001 };
     // tasks is in saved → 777; approvals is in saved → 888; hiring is in saved → 999
     expect(resolveTopicId(configRouting, COMPANY_FIDELIOS, "tasks", DEFAULT_TOPIC, savedTopics)).toBe(777);
     // Unknown key not in saved and not in config for the company → default
     expect(resolveTopicId(configRouting, COMPANY_FIDELIOS, "nonexistent", DEFAULT_TOPIC, savedTopics)).toBe(DEFAULT_TOPIC);
+  });
+});
+
+// FID-38: Board-CEO topic detection and message text extraction
+describe("isCeoTopicMessage", () => {
+  it("returns false when ceoTopicId is not configured", () => {
+    expect(isCeoTopicMessage(42, undefined)).toBe(false);
+    expect(isCeoTopicMessage(42, 0)).toBe(false);
+  });
+
+  it("returns false when message has no thread id (general chat)", () => {
+    expect(isCeoTopicMessage(undefined, 42)).toBe(false);
+  });
+
+  it("returns true when messageThreadId matches ceoTopicId", () => {
+    expect(isCeoTopicMessage(42, 42)).toBe(true);
+  });
+
+  it("returns false when messageThreadId does not match ceoTopicId", () => {
+    expect(isCeoTopicMessage(99, 42)).toBe(false);
+  });
+});
+
+describe("extractMessageText", () => {
+  it("returns text for plain text messages", () => {
+    expect(extractMessageText({ text: "Hello CEO" })).toBe("Hello CEO");
+  });
+
+  it("returns caption for media messages without text", () => {
+    expect(extractMessageText({ caption: "Check this doc" })).toBe("Check this doc");
+  });
+
+  it("prefers text over caption when both are present", () => {
+    expect(extractMessageText({ text: "Main text", caption: "Caption" })).toBe("Main text");
+  });
+
+  it("returns undefined for messages with no text or caption", () => {
+    expect(extractMessageText({})).toBeUndefined();
+    expect(extractMessageText({ text: "  " })).toBeUndefined();
+    expect(extractMessageText({ voice: {} })).toBeUndefined();
   });
 });
