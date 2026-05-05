@@ -6,4 +6,5 @@
  */
 import type { AdapterEnvironmentTestContext, AdapterEnvironmentTestResult } from "@fideliosai/adapter-utils";
 export declare function testEnvironment(ctx: AdapterEnvironmentTestContext): Promise<AdapterEnvironmentTestResult>;
+export declare function isHermesAuthRequiredText(text: unknown): boolean;
 //# sourceMappingURL=test.d.ts.map
