@@ -128,7 +128,7 @@ describe("testEnvironment", () => {
     );
     const tierCheck = result.checks.find((c) => c.code === "ollama_tier_configured");
     expect(tierCheck?.message).toMatch(/pro/);
-    expect(tierCheck?.hint).toMatch(/no public Ollama API/i);
+    expect(tierCheck?.hint).toMatch(/concurrency cap applies to cloud models only/i);
   });
 
   it("warns when configured model is missing from /api/tags", async () => {
