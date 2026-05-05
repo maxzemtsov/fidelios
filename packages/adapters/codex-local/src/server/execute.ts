@@ -606,7 +606,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   ) {
     await onLog(
       "stdout",
-      `[fidelios] Codex resume session "${sessionId}" is unavailable; retrying with a fresh session.\n`,
+      `[codex-local] auto-recovering from stale thread "${sessionId}"; retrying with fresh session.\n`,
     );
     const retry = await runAttempt(null);
     return toResult(retry, true);

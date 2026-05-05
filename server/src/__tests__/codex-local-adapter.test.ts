@@ -31,6 +31,42 @@ describe("codex_local stale session detection", () => {
 
     expect(isCodexUnknownSessionError("", stderr)).toBe(true);
   });
+
+  it("detects 'unknown thread' error in stdout", () => {
+    const stdout = JSON.stringify({
+      type: "error",
+      message: "unknown thread 019c775d-967c-7ef1-acc7-e396dc2c87cc",
+    });
+    expect(isCodexUnknownSessionError(stdout, "")).toBe(true);
+  });
+
+  it("detects 'unknown session' error in stderr", () => {
+    expect(isCodexUnknownSessionError("", "Error: unknown session abc-123")).toBe(true);
+  });
+
+  it("detects bare 'resume model mismatch' error message", () => {
+    const stdout = JSON.stringify({
+      type: "item.completed",
+      item: { type: "error", message: "resume model mismatch" },
+    });
+    expect(isCodexUnknownSessionError(stdout, "")).toBe(true);
+  });
+
+  it("detects model mismatch full message ('recorded with model X but is resuming with Y')", () => {
+    const stdout = JSON.stringify({
+      type: "item.completed",
+      item: {
+        type: "error",
+        message:
+          "This session was recorded with model `gpt-5.2-pro` but is resuming with `gpt-5.2-codex`.",
+      },
+    });
+    expect(isCodexUnknownSessionError(stdout, "")).toBe(true);
+  });
+
+  it("returns false for unrelated errors", () => {
+    expect(isCodexUnknownSessionError("", "Error: model access denied")).toBe(false);
+  });
 });
 
 describe("codex_local ui stdout parser", () => {
