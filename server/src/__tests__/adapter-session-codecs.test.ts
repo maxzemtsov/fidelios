@@ -13,6 +13,7 @@ import {
   sessionCodec as opencodeSessionCodec,
   isOpenCodeUnknownSessionError,
 } from "@fideliosai/adapter-opencode-local/server";
+import { sessionCodec as hermesSessionCodec } from "@fideliosai/adapter-hermes-local/server";
 
 describe("adapter session codecs", () => {
   it("normalizes claude session params with cwd", () => {
@@ -103,6 +104,32 @@ describe("adapter session codecs", () => {
       cwd: "/tmp/gemini",
     });
     expect(geminiSessionCodec.getDisplayId?.(serialized ?? null)).toBe("gemini-session-1");
+  });
+
+  // FID-19 (parent FID-12 [C] hermes audit): Hermes Agent is STATEFUL across
+  // heartbeats — execute.js reads ctx.runtime.sessionParams.sessionId and passes
+  // `--resume <id>` to `hermes chat`, then writes parsed.sessionId back to
+  // executionResult.sessionParams. Therefore PATCH adapterType→hermes_local (or
+  // hermes_local→other) MUST clear sessionParams when the FID-12 [A] swap-clear
+  // logic lands; hermes is NOT stateless.
+  it("normalizes hermes session params (stateful — needs swap-clear)", () => {
+    const parsed = hermesSessionCodec.deserialize({
+      session_id: "hermes-session-1",
+    });
+    expect(parsed).toEqual({ sessionId: "hermes-session-1" });
+
+    // Also accepts camelCase input.
+    expect(hermesSessionCodec.deserialize({ sessionId: "hermes-session-2" })).toEqual({
+      sessionId: "hermes-session-2",
+    });
+
+    const serialized = hermesSessionCodec.serialize(parsed);
+    expect(serialized).toEqual({ sessionId: "hermes-session-1" });
+    expect(hermesSessionCodec.getDisplayId?.(serialized ?? null)).toBe("hermes-session-1");
+
+    // Empty / missing sessionId is rejected.
+    expect(hermesSessionCodec.deserialize({})).toBeNull();
+    expect(hermesSessionCodec.deserialize(null)).toBeNull();
   });
 });
 
