@@ -9,6 +9,7 @@ export interface PeakHoursConfig {
   enabled: boolean;
   windows: PeakHoursWindow[];
   policy: "skip";
+  bypassUntil?: string | null; // ISO timestamp; when set and in the future, peak hours are bypassed
 }
 
 export interface Company {

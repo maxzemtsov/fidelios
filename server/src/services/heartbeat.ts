@@ -276,6 +276,8 @@ function readNonEmptyString(value: unknown): string | null {
  */
 function isInPeakHours(config: PeakHoursConfig | null | undefined, now: Date = new Date()): boolean {
   if (!config || !config.enabled || !config.windows?.length) return false;
+  // Bypass: if bypassUntil is set and in the future, peak hours are skipped
+  if (config.bypassUntil && new Date(config.bypassUntil) > now) return false;
   const hh = now.getUTCHours().toString().padStart(2, "0");
   const mm = now.getUTCMinutes().toString().padStart(2, "0");
   const current = `${hh}:${mm}`;
