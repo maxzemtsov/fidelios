@@ -48,7 +48,7 @@ describe("resolveTopicId — precedence", () => {
   });
 
   it("UI-saved topics win over config JSON for the same key", () => {
-    const savedTopics = { tasks: 777, approvals: 888, hiring: 999, system: 1000 };
+    const savedTopics = { tasks: 777, approvals: 888, hiring: 999, system: 1000, ceo: 1001 };
     expect(resolveTopicId(configRouting, COMPANY_FIDELIOS, "tasks", DEFAULT_TOPIC, savedTopics)).toBe(777);
     expect(resolveTopicId(configRouting, COMPANY_FIDELIOS, "approvals", DEFAULT_TOPIC, savedTopics)).toBe(888);
   });
@@ -65,7 +65,7 @@ describe("resolveTopicId — precedence", () => {
   });
 
   it("handles mixed saved topics — saved keys win, missing keys fall through", () => {
-    const savedTopics = { tasks: 777, approvals: 888, hiring: 999, system: 1000 };
+    const savedTopics = { tasks: 777, approvals: 888, hiring: 999, system: 1000, ceo: 1001 };
     // tasks is in saved → 777; approvals is in saved → 888; hiring is in saved → 999
     expect(resolveTopicId(configRouting, COMPANY_FIDELIOS, "tasks", DEFAULT_TOPIC, savedTopics)).toBe(777);
     // Unknown key not in saved and not in config for the company → default

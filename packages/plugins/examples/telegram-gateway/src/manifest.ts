@@ -65,11 +65,6 @@ const manifest: FideliOSPluginManifestV1 = {
         description: "Optional JSON mapping agent roles and event types to topic thread IDs. See docs for format.",
         default: "{}",
       },
-      ceoTopicId: {
-        type: "number",
-        title: "Board-CEO Topic ID",
-        description: "Thread ID of the Telegram topic used for direct Board↔CEO messages. Messages in this topic create tasks assigned directly to the CEO agent.",
-      },
     },
   },
   webhooks: [

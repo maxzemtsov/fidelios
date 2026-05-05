@@ -82,6 +82,7 @@ const TOPIC_DEFINITIONS = [
   { key: "approvals", name: "Approvals" },
   { key: "hiring", name: "Hiring" },
   { key: "system", name: "System" },
+  { key: "ceo", name: "Board-CEO" },
 ] as const;
 
 type TopicKey = typeof TOPIC_DEFINITIONS[number]["key"];
@@ -476,8 +477,13 @@ const plugin = definePlugin({
     // -----------------------------------------------------------------------
     // CEO topic: new messages (not necessarily replies) create tasks assigned
     // to the CEO agent and immediately invoke a CEO heartbeat.
+    // The "Board-CEO" topic thread ID is read from plugin state (set when the
+    // "Create Topics" action is run) — no manual config required.
     // -----------------------------------------------------------------------
-    if (isCeoTopicMessage(messageThreadId, config.ceoTopicId)) {
+    const companyId = currentCompanyId ?? "";
+    const savedTopics = companyId ? await getSavedTopics(ctx, companyId) : null;
+    const ceoTopicId = savedTopics?.ceo ?? config.ceoTopicId;
+    if (isCeoTopicMessage(messageThreadId, ceoTopicId)) {
       const body = extractMessageText(message);
       if (!body) return; // nothing actionable (e.g. sticker, photo without caption)
 
@@ -485,8 +491,6 @@ const plugin = definePlugin({
       const senderName = from
         ? String(from.first_name ?? from.username ?? "Board")
         : "Board";
-
-      const companyId = currentCompanyId ?? "";
 
       const ceoAgent = await findCeoAgent(ctx, companyId);
       if (!ceoAgent) {
