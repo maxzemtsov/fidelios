@@ -5,7 +5,6 @@ export const models = [
   { id: "claude-opus-4-7", label: "Claude Opus 4.7" },
   { id: "claude-opus-4-6", label: "Claude Opus 4.6" },
   { id: "claude-sonnet-4-6", label: "Claude Sonnet 4.6" },
-  { id: "claude-haiku-4-6", label: "Claude Haiku 4.6" },
   { id: "claude-sonnet-4-5-20250929", label: "Claude Sonnet 4.5" },
   { id: "claude-haiku-4-5-20251001", label: "Claude Haiku 4.5" },
 ];
@@ -18,7 +17,7 @@ Core fields:
 - cwd (string, optional): default absolute working directory fallback for the agent process (created if missing when possible)
 - instructionsFilePath (string, optional): absolute path to a markdown instructions file injected at runtime
 - model (string, optional): Claude model id
-- effort (string, optional): reasoning effort passed via --effort. Valid values: low | medium | high | max (GA on Opus 4.7 / 4.6 / Sonnet 4.6). Pick low for fast/cheap subagents, xhigh for deep coding.
+- effort (string, optional): reasoning effort passed via --effort. Valid values: low | medium | high | xhigh | max (availability depends on model — xhigh is GA on Opus 4.7; other models fall back to high). Pick low for fast/cheap subagents, xhigh for deep coding/agentic tasks (recommended default for Opus 4.7).
 - fallbackModel (string, optional): alternative model id passed via --fallback-model when the primary model is overloaded (only applies with --print). Good failover pair: primary=opus, fallback=sonnet.
 - maxBudgetUsd (number, optional): hard spend cap in USD for a single run, passed via --max-budget-usd. The Claude Code CLI will abort the run once the cap is reached. Complements FideliOS's per-agent monthly budgets.
 - betas (string, optional): comma- or space-separated Anthropic beta-header names forwarded via --betas (API-key users only). Examples worth trying:
