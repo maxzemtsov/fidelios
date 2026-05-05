@@ -1,11 +1,17 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AGENT_ADAPTER_TYPES } from "@fideliosai/shared";
+import {
+  AGENT_ADAPTER_TYPES,
+  AGENT_ROLES,
+  AGENT_ROLE_LABELS,
+  TASK_KINDS,
+} from "@fideliosai/shared";
 import type {
   Agent,
   AdapterEnvironmentTestResult,
   CompanySecret,
   EnvBinding,
+  ModelRoutingRule,
 } from "@fideliosai/shared";
 import type { AdapterModel } from "../api/agents";
 import { agentsApi } from "../api/agents";
@@ -23,7 +29,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { FolderOpen, Heart, ChevronDown, X, Download, Loader2, CheckCircle2 } from "lucide-react";
+import { FolderOpen, Heart, ChevronDown, ChevronRight, X, Download, Loader2, CheckCircle2, Plus, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "../lib/utils";
 import { extractModelName, extractProviderId, providerDisplayLabel, isCloudProvider } from "../lib/model-utils";
 import { queryKeys } from "../lib/queryKeys";
@@ -46,6 +52,15 @@ import { ChoosePathButton } from "./PathInstructionsModal";
 import { OpenCodeLogoIcon } from "./OpenCodeLogoIcon";
 import { ReportsToPicker } from "./ReportsToPicker";
 import { shouldShowLegacyWorkingDirectoryField } from "../lib/legacy-agent-config";
+import {
+  addRule,
+  isRuleInvalid,
+  moveRule,
+  removeRule,
+  rulesFromConfig,
+  rulesToConfig,
+  updateRule,
+} from "../lib/model-routing-rules";
 
 /* ---- Create mode values ---- */
 
@@ -373,6 +388,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
 
   // Section toggle state — advanced always starts collapsed
   const [runPolicyAdvancedOpen, setRunPolicyAdvancedOpen] = useState(false);
+  const [routingRulesOpen, setRoutingRulesOpen] = useState(false);
   // Popover states
   const [modelOpen, setModelOpen] = useState(false);
   const [thinkingEffortOpen, setThinkingEffortOpen] = useState(false);
@@ -813,6 +829,24 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                       </p>
                     )}
                 </>
+              )}
+              {!isCreate && (
+                <ModelRoutingRulesEditor
+                  open={routingRulesOpen}
+                  onToggle={() => setRoutingRulesOpen((v) => !v)}
+                  rules={rulesFromConfig(
+                    eff(
+                      "adapterConfig",
+                      "modelRouting",
+                      (config.modelRouting as unknown) ?? [],
+                    ),
+                  )}
+                  onChange={(next) =>
+                    mark("adapterConfig", "modelRouting", rulesToConfig(next))
+                  }
+                  models={models}
+                  effortOptions={thinkingEffortOptions}
+                />
               )}
               {!isCreate && typeof config.bootstrapPromptTemplate === "string" && config.bootstrapPromptTemplate && (
                 <>
@@ -1713,5 +1747,215 @@ function ThinkingEffortDropdown({
         </PopoverContent>
       </Popover>
     </Field>
+  );
+}
+
+function ModelRoutingRulesEditor({
+  open,
+  onToggle,
+  rules,
+  onChange,
+  models,
+  effortOptions,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  rules: ModelRoutingRule[];
+  onChange: (next: ModelRoutingRule[]) => void;
+  models: AdapterModel[];
+  effortOptions: ReadonlyArray<{ id: string; label: string }>;
+}) {
+  const ruleCount = rules.length;
+  const summary = ruleCount === 0 ? "no rules" : `${ruleCount} rule${ruleCount === 1 ? "" : "s"}`;
+
+  return (
+    <div className="rounded-md border border-border">
+      <button
+        type="button"
+        className="flex items-center gap-2 w-full px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-accent/30 transition-colors"
+        onClick={onToggle}
+      >
+        {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+        <span>Model routing rules</span>
+        <span className="text-muted-foreground/70 font-normal">— {summary}</span>
+      </button>
+      {open && (
+        <div className="px-3 pb-3 space-y-2">
+          <p className="text-xs text-muted-foreground">
+            Override the default model and effort per task kind or agent role. Rules are
+            evaluated top-to-bottom; the first match wins. An empty list keeps the default
+            behaviour.
+          </p>
+          {rules.length === 0 ? (
+            <p className="text-xs text-muted-foreground/70 italic px-1 py-2">
+              No rules configured. Click "Add rule" to start routing tasks to different models.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {rules.map((rule, index) => (
+                <RoutingRuleRow
+                  key={index}
+                  rule={rule}
+                  models={models}
+                  effortOptions={effortOptions}
+                  isFirst={index === 0}
+                  isLast={index === rules.length - 1}
+                  onUpdate={(patch) => onChange(updateRule(rules, index, patch))}
+                  onRemove={() => onChange(removeRule(rules, index))}
+                  onMoveUp={() => onChange(moveRule(rules, index, "up"))}
+                  onMoveDown={() => onChange(moveRule(rules, index, "down"))}
+                />
+              ))}
+            </div>
+          )}
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs hover:bg-accent/50 transition-colors"
+            onClick={() => onChange(addRule(rules))}
+          >
+            <Plus className="h-3 w-3" /> Add rule
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RoutingRuleRow({
+  rule,
+  models,
+  effortOptions,
+  isFirst,
+  isLast,
+  onUpdate,
+  onRemove,
+  onMoveUp,
+  onMoveDown,
+}: {
+  rule: ModelRoutingRule;
+  models: AdapterModel[];
+  effortOptions: ReadonlyArray<{ id: string; label: string }>;
+  isFirst: boolean;
+  isLast: boolean;
+  onUpdate: (patch: {
+    taskKind?: string | undefined;
+    agentRole?: string | undefined;
+    model?: string;
+    effort?: string | undefined;
+  }) => void;
+  onRemove: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+}) {
+  const invalid = isRuleInvalid(rule);
+  const selectClass =
+    "rounded-md border border-border bg-transparent px-2 py-1 text-xs font-mono outline-none focus:border-foreground/30";
+  const modelInputClass =
+    "w-full rounded-md border border-border bg-transparent px-2 py-1 text-xs font-mono outline-none focus:border-foreground/30";
+  return (
+    <div className="rounded-md border border-border/60 bg-accent/10 p-2 space-y-1.5">
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_2fr_1fr_auto] gap-2 items-start">
+        <label className="flex flex-col gap-0.5">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Task kind</span>
+          <select
+            className={selectClass}
+            value={rule.when.taskKind ?? ""}
+            onChange={(e) => onUpdate({ taskKind: e.target.value || undefined })}
+          >
+            <option value="">Any</option>
+            {TASK_KINDS.map((kind) => (
+              <option key={kind} value={kind}>
+                {kind}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-0.5">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Agent role</span>
+          <select
+            className={selectClass}
+            value={rule.when.agentRole ?? ""}
+            onChange={(e) => onUpdate({ agentRole: e.target.value || undefined })}
+          >
+            <option value="">Any</option>
+            {AGENT_ROLES.map((role) => (
+              <option key={role} value={role}>
+                {AGENT_ROLE_LABELS[role]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-0.5">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Model</span>
+          <input
+            type="text"
+            className={cn(
+              modelInputClass,
+              invalid && "border-destructive focus:border-destructive",
+            )}
+            list={models.length > 0 ? "routing-models" : undefined}
+            placeholder="model id"
+            value={rule.model}
+            onChange={(e) => onUpdate({ model: e.target.value })}
+          />
+          {models.length > 0 && (
+            <datalist id="routing-models">
+              {models.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.label}
+                </option>
+              ))}
+            </datalist>
+          )}
+        </label>
+        <label className="flex flex-col gap-0.5">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Effort</span>
+          <select
+            className={selectClass}
+            value={rule.effort ?? ""}
+            onChange={(e) => onUpdate({ effort: e.target.value || undefined })}
+          >
+            {effortOptions.map((opt) => (
+              <option key={opt.id || "auto"} value={opt.id}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="flex flex-col items-end gap-1 pt-3">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              className="rounded p-1 text-muted-foreground hover:bg-accent/50 disabled:opacity-30"
+              onClick={onMoveUp}
+              disabled={isFirst}
+              aria-label="Move rule up"
+            >
+              <ArrowUp className="h-3 w-3" />
+            </button>
+            <button
+              type="button"
+              className="rounded p-1 text-muted-foreground hover:bg-accent/50 disabled:opacity-30"
+              onClick={onMoveDown}
+              disabled={isLast}
+              aria-label="Move rule down"
+            >
+              <ArrowDown className="h-3 w-3" />
+            </button>
+            <button
+              type="button"
+              className="rounded p-1 text-muted-foreground hover:bg-destructive/20 hover:text-destructive"
+              onClick={onRemove}
+              aria-label="Remove rule"
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
+      </div>
+      {invalid && (
+        <p className="text-[11px] text-destructive">Model is required for this rule.</p>
+      )}
+    </div>
   );
 }
