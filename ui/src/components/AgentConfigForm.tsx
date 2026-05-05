@@ -25,7 +25,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { FolderOpen, Heart, ChevronDown, X, Download, Loader2, CheckCircle2 } from "lucide-react";
 import { cn } from "../lib/utils";
-import { extractModelName, extractProviderId } from "../lib/model-utils";
+import { extractModelName, extractProviderId, providerDisplayLabel, isCloudProvider } from "../lib/model-utils";
 import { queryKeys } from "../lib/queryKeys";
 import { useCompany } from "../context/CompanyContext";
 import {
@@ -1625,8 +1625,12 @@ function ModelDropdown({
             {groupedModels.map((group) => (
               <div key={group.provider} className="mb-1 last:mb-0">
                 {groupByProvider && (
-                  <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-                    {group.provider} ({group.entries.length})
+                  <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                    {isCloudProvider(group.provider) && (
+                      <span title="Cloud provider">☁</span>
+                    )}
+                    {providerDisplayLabel(group.provider)}
+                    <span className="ml-1 opacity-60">({group.entries.length})</span>
                   </div>
                 )}
                 {group.entries.map((m) => (
