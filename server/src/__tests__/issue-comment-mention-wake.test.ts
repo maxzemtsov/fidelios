@@ -47,6 +47,7 @@ vi.mock("../services/index.js", () => ({
 const ASSIGNEE_ID = "22222222-2222-4222-8222-222222222222";
 const MENTIONED_ID = "33333333-3333-4333-8333-333333333333";
 const SECOND_MENTIONED_ID = "44444444-4444-4444-8444-444444444444";
+const CEO_ID = "66666666-6666-4666-8666-666666666666";
 const ISSUE_ID = "11111111-1111-4111-8111-111111111111";
 const COMPANY_ID = "company-1";
 const COMMENT_ID = "55555555-5555-4555-8555-555555555555";
@@ -242,5 +243,124 @@ describe("issue comment mention-wake (FID-44)", () => {
     expect(calls).toHaveLength(1);
     expect(calls[0]![0]).toBe(MENTIONED_ID);
     expect(calls[0]![1]).toMatchObject({ reason: "issue_comment_mentioned" });
+  });
+});
+
+describe("issue update mention-wake — reassign + reopen + comment + mention (FID-44)", () => {
+  // Reproduces Board's exact flow: open the picker, choose CEO, write text,
+  // tick re-open, set assignee = CEO, submit. The UI sends this through
+  // PATCH /issues/:id (not POST /comments) because the assignee changed.
+  // Without the FID-44 fix, the new assignee got an `issue_assigned` wake
+  // with no `wakeCommentId`, so the heartbeat never surfaced the trigger
+  // comment and the agent appeared to do nothing.
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockIssueService.findMentionedAgents.mockResolvedValue([]);
+    mockIssueService.addComment.mockResolvedValue({
+      id: COMMENT_ID,
+      issueId: ISSUE_ID,
+      companyId: COMPANY_ID,
+      body: "stub",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      authorAgentId: null,
+      authorUserId: "local-board",
+    });
+  });
+
+  it("includes wakeCommentId in the assigneeʼs wake when reassign + comment + mention happen together", async () => {
+    // Existing issue: closed, no assignee.
+    mockIssueService.getById.mockResolvedValue(
+      makeIssue({ status: "done", assigneeAgentId: null }),
+    );
+    // After update: reopened to todo, assigned to CEO.
+    mockIssueService.update.mockResolvedValue(
+      makeIssue({ status: "todo", assigneeAgentId: CEO_ID }),
+    );
+    // The picker emits `[@CEO](agent://<uuid>)`; the resolver returns CEO's id.
+    mockIssueService.findMentionedAgents.mockResolvedValue([CEO_ID]);
+
+    const res = await request(createApp())
+      .patch(`/api/issues/${ISSUE_ID}`)
+      .send({
+        comment: "[@CEO](agent://" + CEO_ID + ") please take a look",
+        reopen: true,
+        assigneeAgentId: CEO_ID,
+      });
+
+    expect(res.status).toBe(200);
+    await flushAsync();
+
+    const calls = mockHeartbeatService.wakeup.mock.calls;
+    const ceoCalls = calls.filter(([agentId]) => agentId === CEO_ID);
+    // CEO is woken exactly once (assignment + mention dedup to a single wake).
+    expect(ceoCalls).toHaveLength(1);
+    // The wake carries the comment id so the heartbeat surfaces the trigger
+    // comment, even though the primary reason is `issue_assigned`.
+    expect(ceoCalls[0]![1]).toMatchObject({
+      payload: expect.objectContaining({ commentId: COMMENT_ID }),
+      contextSnapshot: expect.objectContaining({
+        commentId: COMMENT_ID,
+        wakeCommentId: COMMENT_ID,
+      }),
+    });
+  });
+
+  it("includes wakeCommentId on a plain reassign + comment (no mention) too", async () => {
+    mockIssueService.getById.mockResolvedValue(
+      makeIssue({ status: "todo", assigneeAgentId: ASSIGNEE_ID }),
+    );
+    mockIssueService.update.mockResolvedValue(
+      makeIssue({ status: "todo", assigneeAgentId: CEO_ID }),
+    );
+    mockIssueService.findMentionedAgents.mockResolvedValue([]);
+
+    const res = await request(createApp())
+      .patch(`/api/issues/${ISSUE_ID}`)
+      .send({
+        comment: "passing this to you",
+        assigneeAgentId: CEO_ID,
+      });
+
+    expect(res.status).toBe(200);
+    await flushAsync();
+
+    const calls = mockHeartbeatService.wakeup.mock.calls;
+    const ceoCalls = calls.filter(([agentId]) => agentId === CEO_ID);
+    expect(ceoCalls).toHaveLength(1);
+    expect(ceoCalls[0]![1]).toMatchObject({
+      reason: "issue_assigned",
+      payload: expect.objectContaining({ commentId: COMMENT_ID }),
+      contextSnapshot: expect.objectContaining({
+        commentId: COMMENT_ID,
+        wakeCommentId: COMMENT_ID,
+      }),
+    });
+  });
+
+  it("does not inject wakeCommentId when the PATCH carries no comment body", async () => {
+    mockIssueService.getById.mockResolvedValue(
+      makeIssue({ status: "todo", assigneeAgentId: ASSIGNEE_ID }),
+    );
+    mockIssueService.update.mockResolvedValue(
+      makeIssue({ status: "todo", assigneeAgentId: CEO_ID }),
+    );
+
+    const res = await request(createApp())
+      .patch(`/api/issues/${ISSUE_ID}`)
+      .send({ assigneeAgentId: CEO_ID });
+
+    expect(res.status).toBe(200);
+    await flushAsync();
+
+    const calls = mockHeartbeatService.wakeup.mock.calls;
+    const ceoCalls = calls.filter(([agentId]) => agentId === CEO_ID);
+    expect(ceoCalls).toHaveLength(1);
+    // No comment in this PATCH → contextSnapshot must NOT carry a wakeCommentId.
+    const ctx = (ceoCalls[0]![1] as any).contextSnapshot;
+    expect(ctx.wakeCommentId).toBeUndefined();
+    expect(ctx.commentId).toBeUndefined();
+    // Also: addComment must NOT be called when no body was sent.
+    expect(mockIssueService.addComment).not.toHaveBeenCalled();
   });
 });
