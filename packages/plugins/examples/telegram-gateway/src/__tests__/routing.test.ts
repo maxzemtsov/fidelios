@@ -112,3 +112,28 @@ describe("extractMessageText", () => {
     expect(extractMessageText({ voice: {} })).toBeUndefined();
   });
 });
+
+// FID-38: Voice message handling in CEO topic
+// extractMessageText returns undefined for voice — the onWebhook handler must
+// detect message.voice separately and create a placeholder task so the CEO
+// is notified even when transcribeAudio is unavailable.
+describe("voice message detection (CEO topic)", () => {
+  it("extractMessageText returns undefined for voice-only messages", () => {
+    // Confirms the voice path must be handled separately in onWebhook
+    expect(extractMessageText({ voice: { duration: 30, file_id: "abc" } })).toBeUndefined();
+    expect(extractMessageText({ voice: { duration: 0 } })).toBeUndefined();
+  });
+
+  it("extractMessageText still works when voice accompanies a caption", () => {
+    // e.g. video notes can have both voice and caption
+    expect(extractMessageText({ voice: { duration: 5 }, caption: "See attached" })).toBe("See attached");
+  });
+
+  it("isCeoTopicMessage correctly matches voice messages in CEO topic", () => {
+    // Voice messages carry the same message_thread_id — routing must apply
+    const ceoTopicId = 42;
+    expect(isCeoTopicMessage(42, ceoTopicId)).toBe(true);
+    expect(isCeoTopicMessage(99, ceoTopicId)).toBe(false);
+    expect(isCeoTopicMessage(undefined, ceoTopicId)).toBe(false);
+  });
+});
