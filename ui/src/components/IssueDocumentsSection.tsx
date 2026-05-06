@@ -8,7 +8,7 @@ import { useAutosaveIndicator } from "../hooks/useAutosaveIndicator";
 import { queryKeys } from "../lib/queryKeys";
 import { cn, relativeTime } from "../lib/utils";
 import { MarkdownBody } from "./MarkdownBody";
-import { MarkdownEditor, type MentionOption } from "./MarkdownEditor";
+import { MarkdownEditor, type MarkdownEditorRef, type MentionOption } from "./MarkdownEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -58,6 +58,99 @@ function saveFoldedDocumentKeys(issueId: string, keys: string[]) {
 
 function renderBody(body: string, className?: string) {
   return <MarkdownBody className={className}>{body}</MarkdownBody>;
+}
+
+function DocumentBodySlot({
+  body,
+  hasDraft,
+  draftBody,
+  onChange,
+  onBeginEdit,
+  onSubmit,
+  contentClassName,
+  shellClassName,
+  paddingClassName,
+  mentions,
+  imageUploadHandler,
+}: {
+  body: string;
+  hasDraft: boolean;
+  draftBody: string;
+  onChange: (next: string) => void;
+  onBeginEdit: () => void;
+  onSubmit: () => void;
+  contentClassName: string;
+  shellClassName: string;
+  paddingClassName: string;
+  mentions?: MentionOption[];
+  imageUploadHandler?: (file: File) => Promise<string>;
+}) {
+  const editorRef = useRef<MarkdownEditorRef | null>(null);
+  const focusOnMountRef = useRef(false);
+
+  useEffect(() => {
+    if (hasDraft && focusOnMountRef.current) {
+      editorRef.current?.focus();
+      focusOnMountRef.current = false;
+    }
+  }, [hasDraft]);
+
+  if (hasDraft) {
+    return (
+      <div className={cn(shellClassName, paddingClassName)}>
+        <MarkdownEditor
+          ref={editorRef}
+          value={draftBody}
+          onChange={onChange}
+          placeholder="Markdown body"
+          bordered={false}
+          className="bg-transparent"
+          contentClassName={contentClassName}
+          mentions={mentions}
+          imageUploadHandler={imageUploadHandler}
+          onSubmit={onSubmit}
+        />
+      </div>
+    );
+  }
+
+  const startEditing = () => {
+    focusOnMountRef.current = true;
+    onBeginEdit();
+  };
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      className={cn(
+        shellClassName,
+        paddingClassName,
+        "cursor-text hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+      )}
+      onClick={(event) => {
+        if ((event.target as HTMLElement).closest("a")) return;
+        startEditing();
+      }}
+      onFocus={() => {
+        focusOnMountRef.current = true;
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          startEditing();
+        }
+      }}
+    >
+      {body.trim() ? (
+        <MarkdownBody className={contentClassName}>{body}</MarkdownBody>
+      ) : (
+        <p className={cn(contentClassName, "italic text-muted-foreground")}>
+          Click to add markdown body
+        </p>
+      )}
+    </div>
+  );
 }
 
 function isPlanKey(key: string) {
@@ -798,37 +891,33 @@ export function IssueDocumentsSection({
                       placeholder="Optional title"
                     />
                   )}
-                  <div
-                    className={`${documentBodyShellClassName} ${documentBodyPaddingClassName} ${
-                      activeDraft ? "" : "hover:bg-accent/10"
-                    }`}
-                  >
-                    <MarkdownEditor
-                      value={activeDraft?.body ?? doc.body}
-                      onChange={(body) => {
-                        markDocumentDirty(doc.key);
-                        setDraft((current) => {
-                          if (current && current.key === doc.key && !current.isNew) {
-                            return { ...current, body };
-                          }
-                          return {
-                            key: doc.key,
-                            title: doc.title ?? "",
-                            body,
-                            baseRevisionId: doc.latestRevisionId,
-                            isNew: false,
-                          };
-                        });
-                      }}
-                      placeholder="Markdown body"
-                      bordered={false}
-                      className="bg-transparent"
-                      contentClassName={documentBodyContentClassName}
-                      mentions={mentions}
-                      imageUploadHandler={imageUploadHandler}
-                      onSubmit={() => void commitDraft(activeDraft ?? draft, { clearAfterSave: false, trackAutosave: true })}
-                    />
-                  </div>
+                  <DocumentBodySlot
+                    body={doc.body}
+                    hasDraft={!!activeDraft}
+                    draftBody={activeDraft?.body ?? doc.body}
+                    onChange={(body) => {
+                      markDocumentDirty(doc.key);
+                      setDraft((current) => {
+                        if (current && current.key === doc.key && !current.isNew) {
+                          return { ...current, body };
+                        }
+                        return {
+                          key: doc.key,
+                          title: doc.title ?? "",
+                          body,
+                          baseRevisionId: doc.latestRevisionId,
+                          isNew: false,
+                        };
+                      });
+                    }}
+                    onBeginEdit={() => beginEdit(doc.key)}
+                    onSubmit={() => void commitDraft(activeDraft ?? draft, { clearAfterSave: false, trackAutosave: true })}
+                    contentClassName={documentBodyContentClassName}
+                    shellClassName={documentBodyShellClassName}
+                    paddingClassName={documentBodyPaddingClassName}
+                    mentions={mentions}
+                    imageUploadHandler={imageUploadHandler}
+                  />
                   <div className="flex min-h-4 items-center justify-end px-1">
                     <span
                       className={`text-[11px] transition-opacity duration-150 ${
