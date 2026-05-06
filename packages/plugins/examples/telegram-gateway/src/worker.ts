@@ -112,6 +112,29 @@ export function parseTopicRouting(raw: string | undefined): TopicRouting {
 }
 
 // ---------------------------------------------------------------------------
+// FID-43: HTML numeric character reference normalization
+//
+// Some Telegram clients (notably iOS) emit trailing whitespace as numeric
+// HTML entities (e.g. `&#x20;`, `&#xA0;`). When markdown is re-pasted, the
+// `&` may be backslash-escaped to `\&#x20;`. Both forms survive react-markdown
+// rendering and surface as literal text in the FideliOS UI.
+//
+// We decode the whitespace numeric references (and consume an optional
+// leading backslash) at ingestion time so downstream renderers see plain
+// whitespace. Scope is intentionally narrow — only whitespace entities — to
+// avoid changing semantics for comments that legitimately mention `&#xNN;`.
+// ---------------------------------------------------------------------------
+
+const WHITESPACE_ENTITY_RE = /\\?&#(?:x(20|09|0[Aa]|0[Dd]|[Aa]0)|(32|9|10|13|160));/g;
+
+export function decodeWhitespaceEntities(input: string): string {
+  return input.replace(WHITESPACE_ENTITY_RE, (_match, hex: string | undefined, dec: string | undefined) => {
+    const code = hex !== undefined ? parseInt(hex, 16) : parseInt(dec ?? "0", 10);
+    return Number.isFinite(code) && code > 0 ? String.fromCharCode(code) : "";
+  });
+}
+
+// ---------------------------------------------------------------------------
 // State helpers — map Telegram message IDs back to FideliOS entities
 // ---------------------------------------------------------------------------
 
@@ -433,7 +456,11 @@ const plugin = definePlugin({
     // Post the reply back to FideliOS as a comment on the issue
     const from = message.from as Record<string, unknown> | undefined;
     const senderName = from ? String(from.first_name ?? from.username ?? "Telegram user") : "Telegram user";
-    const commentBody = `**${senderName} via Telegram:** ${text}`;
+    // FID-43: normalize whitespace HTML entities (e.g. `&#x20;`, `\&#x20;`) that
+    // some Telegram clients emit for trailing whitespace, to prevent literal
+    // entity text from leaking into rendered comments.
+    const normalizedText = decodeWhitespaceEntities(text);
+    const commentBody = `**${senderName} via Telegram:** ${normalizedText}`;
 
     try {
       await ctx.issues.createComment(entry.entityId, commentBody, entry.companyId);
