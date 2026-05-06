@@ -28,6 +28,25 @@ function flattenText(value: ReactNode): string {
   return "";
 }
 
+// FID-43: Some clients (notably iOS keyboards in both Telegram and the
+// FideliOS UI comment editor) emit trailing whitespace as numeric HTML
+// entities (e.g. `&#x20;`, `&#xA0;`) which `react-markdown` intentionally
+// does NOT decode — they survive the pipeline and render as literal text.
+// We pre-normalize these whitespace entities (and consume an optional
+// leading backslash from the markdown-escaped form `\&#x20;`) so the
+// rendered output stays clean regardless of how the comment was authored.
+//
+// Scope is intentionally narrow — only whitespace entities — to avoid
+// changing semantics for content that legitimately mentions `&#xNN;`.
+const WHITESPACE_ENTITY_RE = /\\?&#(?:x(20|09|0[Aa]|0[Dd]|[Aa]0)|(32|9|10|13|160));/g;
+
+export function decodeWhitespaceEntities(input: string): string {
+  return input.replace(WHITESPACE_ENTITY_RE, (_match, hex: string | undefined, dec: string | undefined) => {
+    const code = hex !== undefined ? parseInt(hex, 16) : parseInt(dec ?? "0", 10);
+    return Number.isFinite(code) && code > 0 ? String.fromCharCode(code) : "";
+  });
+}
+
 function extractMermaidSource(children: ReactNode): string | null {
   if (!isValidElement(children)) return null;
   const childProps = children.props as { className?: unknown; children?: ReactNode };
@@ -145,7 +164,7 @@ export function MarkdownBody({ children, className, resolveImageSrc }: MarkdownB
       )}
     >
       <Markdown remarkPlugins={[remarkGfm]} components={components} urlTransform={(url) => url}>
-        {children}
+        {decodeWhitespaceEntities(children)}
       </Markdown>
     </div>
   );
