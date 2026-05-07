@@ -41,6 +41,14 @@ export function buildHermesConfig(v) {
     if (v.promptTemplate) {
         ac.promptTemplate = v.promptTemplate;
     }
+    // Toolset whitelist (empty → LLM-driven triage chooses per prompt)
+    if (typeof v.toolsets === "string" && v.toolsets.trim()) {
+        ac.toolsets = v.toolsets.trim();
+    }
+    // Optional triage router model override
+    if (typeof v.triageModel === "string" && v.triageModel.trim()) {
+        ac.triageModel = v.triageModel.trim();
+    }
     // Heartbeat config is handled by FideliOS itself
     return ac;
 }

@@ -17,6 +17,8 @@
  */
 import { runChildProcess, buildFideliOSEnv, renderTemplate, ensureAbsoluteDirectory, } from "@fideliosai/adapter-utils/server-utils";
 import { HERMES_CLI, DEFAULT_TIMEOUT_SEC, DEFAULT_GRACE_SEC, VALID_PROVIDERS, } from "../shared/constants.js";
+import { triageToolsets } from "./triage.js";
+import { HERMES_TOOLSET_REGISTRY } from "./toolset-registry.js";
 // ---------------------------------------------------------------------------
 // Config helpers
 // ---------------------------------------------------------------------------
@@ -248,13 +250,36 @@ export async function execute(ctx) {
     const provider = cfgString(config.provider);
     const timeoutSec = cfgNumber(config.timeoutSec) || DEFAULT_TIMEOUT_SEC;
     const graceSec = cfgNumber(config.graceSec) || DEFAULT_GRACE_SEC;
-    const toolsets = cfgString(config.toolsets) || cfgStringArray(config.enabledToolsets)?.join(",");
+    const explicitToolsets = cfgString(config.toolsets) || cfgStringArray(config.enabledToolsets)?.join(",");
+    let toolsets = explicitToolsets;
+    let triageMeta = null;
     const extraArgs = cfgStringArray(config.extraArgs);
     const persistSession = cfgBoolean(config.persistSession) !== false;
     const worktreeMode = cfgBoolean(config.worktreeMode) === true;
     const checkpoints = cfgBoolean(config.checkpoints) === true;
     // ── Build prompt ───────────────────────────────────────────────────────
     const prompt = buildPrompt(ctx, config);
+    // ── Triage toolsets (FID-48) ───────────────────────────────────────────
+    // If the operator pinned toolsets explicitly, respect that whitelist
+    // (backwards compat). Otherwise ask the configured local model to pick a
+    // relevant subset for this prompt out of all available Hermes toolsets.
+    const triageEnabled = cfgBoolean(config.triageEnabled) !== false; // default on
+    if (!explicitToolsets && triageEnabled) {
+        const triageModel = cfgString(config.triageModel) || model;
+        const triageTimeoutMs = cfgNumber(config.triageTimeoutMs);
+        const triageHost = cfgString(config.triageHost) || cfgString(config.ollamaHost);
+        triageMeta = await triageToolsets({
+            prompt,
+            model: triageModel,
+            host: triageHost,
+            timeoutMs: triageTimeoutMs,
+        });
+        if (triageMeta.toolsets.length > 0) {
+            toolsets = triageMeta.toolsets.join(",");
+        }
+        const total = HERMES_TOOLSET_REGISTRY.length;
+        await ctx.onLog("stdout", `[hermes-triage] selected: ${triageMeta.toolsets.join(",") || "(none)"} (${triageMeta.toolsets.length} of ${total}, ${triageMeta.durationMs}ms${triageMeta.usedFallback ? `, fallback: ${triageMeta.error}` : ""})\n`);
+    }
     // ── Build command args ─────────────────────────────────────────────────
     // Use -Q (quiet) to get clean output: just response + session_id line
     const useQuiet = cfgBoolean(config.quiet) !== false; // default true
@@ -400,6 +425,14 @@ export async function execute(ctx) {
         session_id: parsed.sessionId || null,
         usage: parsed.usage || null,
         cost_usd: parsed.costUsd ?? null,
+        triage: triageMeta
+            ? {
+                toolsets: triageMeta.toolsets,
+                used_fallback: triageMeta.usedFallback,
+                error: triageMeta.error ?? null,
+                duration_ms: triageMeta.durationMs,
+            }
+            : null,
     };
     // Store session ID for next run
     if (persistSession && parsed.sessionId) {
