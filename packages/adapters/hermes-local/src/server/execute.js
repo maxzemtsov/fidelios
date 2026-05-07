@@ -19,6 +19,7 @@ import { runChildProcess, buildFideliOSEnv, renderTemplate, ensureAbsoluteDirect
 import { HERMES_CLI, DEFAULT_TIMEOUT_SEC, DEFAULT_GRACE_SEC, VALID_PROVIDERS, } from "../shared/constants.js";
 import { triageToolsets } from "./triage.js";
 import { HERMES_TOOLSET_REGISTRY } from "./toolset-registry.js";
+import { isHeadlessEnv, filterHeadlessCsv } from "./headless.js";
 // ---------------------------------------------------------------------------
 // Config helpers
 // ---------------------------------------------------------------------------
@@ -75,6 +76,18 @@ Someone commented. Read it:
 
 Address the comment, POST a reply if needed, then continue working.
 {{/commentId}}
+
+{{#taskId}}
+## If you need clarification
+
+You are running unattended — there is no human at the terminal, so do NOT use \`clarify\` (it has been stripped from your toolset for this reason). If the task is genuinely ambiguous and you cannot proceed safely, escalate via the FideliOS API:
+
+1. Post the question as a comment:
+   \`curl -s -X POST "{{fideliosApiUrl}}/issues/{{taskId}}/comments" -H "Content-Type: application/json" -d '{"body":"❓ Question: <your question>"}'\`
+2. Mark the issue blocked:
+   \`curl -s -X PATCH "{{fideliosApiUrl}}/issues/{{taskId}}" -H "Content-Type: application/json" -d '{"status":"blocked"}'\`
+3. Stop. The Board will answer in a comment; FideliOS will wake you on the next heartbeat with the reply attached. Prefer this over making large irreversible decisions on shaky assumptions.
+{{/taskId}}
 
 {{#noTask}}
 ## Heartbeat Wake — Check for Work
@@ -280,6 +293,26 @@ export async function execute(ctx) {
         const total = HERMES_TOOLSET_REGISTRY.length;
         await ctx.onLog("stdout", `[hermes-triage] selected: ${triageMeta.toolsets.join(",") || "(none)"} (${triageMeta.toolsets.length} of ${total}, ${triageMeta.durationMs}ms${triageMeta.usedFallback ? `, fallback: ${triageMeta.error}` : ""})\n`);
     }
+    // ── Headless I/O contract (FID-52) ─────────────────────────────────────
+    // Strip toolsets that block on stdin (e.g. `clarify`) when running
+    // unattended. Without this, hermes hangs ~120 s per clarify call up to
+    // the adapter's hard timeout (FID-47). The model is instead expected to
+    // escalate via the FideliOS API — the prompt template carries that
+    // guidance.
+    let headlessMeta = null;
+    if (isHeadlessEnv(process.env, { stdinIsTTY: process.stdin?.isTTY })) {
+        const { csv, stripped } = filterHeadlessCsv(toolsets);
+        headlessMeta = {
+            headless: true,
+            stripped,
+            explicitOverride: !!explicitToolsets && stripped.length > 0,
+        };
+        if (stripped.length > 0) {
+            const noun = stripped.length === 1 ? "toolset" : "toolsets";
+            await ctx.onLog("stdout", `[hermes-headless] stripped interactive ${noun}: ${stripped.join(",")} (escalate via FideliOS API instead)\n`);
+            toolsets = csv || undefined;
+        }
+    }
     // ── Build command args ─────────────────────────────────────────────────
     // Use -Q (quiet) to get clean output: just response + session_id line
     const useQuiet = cfgBoolean(config.quiet) !== false; // default true
@@ -431,6 +464,13 @@ export async function execute(ctx) {
                 used_fallback: triageMeta.usedFallback,
                 error: triageMeta.error ?? null,
                 duration_ms: triageMeta.durationMs,
+            }
+            : null,
+        headless: headlessMeta
+            ? {
+                headless: headlessMeta.headless,
+                stripped: headlessMeta.stripped,
+                explicit_override: headlessMeta.explicitOverride,
             }
             : null,
     };
