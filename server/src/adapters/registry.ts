@@ -196,6 +196,7 @@ const hermesLocalAdapter: ServerAdapterModule = {
   listSkills: hermesListSkills,
   syncSkills: hermesSyncSkills,
   models: hermesModels,
+  listModels: listOllamaModels,
   supportsLocalAgentJwt: true,
   agentConfigurationDoc: hermesAgentConfigurationDoc,
   detectModel: () => detectModelFromHermes(),
