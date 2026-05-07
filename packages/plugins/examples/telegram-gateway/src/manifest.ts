@@ -1,7 +1,7 @@
 import type { FideliOSPluginManifestV1 } from "@fideliosai/plugin-sdk";
 
 const PLUGIN_ID = "fidelios.telegram-gateway";
-const PLUGIN_VERSION = "0.1.1";
+const PLUGIN_VERSION = "0.2.0";
 
 const manifest: FideliOSPluginManifestV1 = {
   id: PLUGIN_ID,
@@ -14,8 +14,10 @@ const manifest: FideliOSPluginManifestV1 = {
   capabilities: [
     "companies.read",
     "issues.read",
+    "issues.create",
     "issue.comments.create",
     "agents.read",
+    "agents.invoke",
     "events.subscribe",
     "webhooks.receive",
     "http.outbound",
