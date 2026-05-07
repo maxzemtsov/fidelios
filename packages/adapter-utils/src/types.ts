@@ -354,6 +354,10 @@ export interface CreateConfigValues {
   workspaceBranchTemplate?: string;
   worktreeParentDir?: string;
   runtimeServicesJson?: string;
+  /** ollama_local: optional host override (defaults to http://localhost:11434). */
+  ollamaHost?: string;
+  /** ollama_local: optional cloud tier override. */
+  ollamaTier?: string;
   maxTurnsPerRun: number;
   heartbeatEnabled: boolean;
   intervalSec: number;
