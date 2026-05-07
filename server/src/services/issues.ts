@@ -304,15 +304,32 @@ function decodeNumericHtmlEntity(digits: string, radix: 16 | 10): string | null 
   }
 }
 
-/** Decodes HTML character references in a raw @mention capture so UI-encoded bodies match agent names. */
-export function normalizeAgentMentionToken(raw: string): string {
-  let s = raw.replace(/&#x([0-9a-fA-F]+);/gi, (full, hex: string) => decodeNumericHtmlEntity(hex, 16) ?? full);
+/** Decodes HTML numeric and well-known named character references in arbitrary text. */
+function decodeMentionHtmlEntities(input: string): string {
+  let s = input.replace(/&#x([0-9a-fA-F]+);/gi, (full, hex: string) => decodeNumericHtmlEntity(hex, 16) ?? full);
   s = s.replace(/&#([0-9]+);/g, (full, dec: string) => decodeNumericHtmlEntity(dec, 10) ?? full);
   s = s.replace(/&([a-z][a-z0-9]*);/gi, (full, name: string) => {
     const decoded = WELL_KNOWN_NAMED_HTML_ENTITIES[name.toLowerCase()];
     return decoded !== undefined ? decoded : full;
   });
-  return s.trim();
+  return s;
+}
+
+/** Decodes HTML character references in a raw @mention capture so UI-encoded bodies match agent names. */
+export function normalizeAgentMentionToken(raw: string): string {
+  return decodeMentionHtmlEntities(raw).trim();
+}
+
+const REGEX_META_RE = /[-/\\^$*+?.()|[\]{}]/g;
+const MARKDOWN_AGENT_LINK_RE = /\[[^\]]*]\(agent:\/\/[^)\s]+\)/gi;
+
+/** Build a regex that matches `@<name>` as a standalone mention (case-insensitive). */
+function buildAgentNameMentionRegex(name: string, flags = "i"): RegExp {
+  const escaped = name.replace(REGEX_META_RE, "\\$&");
+  // \B before @ avoids false positives in emails (foo@bar.com).
+  // The lookahead ensures the name ends at a non-word boundary so we don't
+  // match `@Bob` inside `@Bobby`, but still match before punctuation/EOL.
+  return new RegExp(`\\B@${escaped}(?=$|[^A-Za-z0-9_])`, flags);
 }
 
 export function deriveIssueUserContext(
@@ -1667,24 +1684,55 @@ export function issueService(db: Db) {
       }),
 
     findMentionedAgents: async (companyId: string, body: string) => {
-      const re = /\B@([^\s@,!?.]+)/g;
-      const tokens = new Set<string>();
-      let m: RegExpExecArray | null;
-      while ((m = re.exec(body)) !== null) {
-        const normalized = normalizeAgentMentionToken(m[1]);
-        if (normalized) tokens.add(normalized.toLowerCase());
-      }
+      if (!body) return [];
 
+      // Markdown-link mentions like `[@Name](agent://id)` carry the agent id explicitly.
       const explicitAgentMentionIds = extractAgentMentionIds(body);
-      if (tokens.size === 0 && explicitAgentMentionIds.length === 0) return [];
-      const rows = await db.select({ id: agents.id, name: agents.name })
-        .from(agents).where(eq(agents.companyId, companyId));
+
+      // Plain-text scan: decode HTML entities so UI/Telegram-encoded bodies match,
+      // then strip out any markdown-link mentions so the visible label inside `[...]`
+      // doesn't get matched a second time against agent names.
+      const decoded = decodeMentionHtmlEntities(body);
+      const scratch = decoded.replace(MARKDOWN_AGENT_LINK_RE, "");
+
+      // Quick reject: no `@` left, no plain-text matches possible.
+      const hasAtSign = scratch.includes("@");
+      if (!hasAtSign && explicitAgentMentionIds.length === 0) return [];
+
+      const rows = await db
+        .select({ id: agents.id, name: agents.name })
+        .from(agents)
+        .where(eq(agents.companyId, companyId));
+
       const resolved = new Set<string>(explicitAgentMentionIds);
-      for (const agent of rows) {
-        if (tokens.has(agent.name.toLowerCase())) {
+      if (!hasAtSign || rows.length === 0) return [...resolved];
+
+      // Match longest agent name first so that `@Platform Engineer` resolves
+      // to "Platform Engineer" rather than to a separate "Platform" agent.
+      // Each match is replaced with whitespace in the scratch buffer so that a
+      // shorter agent name cannot re-match the same span.
+      const sortedAgents = [...rows]
+        .filter((agent) => agent.name && agent.name.trim().length > 0)
+        .sort((a, b) => b.name.length - a.name.length);
+
+      let mutableScratch = scratch;
+      for (const agent of sortedAgents) {
+        const globalPattern = buildAgentNameMentionRegex(agent.name, "gi");
+        if (globalPattern.test(mutableScratch)) {
           resolved.add(agent.id);
+          // Wipe matched spans so that shorter agent names don't re-match the
+          // same text (e.g. agent "Platform" must not match `@Platform Engineer`
+          // when "Platform Engineer" already resolved). We always perform the
+          // replace — even when this agent was already resolved via the
+          // markdown-link path — so longer-name spans always win over shorter
+          // ones in subsequent iterations.
+          mutableScratch = mutableScratch.replace(
+            buildAgentNameMentionRegex(agent.name, "gi"),
+            "",
+          );
         }
       }
+
       return [...resolved];
     },
 

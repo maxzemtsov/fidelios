@@ -1141,6 +1141,33 @@ export function issueRoutes(db: Db, storage: StorageService) {
         }
       }
 
+      // When this update carried a fresh comment, surface the comment id on
+      // every wakeup's context so the woken agent sees the trigger comment —
+      // even if their primary wake reason is `issue_assigned` (which on its
+      // own does not include `wakeCommentId`). Without this, an assignee who
+      // was @-mentioned in the same submission gets the assignment wake first
+      // (and the mention wake is skipped via dedup), so they never see the
+      // comment that prompted the assignment. (FID-44)
+      if (comment) {
+        const commentId = comment.id;
+        for (const agentId of [...wakeups.keys()]) {
+          const wake = wakeups.get(agentId);
+          if (!wake) continue;
+          wakeups.set(agentId, {
+            ...wake,
+            payload: {
+              ...((wake.payload ?? {}) as Record<string, unknown>),
+              commentId,
+            },
+            contextSnapshot: {
+              ...((wake.contextSnapshot ?? {}) as Record<string, unknown>),
+              commentId,
+              wakeCommentId: commentId,
+            },
+          });
+        }
+      }
+
       for (const [agentId, wakeup] of wakeups.entries()) {
         heartbeat
           .wakeup(agentId, wakeup)
