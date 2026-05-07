@@ -70,13 +70,19 @@ export async function testEnvironment(
   const Ctor = deps.ollamaCtor ?? Ollama;
   const client = buildClient(cfg, Ctor);
 
-  // Surface tier verbatim (no public Ollama API to verify it).
-  if (cfg.ollamaTier) {
+  // Surface configured tier + concurrency cap (no public Ollama API to verify a tier).
+  {
+    const { tierCap, requiresConcurrencyCap } = await import("./concurrency.js");
+    const isCloud = isCloudHost(cfg.host);
+    const cap = tierCap(cfg.tier);
+    const subject = requiresConcurrencyCap(cfg.model, isCloud);
     checks.push({
       code: "ollama_tier_configured",
       level: "info",
-      message: `Configured Ollama tier: ${cfg.ollamaTier}`,
-      hint: "There is no public Ollama API to verify a tier — this value is documentation only.",
+      message: `Configured Ollama tier: ${cfg.tier} (concurrency cap: ${cap} cloud run${cap !== 1 ? "s" : ""})`,
+      hint: subject
+        ? `Cloud model detected — concurrency capped at ${cap} run(s) for tier "${cfg.tier}".`
+        : "Concurrency cap applies to cloud models only. Local daemon runs are uncapped.",
     });
   }
 

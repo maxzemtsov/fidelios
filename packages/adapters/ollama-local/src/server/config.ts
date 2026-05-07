@@ -4,11 +4,15 @@
  * tests can exercise them without spinning up a fake fetch().
  */
 
+import { parseTier, type OllamaTierName } from "./concurrency.js";
+
 export const DEFAULT_HOST = "http://localhost:11434";
 export const CLOUD_HOST = "https://ollama.com";
 export const DEFAULT_TIMEOUT_SEC = 300;
+export const DEFAULT_MAX_TURNS = 20;
 
 export type ThinkOption = boolean | "low" | "medium" | "high";
+export type { OllamaTierName };
 
 export interface OllamaConfig {
   host: string;
@@ -19,6 +23,10 @@ export interface OllamaConfig {
   think: ThinkOption | null;
   ollamaTier: string | null;
   timeoutSec: number;
+  /** Parsed concurrency tier (free/pro/max) — caps concurrent cloud runs. */
+  tier: OllamaTierName;
+  /** Max agent loop turns before halting. Default: 20. */
+  maxTurns: number;
 }
 
 function asString(value: unknown, fallback = ""): string {
@@ -103,6 +111,12 @@ export function parseOllamaConfig(rawConfig: unknown): OllamaConfig {
   const timeoutSec =
     timeoutSecRaw !== null && timeoutSecRaw > 0 ? timeoutSecRaw : DEFAULT_TIMEOUT_SEC;
 
+  // Phase 2: concurrency tier + agent loop turn limit.
+  const tier = parseTier(config.tier ?? config.ollamaTier);
+  const maxTurnsRaw = asNumberOrNull(config.maxTurns);
+  const maxTurns =
+    maxTurnsRaw !== null && maxTurnsRaw > 0 ? Math.floor(maxTurnsRaw) : DEFAULT_MAX_TURNS;
+
   return {
     host,
     model,
@@ -112,6 +126,8 @@ export function parseOllamaConfig(rawConfig: unknown): OllamaConfig {
     think,
     ollamaTier,
     timeoutSec,
+    tier,
+    maxTurns,
   };
 }
 
