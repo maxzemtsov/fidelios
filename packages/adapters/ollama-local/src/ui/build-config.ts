@@ -62,7 +62,12 @@ export function buildOllamaLocalConfig(v: CreateConfigValues): Record<string, un
 
   const argLines = parseEnvVars(`${v.args ?? ""}\n${v.extraArgs ?? ""}`);
 
-  if (argLines.host) ac.host = argLines.host;
+  // Dedicated form fields take precedence over key=value lines so the
+  // form's typed inputs are the source of truth when both are present.
+  const hostFromField = typeof v.ollamaHost === "string" ? v.ollamaHost.trim() : "";
+  if (hostFromField) ac.host = hostFromField;
+  else if (argLines.host) ac.host = argLines.host;
+
   if (argLines.keepAlive) ac.keepAlive = argLines.keepAlive;
   if (argLines.numCtx) {
     const n = Number(argLines.numCtx);
@@ -73,7 +78,11 @@ export function buildOllamaLocalConfig(v: CreateConfigValues): Record<string, un
     if (t === "true" || t === "false") ac.think = t === "true";
     else if (t === "low" || t === "medium" || t === "high") ac.think = t;
   }
-  if (argLines.ollamaTier) ac.ollamaTier = argLines.ollamaTier;
+
+  const tierFromField = typeof v.ollamaTier === "string" ? v.ollamaTier.trim() : "";
+  if (tierFromField) ac.ollamaTier = tierFromField;
+  else if (argLines.ollamaTier) ac.ollamaTier = argLines.ollamaTier;
+
   if (argLines.timeoutSec) {
     const n = Number(argLines.timeoutSec);
     if (Number.isFinite(n) && n > 0) ac.timeoutSec = n;

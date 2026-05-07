@@ -1,0 +1,14 @@
+import type { UIAdapterModule } from "../types";
+import {
+  parseOllamaStdoutLine,
+  buildOllamaLocalConfig,
+} from "@fideliosai/adapter-ollama-local/ui";
+import { OllamaLocalConfigFields } from "./config-fields";
+
+export const ollamaLocalUIAdapter: UIAdapterModule = {
+  type: "ollama_local",
+  label: "Ollama (local)",
+  parseStdoutLine: parseOllamaStdoutLine,
+  ConfigFields: OllamaLocalConfigFields,
+  buildAdapterConfig: buildOllamaLocalConfig,
+};
