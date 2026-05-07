@@ -227,3 +227,98 @@ describe("execute: triage off when no toolsets and triageEnabled disabled", () =
     expect(result.resultJson?.triage).toBeNull();
   });
 });
+
+describe("execute: headless I/O contract (FID-52)", () => {
+  // FideliOS spawns always set FIDELIOS_RUN_ID — vitest's process.env may or
+  // may not have it depending on parent invocation. We force the desired
+  // state per test via FIDELIOS_HEADLESS to avoid leaking between cases.
+  const ORIG_HEADLESS = process.env.FIDELIOS_HEADLESS;
+  const ORIG_RUN_ID = process.env.FIDELIOS_RUN_ID;
+
+  beforeEach(() => {
+    delete process.env.FIDELIOS_HEADLESS;
+    delete process.env.FIDELIOS_RUN_ID;
+  });
+
+  it("strips clarify from a triage selection when headless", async () => {
+    process.env.FIDELIOS_HEADLESS = "1";
+    triageToolsetsMock.mockResolvedValue({
+      toolsets: ["file", "clarify", "web"],
+      usedFallback: false,
+      durationMs: 7,
+    });
+
+    const { ctx, logs } = makeCtx();
+    const result = await execute(ctx);
+
+    expect(findToolsetsArg(getArgs())).toBe("file,web");
+    expect(result.resultJson?.headless).toEqual({
+      headless: true,
+      stripped: ["clarify"],
+      explicit_override: false,
+    });
+    const banner = logs.find((l) => l.chunk.includes("[hermes-headless] stripped"));
+    expect(banner).toBeTruthy();
+    expect(banner.chunk).toMatch(/clarify/);
+  });
+
+  it("strips clarify from an explicitly-pinned toolset whitelist when headless", async () => {
+    process.env.FIDELIOS_HEADLESS = "1";
+
+    const { ctx } = makeCtx({
+      adapterConfig: { toolsets: "clarify,file" },
+    });
+    const result = await execute(ctx);
+
+    expect(triageToolsetsMock).not.toHaveBeenCalled();
+    expect(findToolsetsArg(getArgs())).toBe("file");
+    expect(result.resultJson?.headless?.stripped).toEqual(["clarify"]);
+    expect(result.resultJson?.headless?.explicit_override).toBe(true);
+  });
+
+  it("omits -t entirely when stripping leaves nothing", async () => {
+    process.env.FIDELIOS_HEADLESS = "1";
+
+    const { ctx } = makeCtx({
+      adapterConfig: { toolsets: "clarify" },
+    });
+    await execute(ctx);
+
+    expect(findToolsetsArg(getArgs())).toBeNull();
+  });
+
+  it("does not strip clarify in interactive mode (no FideliOS markers, default TTY)", async () => {
+    // No FIDELIOS_HEADLESS, no FIDELIOS_RUN_ID. The detector falls back to
+    // the stdin TTY hint; in vitest stdin is typically not a TTY but we
+    // bypass that here by explicitly setting FIDELIOS_HEADLESS=0.
+    process.env.FIDELIOS_HEADLESS = "0";
+
+    const { ctx } = makeCtx({
+      adapterConfig: { toolsets: "clarify,file" },
+    });
+    const result = await execute(ctx);
+
+    expect(findToolsetsArg(getArgs())).toBe("clarify,file");
+    expect(result.resultJson?.headless).toBeNull();
+  });
+
+  it("resultJson.headless is null in interactive mode even with no toolsets", async () => {
+    process.env.FIDELIOS_HEADLESS = "0";
+
+    triageToolsetsMock.mockResolvedValue({
+      toolsets: ["file"],
+      usedFallback: false,
+      durationMs: 2,
+    });
+
+    const { ctx } = makeCtx();
+    const result = await execute(ctx);
+
+    expect(result.resultJson?.headless).toBeNull();
+
+    // Restore for subsequent suites
+    if (ORIG_HEADLESS !== undefined) process.env.FIDELIOS_HEADLESS = ORIG_HEADLESS;
+    else delete process.env.FIDELIOS_HEADLESS;
+    if (ORIG_RUN_ID !== undefined) process.env.FIDELIOS_RUN_ID = ORIG_RUN_ID;
+  });
+});
