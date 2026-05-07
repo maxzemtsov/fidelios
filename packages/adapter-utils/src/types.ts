@@ -358,6 +358,10 @@ export interface CreateConfigValues {
   ollamaHost?: string;
   /** ollama_local: optional cloud tier override. */
   ollamaTier?: string;
+  /** hermes_local: comma-separated toolset whitelist; empty enables LLM triage. */
+  toolsets?: string;
+  /** hermes_local: optional override model for the triage router. */
+  triageModel?: string;
   maxTurnsPerRun: number;
   heartbeatEnabled: boolean;
   intervalSec: number;

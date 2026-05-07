@@ -22,8 +22,15 @@
   "files": [
     "src"
   ],
+  "scripts": {
+    "test": "vitest run"
+  },
   "dependencies": {
     "@fideliosai/adapter-utils": "workspace:*",
+    "ollama": "^0.6.3",
     "picocolors": "^1.1.0"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.4"
   }
 }

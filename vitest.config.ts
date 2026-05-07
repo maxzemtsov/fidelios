@@ -6,6 +6,7 @@ export default defineConfig({
       "packages/db",
       "packages/adapters/opencode-local",
       "packages/adapters/ollama-local",
+      "packages/adapters/hermes-local",
       "packages/plugins/examples/telegram-gateway",
       "server",
       "ui",
