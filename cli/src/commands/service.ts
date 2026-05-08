@@ -106,7 +106,7 @@ export function resolveDevRepoDir(providedPath: string | undefined): string | nu
   return validatedGuess;
 }
 
-export function buildServicePath(nodeBin: string): string {
+export function buildServicePath(nodeBin: string, extraToolBins: string[] = []): string {
   const homeDir = os.homedir();
   const nodeBinDir = path.dirname(nodeBin);
   // Order matters: node first, then common adapter CLI locations, then system dirs.
@@ -114,6 +114,7 @@ export function buildServicePath(nodeBin: string): string {
   // (claude, codex, gh, git, brew, ...) must resolve via this list.
   const candidates = [
     nodeBinDir,
+    ...extraToolBins.map((bin) => path.dirname(bin)),
     path.join(homeDir, ".claude", "local", "bin"),
     path.join(homeDir, ".codex", "bin"),
     path.join(homeDir, ".cargo", "bin"),
@@ -133,6 +134,44 @@ export function buildServicePath(nodeBin: string): string {
   // Dedupe while preserving order.
   const seen = new Set<string>();
   return candidates.filter((dir) => (seen.has(dir) ? false : (seen.add(dir), true))).join(":");
+}
+
+export function buildDevServicePreflightArgs(): string[] {
+  return [
+    "--filter",
+    "@fideliosai/server",
+    "exec",
+    "tsx",
+    "-e",
+    "import('./src/adapters/registry.ts').then(() => process.exit(0), (err) => { console.error(err?.stack ?? err); process.exit(1); })",
+  ];
+}
+
+function preflightDevServiceRepo(repoDir: string, pnpmBin: string, nodeBin: string): void {
+  try {
+    execFileSync(pnpmBin, buildDevServicePreflightArgs(), {
+      cwd: repoDir,
+      env: {
+        ...process.env,
+        NODE_ENV: "development",
+        PATH: buildServicePath(nodeBin, [pnpmBin]),
+      },
+      stdio: ["ignore", "pipe", "pipe"],
+      encoding: "utf8",
+    });
+  } catch (err) {
+    const output = err && typeof err === "object"
+      ? `${"stdout" in err ? String(err.stdout ?? "") : ""}${"stderr" in err ? String(err.stderr ?? "") : ""}`.trim()
+      : "";
+    p.log.error(
+      [
+        "Dev-mode service preflight failed. The repo cannot currently import the server adapter registry.",
+        "Run `pnpm install` from the repo root, then retry `fidelios service install --dev`.",
+        output ? `\n${output}` : "",
+      ].join("\n"),
+    );
+    process.exit(1);
+  }
 }
 
 interface PlistOptions {
@@ -166,7 +205,7 @@ export function buildPlist(
 ): string {
   const homeDir = os.homedir();
   const mode = opts.mode ?? "release";
-  const servicePath = buildServicePath(nodeBin);
+  const servicePath = buildServicePath(nodeBin, [resolveBinary("pnpm")]);
   const workingDir = mode === "dev" && opts.repoDir ? opts.repoDir : homeDir;
   const programArgs = renderPlistProgramArgs(nodeBin, fideliosBin, { mode, repoDir: opts.repoDir });
   const nodeEnvValue = mode === "dev" ? "development" : "production";
@@ -226,7 +265,7 @@ interface SystemdOptions {
 export function buildSystemdUnit(fideliosBin: string, logPath: string, opts: SystemdOptions = {}): string {
   const homeDir = os.homedir();
   const nodeBin = resolveBinary("node");
-  const servicePath = buildServicePath(nodeBin);
+  const servicePath = buildServicePath(nodeBin, [resolveBinary("pnpm")]);
   const mode = opts.mode ?? "release";
   const execStart = mode === "dev" && opts.repoDir
     ? `${nodeBin} ${path.join(opts.repoDir, "scripts", "dev-runner.mjs")} watch`
@@ -307,8 +346,14 @@ export async function serviceInstall(options: ServiceInstallOptions = {}): Promi
 
   const { mode, repoDir } = resolveModeAndRepo(options);
   const nodeBin = resolveBinary("node");
+  const pnpmBin = resolveBinary("pnpm");
   const fideliosBin = resolveBinary("fidelios");
   const logPath = resolveLogPath();
+
+  if (mode === "dev" && repoDir) {
+    p.log.step("Checking dev workspace dependencies...");
+    preflightDevServiceRepo(repoDir, pnpmBin, nodeBin);
+  }
 
   if (platform === "macos") {
     await installMacOS(nodeBin, fideliosBin, logPath, mode, repoDir);
@@ -440,11 +485,17 @@ export async function serviceSwitch(options: { mode: ServiceMode; repoDir?: stri
       process.exit(1);
     }
     resolvedRepoDir = found;
+    p.log.step("Checking dev workspace dependencies...");
   }
 
   const nodeBin = resolveBinary("node");
+  const pnpmBin = resolveBinary("pnpm");
   const fideliosBin = resolveBinary("fidelios");
   const logPath = resolveLogPath();
+
+  if (options.mode === "dev" && resolvedRepoDir) {
+    preflightDevServiceRepo(resolvedRepoDir, pnpmBin, nodeBin);
+  }
 
   if (platform === "macos") {
     // Rewrite plist, reload, kickstart.
