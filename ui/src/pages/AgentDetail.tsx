@@ -3125,7 +3125,7 @@ function RunDetail({ run: initialRun, agentRouteId, adapterType }: { run: Heartb
                   onClick={() => runClaudeLogin.mutate()}
                   disabled={runClaudeLogin.isPending}
                 >
-                  {runClaudeLogin.isPending ? "Running claude login..." : "Login to Claude Code"}
+                  {runClaudeLogin.isPending ? "Running claude auth login..." : "Login to Claude Code"}
                 </Button>
                 {runClaudeLogin.isError && (
                   <p className="text-xs text-destructive">
