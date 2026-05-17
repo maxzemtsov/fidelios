@@ -35,6 +35,7 @@ vi.mock("../services/index.js", () => ({
   goalService: () => ({}),
   heartbeatService: () => mockHeartbeatService,
   issueApprovalService: () => ({}),
+  issueFileService: () => ({}),
   issueService: () => mockIssueService,
   logActivity: mockLogActivity,
   projectService: () => ({}),

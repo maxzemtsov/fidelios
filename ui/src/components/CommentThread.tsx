@@ -212,7 +212,9 @@ const TimelineList = memo(function TimelineList({
                 <CopyMarkdownButton text={comment.body} />
               </span>
             </div>
-            <MarkdownBody className="text-sm">{comment.body}</MarkdownBody>
+            <MarkdownBody className="text-sm" issueId={comment.issueId} companyId={comment.companyId}>
+              {comment.body}
+            </MarkdownBody>
             {companyId ? (
               <div className="mt-2 space-y-2">
                 <PluginSlotOutlet
