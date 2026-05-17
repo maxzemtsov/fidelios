@@ -19,6 +19,8 @@ export const queryKeys = {
     taskSessions: (id: string) => ["agents", "task-sessions", id] as const,
     skills: (id: string) => ["agents", "skills", id] as const,
     instructionsBundle: (id: string) => ["agents", "instructions-bundle", id] as const,
+    instructionsBundleFiles: (id: string) =>
+      ["agents", "instructions-bundle", id, "files"] as const,
     instructionsFile: (id: string, relativePath: string) =>
       ["agents", "instructions-bundle", id, "file", relativePath] as const,
     keys: (agentId: string) => ["agents", "keys", agentId] as const,

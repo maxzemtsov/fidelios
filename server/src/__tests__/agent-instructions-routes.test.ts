@@ -152,6 +152,16 @@ describe("agent instructions bundle routes", () => {
         instructionsFilePath: "/tmp/agent-1/AGENTS.md",
       },
     });
+    mockAgentInstructionsService.exportFiles.mockResolvedValue({
+      files: {
+        "AGENTS.md": "# Agent\n",
+        "SOUL.md": "# Soul\n",
+        "HEARTBEAT.md": "# Heartbeat\n",
+        "TOOLS.md": "# Tools\n",
+      },
+      entryFile: "AGENTS.md",
+      warnings: [],
+    });
   });
 
   it("returns bundle metadata", async () => {
@@ -314,5 +324,22 @@ describe("agent instructions bundle routes", () => {
     expect(res.body.adapterConfig.instructionsRootPath).toBeUndefined();
     expect(res.body.adapterConfig.instructionsEntryFile).toBeUndefined();
     expect(res.body.adapterConfig.instructionsFilePath).toBeUndefined();
+  });
+
+  it("returns the full materialized instruction bundle", async () => {
+    const res = await request(createApp())
+      .get("/api/agents/11111111-1111-4111-8111-111111111111/instructions-bundle/files?companyId=company-1");
+
+    expect(res.status, JSON.stringify(res.body)).toBe(200);
+    expect(res.body).toMatchObject({
+      entryFile: "AGENTS.md",
+      files: {
+        "AGENTS.md": "# Agent\n",
+        "SOUL.md": "# Soul\n",
+        "HEARTBEAT.md": "# Heartbeat\n",
+        "TOOLS.md": "# Tools\n",
+      },
+    });
+    expect(mockAgentInstructionsService.exportFiles).toHaveBeenCalled();
   });
 });

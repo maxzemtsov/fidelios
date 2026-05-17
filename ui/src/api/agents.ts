@@ -60,6 +60,13 @@ export interface AgentPermissionUpdate {
   canAssignTasks: boolean;
 }
 
+/** Full materialized instruction bundle — every file's content. */
+export interface AgentInstructionsBundleFiles {
+  files: Record<string, string>;
+  entryFile: string;
+  warnings: string[];
+}
+
 function withCompanyScope(path: string, companyId?: string) {
   if (!companyId) return path;
   const separator = path.includes("?") ? "&" : "?";
@@ -119,6 +126,8 @@ export const agentsApi = {
     api.patch<AgentDetail>(agentPath(id, companyId, "/permissions"), data),
   instructionsBundle: (id: string, companyId?: string) =>
     api.get<AgentInstructionsBundle>(agentPath(id, companyId, "/instructions-bundle")),
+  instructionsBundleFiles: (id: string, companyId?: string) =>
+    api.get<AgentInstructionsBundleFiles>(agentPath(id, companyId, "/instructions-bundle/files")),
   updateInstructionsBundle: (
     id: string,
     data: {
