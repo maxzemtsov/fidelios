@@ -2,12 +2,16 @@ import { api } from "./client";
 
 export interface IssueFileResult {
   path: string;
-  kind: "text" | "binary";
-  /** UTF-8 content for text files; empty for binary files. */
+  kind: "text" | "binary" | "missing";
+  /** UTF-8 content for text files; empty for binary or missing files. */
   content: string;
   size: number;
   truncated: boolean;
   multipleMatches: boolean;
+  /** For `missing`: the workspace directory that was searched. */
+  workspaceDir?: string;
+  /** For `missing`: the project's git remote URL, when known. */
+  repoUrl?: string | null;
 }
 
 /** Read a file from the on-disk workspace of an issue's project. */

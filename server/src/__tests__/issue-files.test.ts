@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import { promises as fs } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import {
   companies,
@@ -150,30 +151,39 @@ describeEmbeddedPostgres("issueFileService.readWorkspaceFile", () => {
     expect(result.multipleMatches).toBe(false);
   });
 
+  it("resolves a file via git ls-files in a git workspace", async () => {
+    const cwd = await makeWorkspaceDir();
+    execFileSync("git", ["init", "-q"], { cwd });
+    await fs.mkdir(path.join(cwd, "docs", "deep"), { recursive: true });
+    await fs.writeFile(path.join(cwd, "docs", "deep", "GIT_NOTE.md"), "tracked-ish\n", "utf8");
+    const { companyId, issueId } = await seedIssue(cwd);
+
+    const result = await svc.readWorkspaceFile(companyId, issueId, "GIT_NOTE.md");
+
+    expect(result.kind).toBe("text");
+    expect(result.path).toBe("docs/deep/GIT_NOTE.md");
+    expect(result.content).toBe("tracked-ish\n");
+  });
+
   it("keeps a traversal attempt inside the workspace", async () => {
     const cwd = await makeWorkspaceDir();
     const { companyId, issueId } = await seedIssue(cwd);
 
-    // `../../etc/hosts` normalizes away the `..` segments, leaving `etc/hosts`
-    // resolved relative to the workspace root — which does not exist there.
-    await expect(
-      svc.readWorkspaceFile(companyId, issueId, "../../etc/hosts"),
-    ).rejects.toMatchObject({
-      status: 404,
-      message: "File not found in this issue's workspace",
-    });
+    // `../../etc/hosts` normalizes the `..` segments away, leaving `etc/hosts`
+    // — which does not exist in the workspace, so it resolves to `missing`.
+    const result = await svc.readWorkspaceFile(companyId, issueId, "../../etc/hosts");
+    expect(result.kind).toBe("missing");
+    expect(result.path).toBe("etc/hosts");
   });
 
-  it("returns 404 for a missing file", async () => {
+  it("returns a missing result for a file not in the workspace", async () => {
     const cwd = await makeWorkspaceDir();
     const { companyId, issueId } = await seedIssue(cwd);
 
-    await expect(
-      svc.readWorkspaceFile(companyId, issueId, "DOES_NOT_EXIST.md"),
-    ).rejects.toMatchObject({
-      status: 404,
-      message: "File not found in this issue's workspace",
-    });
+    const result = await svc.readWorkspaceFile(companyId, issueId, "DOES_NOT_EXIST.md");
+    expect(result.kind).toBe("missing");
+    expect(result.path).toBe("DOES_NOT_EXIST.md");
+    expect(result.workspaceDir).toBeTruthy();
   });
 
   it("returns 404 when the issue has no project workspace", async () => {

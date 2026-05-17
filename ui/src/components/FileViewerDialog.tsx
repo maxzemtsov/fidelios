@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Download, Loader2 } from "lucide-react";
+import { Download, ExternalLink, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -72,7 +72,28 @@ export function FileViewerDialog({
           ) : errorMessage ? (
             <p className="py-8 text-sm text-muted-foreground">{errorMessage}</p>
           ) : file ? (
-            file.kind === "binary" ? (
+            file.kind === "missing" ? (
+              <div className="flex flex-col items-start gap-3 py-6">
+                <p className="text-sm text-muted-foreground">
+                  Couldn't find <span className="font-mono text-foreground">{file.path}</span> in
+                  this issue's workspace — it may be on a branch that isn't checked out, or in a
+                  different workspace.
+                </p>
+                {file.workspaceDir ? (
+                  <p className="break-all font-mono text-xs text-muted-foreground">
+                    Searched: {file.workspaceDir}
+                  </p>
+                ) : null}
+                {file.repoUrl ? (
+                  <Button asChild size="sm" variant="outline">
+                    <a href={file.repoUrl} target="_blank" rel="noreferrer">
+                      <ExternalLink className="h-4 w-4" />
+                      Open repository
+                    </a>
+                  </Button>
+                ) : null}
+              </div>
+            ) : file.kind === "binary" ? (
               <div className="flex flex-col items-start gap-3 py-6">
                 <p className="text-sm text-muted-foreground">
                   This file can't be previewed inline. Download it to open it on your machine.
