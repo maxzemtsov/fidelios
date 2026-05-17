@@ -26,6 +26,71 @@ function buildAgentHref(agent: InstanceSchedulerHeartbeatAgent) {
   return `/${agent.companyIssuePrefix}/agents/${encodeURIComponent(agent.agentUrlKey)}`;
 }
 
+// Click-to-edit heartbeat interval (seconds). Enter saves, Escape cancels.
+function IntervalEditor({
+  value,
+  saving,
+  onSave,
+}: {
+  value: number;
+  saving: boolean;
+  onSave: (next: number) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        className="shrink-0 tabular-nums text-muted-foreground hover:text-foreground hover:underline disabled:opacity-60"
+        disabled={saving}
+        title="Click to edit the heartbeat interval (seconds)"
+        onClick={() => {
+          setDraft(String(value));
+          setEditing(true);
+        }}
+      >
+        {saving ? "..." : `${value}s`}
+      </button>
+    );
+  }
+
+  const commit = () => {
+    const parsed = Number(draft.trim());
+    if (Number.isInteger(parsed) && parsed >= 1 && parsed !== value) {
+      onSave(parsed);
+    }
+    setEditing(false);
+  };
+
+  return (
+    <span className="flex shrink-0 items-center gap-0.5">
+      <input
+        type="number"
+        min={1}
+        step={1}
+        autoFocus
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        onFocus={(event) => event.currentTarget.select()}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            commit();
+          } else if (event.key === "Escape") {
+            event.preventDefault();
+            setEditing(false);
+          }
+        }}
+        onBlur={() => setEditing(false)}
+        className="w-24 rounded border border-input bg-background px-1 py-0.5 text-sm tabular-nums"
+      />
+      <span className="text-muted-foreground">s</span>
+    </span>
+  );
+}
+
 export function InstanceSettings() {
   const { setBreadcrumbs } = useBreadcrumbs();
   const queryClient = useQueryClient();
@@ -74,6 +139,45 @@ export function InstanceSettings() {
     },
     onError: (error) => {
       setActionError(error instanceof Error ? error.message : "Failed to update heartbeat.");
+    },
+  });
+
+  const intervalMutation = useMutation({
+    mutationFn: async ({
+      agentRow,
+      intervalSec,
+    }: {
+      agentRow: InstanceSchedulerHeartbeatAgent;
+      intervalSec: number;
+    }) => {
+      const agent = await agentsApi.get(agentRow.id, agentRow.companyId);
+      const runtimeConfig = asRecord(agent.runtimeConfig) ?? {};
+      const heartbeat = asRecord(runtimeConfig.heartbeat) ?? {};
+
+      return agentsApi.update(
+        agentRow.id,
+        {
+          runtimeConfig: {
+            ...runtimeConfig,
+            heartbeat: {
+              ...heartbeat,
+              intervalSec,
+            },
+          },
+        },
+        agentRow.companyId,
+      );
+    },
+    onSuccess: async (_, { agentRow }) => {
+      setActionError(null);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.instance.schedulerHeartbeats }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.agents.list(agentRow.companyId) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.agents.detail(agentRow.id) }),
+      ]);
+    },
+    onError: (error) => {
+      setActionError(error instanceof Error ? error.message : "Failed to update heartbeat interval.");
     },
   });
 
@@ -220,6 +324,8 @@ export function InstanceSettings() {
                 <div className="divide-y">
                   {group.agents.map((agent) => {
                     const saving = toggleMutation.isPending && toggleMutation.variables?.id === agent.id;
+                    const intervalSaving =
+                      intervalMutation.isPending && intervalMutation.variables?.agentRow.id === agent.id;
                     return (
                       <div
                         key={agent.id}
@@ -240,9 +346,13 @@ export function InstanceSettings() {
                         <span className="hidden sm:inline text-muted-foreground truncate">
                           {humanize(agent.title ?? agent.role)}
                         </span>
-                        <span className="text-muted-foreground tabular-nums shrink-0">
-                          {agent.intervalSec}s
-                        </span>
+                        <IntervalEditor
+                          value={agent.intervalSec}
+                          saving={intervalSaving}
+                          onSave={(next) =>
+                            intervalMutation.mutate({ agentRow: agent, intervalSec: next })
+                          }
+                        />
                         <span
                           className="hidden md:inline text-muted-foreground truncate"
                           title={agent.lastHeartbeatAt ? formatDateTime(agent.lastHeartbeatAt) : undefined}
