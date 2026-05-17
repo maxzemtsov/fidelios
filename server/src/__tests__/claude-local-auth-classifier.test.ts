@@ -73,6 +73,9 @@ if (mode === "authfail") {
   process.stderr.write("Not logged in. Please run /login\\n");
   process.exit(1);
 }
+if (mode === "exit143") {
+  process.exit(143);
+}
 console.log(JSON.stringify({ type: "system", subtype: "init", session_id: "claude-session-1", model: "claude-sonnet-4-6" }));
 console.log(JSON.stringify({ type: "assistant", session_id: "claude-session-1", message: { content: [{ type: "text", text: "Investigating the /login route; the error users hit is 'Not logged in'." }] } }));
 console.log(JSON.stringify({ type: "result", subtype: "success", session_id: "claude-session-1", is_error: false, result: "Done. The /login route returns 401 Unauthorized for bad credentials.", total_cost_usd: 0 }));
@@ -82,7 +85,7 @@ process.exit(0);
   await fs.chmod(commandPath, 0o755);
 }
 
-async function runClaudeExecute(root: string, mode: "success" | "authfail") {
+async function runClaudeExecute(root: string, mode: "success" | "authfail" | "exit143") {
   const workspace = path.join(root, "workspace");
   const commandPath = path.join(root, "claude");
   await fs.mkdir(workspace, { recursive: true });
@@ -133,6 +136,23 @@ describe("claude execute — auth classification", () => {
       const result = await runClaudeExecute(root, "authfail");
       expect(result.exitCode).toBe(1);
       expect(result.errorCode).toBe("claude_auth_required");
+    } finally {
+      if (previousHome === undefined) delete process.env.HOME;
+      else process.env.HOME = previousHome;
+      await fs.rm(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("claude execute — FID-54 signal-termination classification", () => {
+  it("classifies an exit-143 (terminated) run as timeout, not adapter_failed", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "fidelios-claude-exit143-"));
+    const previousHome = process.env.HOME;
+    process.env.HOME = root;
+    try {
+      const result = await runClaudeExecute(root, "exit143");
+      expect(result.exitCode).toBe(143);
+      expect(result.errorCode).toBe("timeout");
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;

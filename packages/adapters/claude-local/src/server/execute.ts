@@ -502,6 +502,15 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     return { proc, parsedStream, parsed };
   };
 
+  // FID-54: exit 143/137/130 or a terminating signal means the claude process was killed, not an adapter failure.
+  const isSignalTerminated = (proc: RunProcessResult): boolean =>
+    proc.signal === "SIGTERM" ||
+    proc.signal === "SIGKILL" ||
+    proc.signal === "SIGINT" ||
+    proc.exitCode === 143 ||
+    proc.exitCode === 137 ||
+    proc.exitCode === 130;
+
   const toAdapterResult = (
     attempt: {
       proc: RunProcessResult;
@@ -541,7 +550,11 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         signal: proc.signal,
         timedOut: false,
         errorMessage: parseFallbackErrorMessage(proc),
-        errorCode: loginMeta.requiresLogin ? "claude_auth_required" : null,
+        errorCode: loginMeta.requiresLogin
+          ? "claude_auth_required"
+          : isSignalTerminated(proc)
+            ? "timeout"
+            : null,
         errorMeta,
         resultJson: {
           stdout: proc.stdout,
@@ -587,8 +600,13 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         (proc.exitCode ?? 0) === 0
           ? null
           : describeClaudeFailure(parsed) ?? `Claude exited with code ${proc.exitCode ?? -1}`,
-      errorCode:
-        !claudeReportedSuccess && loginMeta.requiresLogin ? "claude_auth_required" : null,
+      errorCode: claudeReportedSuccess
+        ? null
+        : loginMeta.requiresLogin
+          ? "claude_auth_required"
+          : isSignalTerminated(proc)
+            ? "timeout"
+            : null,
       errorMeta,
       usage,
       sessionId: resolvedSessionId,
