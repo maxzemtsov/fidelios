@@ -330,7 +330,14 @@ describe("agent skill routes", () => {
         id: "11111111-1111-4111-8111-111111111111",
         adapterType: "claude_local",
       }),
-      { "AGENTS.md": "You are QA." },
+      // The legacy promptTemplate becomes AGENTS.md, and the other three
+      // managed-bundle files are scaffolded alongside it (no longer suppressed).
+      expect.objectContaining({
+        "AGENTS.md": "You are QA.",
+        "SOUL.md": expect.any(String),
+        "HEARTBEAT.md": expect.any(String),
+        "TOOLS.md": expect.any(String),
+      }),
       { entryFile: "AGENTS.md", replaceExisting: false },
     );
     expect(mockAgentService.update).toHaveBeenCalledWith(

@@ -79,9 +79,28 @@ export const createAgentSchema = z.object({
 
 export type CreateAgent = z.infer<typeof createAgentSchema>;
 
+/**
+ * Optional per-file instruction content authored by the hiring agent (the CEO)
+ * as part of a hire request. Any file provided here overrides that file in the
+ * scaffolded role bundle; files omitted keep the default scaffold. Lets the CEO
+ * submit a complete, role-specific instruction package the human reviewer can
+ * see before approving the hire.
+ */
+export const agentInstructionFilesSchema = z
+  .object({
+    "AGENTS.md": z.string(),
+    "SOUL.md": z.string(),
+    "HEARTBEAT.md": z.string(),
+    "TOOLS.md": z.string(),
+  })
+  .partial();
+
+export type AgentInstructionFiles = z.infer<typeof agentInstructionFilesSchema>;
+
 export const createAgentHireSchema = createAgentSchema.extend({
   sourceIssueId: z.string().uuid().optional().nullable(),
   sourceIssueIds: z.array(z.string().uuid()).optional(),
+  instructionFiles: agentInstructionFilesSchema.optional(),
 });
 
 export type CreateAgentHire = z.infer<typeof createAgentHireSchema>;
