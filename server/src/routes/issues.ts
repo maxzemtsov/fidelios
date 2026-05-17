@@ -15,6 +15,7 @@ import {
   updateIssueSchema,
   createIssueRelationSchema,
 } from "@fideliosai/shared";
+import type { DeploymentMode } from "@fideliosai/shared";
 import type { StorageService } from "../storage/types.js";
 import { validate } from "../middleware/validate.js";
 import {
@@ -41,7 +42,7 @@ import { queueIssueAssignmentWakeup } from "../services/issue-assignment-wakeup.
 
 const MAX_ISSUE_COMMENT_LIMIT = 500;
 
-export function issueRoutes(db: Db, storage: StorageService) {
+export function issueRoutes(db: Db, storage: StorageService, deploymentMode: DeploymentMode) {
   const router = Router();
   const svc = issueService(db);
   const access = accessService(db);
@@ -1619,6 +1620,18 @@ export function issueRoutes(db: Db, storage: StorageService) {
     }
     const result = await issueFilesSvc.readWorkspaceFile(companyId, issueId, requestedPath);
     res.json(result);
+  });
+
+  router.post("/companies/:companyId/issues/:issueId/files/reveal", async (req, res) => {
+    const companyId = req.params.companyId as string;
+    const issueId = req.params.issueId as string;
+    assertCompanyAccess(req, companyId);
+    if (deploymentMode !== "local_trusted") {
+      throw forbidden("Revealing files on the host is only available in local mode");
+    }
+    const requestedPath = String((req.body as { path?: unknown } | undefined)?.path ?? "");
+    const result = await issueFilesSvc.revealWorkspaceFile(companyId, issueId, requestedPath);
+    res.json({ revealed: true, path: result.path });
   });
 
   router.post("/companies/:companyId/issues/:issueId/attachments", async (req, res) => {
