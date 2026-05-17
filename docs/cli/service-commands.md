@@ -106,6 +106,13 @@ fidelios service uninstall
 
 Your data in `~/.fidelios/` is not affected. Reinstall at any time with `fidelios service install`.
 
+This is the single command for stopping **either** a release or a dev service —
+both register under the same service name (`nl.fidelios.server`). A dev service
+runs `dev-runner.mjs`, which kills its entire child process tree (`pnpm` →
+`tsx` → the `node` server → plugin workers) on shutdown, so `uninstall` leaves
+nothing running behind it. To stop a dev service without removing it, switch it
+back to release mode with `fidelios service release`.
+
 ## `fidelios service status`
 
 Reports whether the service is installed, running, and accepting connections.
@@ -182,6 +189,32 @@ Flags:
 |------|---------|
 | `--service` | Also `launchctl unload` / `systemctl --user stop` the background service |
 | `--dry-run` / `-n` | Print what would be killed without killing anything |
+
+## Stray servers started outside the service
+
+`fidelios service uninstall` and `fidelios stop --service` only manage the
+**registered** service. A server started *outside* that system — for example a
+bare `pnpm --filter @fideliosai/server dev` or `pnpm dev` run in a terminal — is
+not a registered service: neither command targets it, and if its terminal
+closes it keeps running (re-parented to PID 1) until the machine reboots.
+
+**Always run a background dev server with `fidelios service install --dev`** —
+never a bare `pnpm dev`. A registered dev service stops with one command
+(`fidelios service uninstall`) and shows up in `fidelios service status`.
+
+To check for a stray server (macOS / Linux):
+
+```sh
+pgrep -fl "fidelios run|@fideliosai/server dev|dev-runner.mjs"
+lsof -nP -iTCP -sTCP:LISTEN | grep node   # look for unexpected ports
+
+# stop a stray one by its process GROUP — this kills its whole tree:
+kill -TERM -$(ps -o pgid= -p <pid> | tr -d ' ')
+```
+
+Two servers pointed at the same instance both execute agent heartbeats and
+corrupt each other's runs. If more than one FideliOS server is running, stop
+the extra one.
 
 ## Platform support
 
