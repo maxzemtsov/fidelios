@@ -4,13 +4,24 @@ import remarkGfm from "remark-gfm";
 import { cn } from "../lib/utils";
 import { useTheme } from "../context/ThemeContext";
 import { mentionChipInlineStyle, parseMentionChipHref } from "../lib/mention-chips";
+import { FileViewerDialog } from "./FileViewerDialog";
 
 interface MarkdownBodyProps {
   children: string;
   className?: string;
   /** Optional resolver for relative image paths (e.g. within export packages) */
   resolveImageSrc?: (src: string) => string | null;
+  /**
+   * When both `issueId` and `companyId` are provided, inline code that looks
+   * like a filename becomes a clickable in-app file viewer (see FID comment
+   * file viewer). Omit them to keep inline code rendered verbatim.
+   */
+  issueId?: string;
+  companyId?: string;
 }
+
+// Filename-like inline code — a path ending in a letter-led extension (so version strings like `v1.2.3` are skipped).
+const FILENAME_INLINE_CODE_RE = /^[\w.\-/]+\.[a-z][a-z0-9]{0,9}$/i;
 
 let mermaidLoaderPromise: Promise<typeof import("mermaid").default> | null = null;
 
@@ -110,8 +121,16 @@ function MermaidDiagramBlock({ source, darkMode }: { source: string; darkMode: b
   );
 }
 
-export function MarkdownBody({ children, className, resolveImageSrc }: MarkdownBodyProps) {
+export function MarkdownBody({
+  children,
+  className,
+  resolveImageSrc,
+  issueId,
+  companyId,
+}: MarkdownBodyProps) {
   const { theme } = useTheme();
+  const [viewingPath, setViewingPath] = useState<string | null>(null);
+  const fileViewerEnabled = Boolean(issueId && companyId);
   const components: Components = {
     pre: ({ node: _node, children: preChildren, ...preProps }) => {
       const mermaidSource = extractMermaidSource(preChildren);
@@ -119,6 +138,35 @@ export function MarkdownBody({ children, className, resolveImageSrc }: MarkdownB
         return <MermaidDiagramBlock source={mermaidSource} darkMode={theme === "dark"} />;
       }
       return <pre {...preProps}>{preChildren}</pre>;
+    },
+    code: ({ node: _node, className: codeClassName, children: codeChildren, ...codeProps }) => {
+      // Fenced/indented code blocks carry a `language-*` class (when tagged)
+      // and always render inside <pre>; only treat untagged single-token code
+      // as a candidate inline file reference.
+      const isBlockCode = typeof codeClassName === "string" && /\blanguage-/.test(codeClassName);
+      const text = flattenText(codeChildren);
+      if (
+        fileViewerEnabled &&
+        !isBlockCode &&
+        !text.includes("\n") &&
+        FILENAME_INLINE_CODE_RE.test(text.trim()) &&
+        !text.includes("://")
+      ) {
+        return (
+          <button
+            type="button"
+            className="fidelios-file-ref"
+            onClick={() => setViewingPath(text.trim())}
+          >
+            {codeChildren}
+          </button>
+        );
+      }
+      return (
+        <code {...codeProps} className={codeClassName}>
+          {codeChildren}
+        </code>
+      );
     },
     a: ({ href, children: linkChildren }) => {
       const parsed = href ? parseMentionChipHref(href) : null;
@@ -156,17 +204,30 @@ export function MarkdownBody({ children, className, resolveImageSrc }: MarkdownB
   }
 
   return (
-    <div
-      className={cn(
-        "fidelios-markdown prose prose-sm max-w-none break-words overflow-hidden",
-        theme === "dark" && "prose-invert",
-        className,
-      )}
-    >
-      <Markdown remarkPlugins={[remarkGfm]} components={components} urlTransform={(url) => url}>
-        {decodeWhitespaceEntities(children)}
-      </Markdown>
-    </div>
+    <>
+      <div
+        className={cn(
+          "fidelios-markdown prose prose-sm max-w-none break-words overflow-hidden",
+          theme === "dark" && "prose-invert",
+          className,
+        )}
+      >
+        <Markdown remarkPlugins={[remarkGfm]} components={components} urlTransform={(url) => url}>
+          {decodeWhitespaceEntities(children)}
+        </Markdown>
+      </div>
+      {fileViewerEnabled && viewingPath ? (
+        <FileViewerDialog
+          companyId={companyId as string}
+          issueId={issueId as string}
+          path={viewingPath}
+          open={viewingPath !== null}
+          onOpenChange={(next) => {
+            if (!next) setViewingPath(null);
+          }}
+        />
+      ) : null}
+    </>
   );
 }
 

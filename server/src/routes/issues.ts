@@ -24,6 +24,7 @@ import {
   goalService,
   heartbeatService,
   issueApprovalService,
+  issueFileService,
   issueService,
   documentService,
   logActivity,
@@ -49,6 +50,7 @@ export function issueRoutes(db: Db, storage: StorageService) {
   const projectsSvc = projectService(db);
   const goalsSvc = goalService(db);
   const issueApprovalsSvc = issueApprovalService(db);
+  const issueFilesSvc = issueFileService(db);
   const executionWorkspacesSvc = executionWorkspaceService(db);
   const workProductsSvc = workProductService(db);
   const documentsSvc = documentService(db);
@@ -1601,6 +1603,22 @@ export function issueRoutes(db: Db, storage: StorageService) {
     assertCompanyAccess(req, issue.companyId);
     const attachments = await svc.listAttachments(issueId);
     res.json(attachments.map(withContentPath));
+  });
+
+  router.get("/companies/:companyId/issues/:issueId/files", async (req, res) => {
+    const companyId = req.params.companyId as string;
+    const issueId = req.params.issueId as string;
+    assertCompanyAccess(req, companyId);
+    const requestedPath = String(req.query.path ?? "");
+    const wantsDownload =
+      req.query.download != null && req.query.download !== "0" && req.query.download !== "false";
+    if (wantsDownload) {
+      const resolved = await issueFilesSvc.resolveWorkspaceFile(companyId, issueId, requestedPath);
+      res.download(resolved.absolutePath);
+      return;
+    }
+    const result = await issueFilesSvc.readWorkspaceFile(companyId, issueId, requestedPath);
+    res.json(result);
   });
 
   router.post("/companies/:companyId/issues/:issueId/attachments", async (req, res) => {

@@ -581,6 +581,29 @@ a.fidelios-mention-chip[data-mention-kind="agent"]::before {
   background-color: #ffffff0f;
 }
 
+/* Clickable inline file reference — styled like inline code but link-colored */
+.fidelios-markdown button.fidelios-file-ref {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 1em;
+  font-weight: 500;
+  background-color: color-mix(in oklab, var(--accent) 60%, transparent);
+  color: var(--primary);
+  padding: 0.15em 0.35em;
+  border: 0;
+  border-radius: 3px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: text-decoration-color 0.1s ease;
+}
+
+.fidelios-markdown button.fidelios-file-ref:hover {
+  text-decoration: underline;
+}
+
+.dark .fidelios-markdown button.fidelios-file-ref {
+  background-color: #ffffff0f;
+}
+
 .fidelios-markdown {
   color: var(--foreground);
   font-size: 0.9375rem;
