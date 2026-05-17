@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { Download, ExternalLink, Loader2 } from "lucide-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Download, ExternalLink, FolderOpen, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "../api/client";
-import { issueFileDownloadUrl, readIssueFile } from "../api/issueFiles";
+import { healthApi } from "../api/health";
+import { issueFileDownloadUrl, readIssueFile, revealIssueFileOnHost } from "../api/issueFiles";
 import { queryKeys } from "../lib/queryKeys";
 import { MarkdownBody } from "./MarkdownBody";
 
@@ -46,7 +47,17 @@ export function FileViewerDialog({
     enabled: open,
   });
 
+  const healthQuery = useQuery({
+    queryKey: queryKeys.health,
+    queryFn: () => healthApi.get(),
+  });
+
+  const revealMutation = useMutation({
+    mutationFn: (filePath: string) => revealIssueFileOnHost(companyId, issueId, filePath),
+  });
+
   const file = fileQuery.data;
+  const canRevealOnHost = healthQuery.data?.deploymentMode === "local_trusted";
   const errorMessage =
     fileQuery.error instanceof ApiError && fileQuery.error.status === 404
       ? NOT_FOUND_MESSAGE
@@ -84,7 +95,14 @@ export function FileViewerDialog({
                     Searched: {file.workspaceDir}
                   </p>
                 ) : null}
-                {file.repoUrl ? (
+                {file.repoFileUrl ? (
+                  <Button asChild size="sm" variant="outline">
+                    <a href={file.repoFileUrl} target="_blank" rel="noreferrer">
+                      <ExternalLink className="h-4 w-4" />
+                      Open file on GitHub
+                    </a>
+                  </Button>
+                ) : file.repoUrl ? (
                   <Button asChild size="sm" variant="outline">
                     <a href={file.repoUrl} target="_blank" rel="noreferrer">
                       <ExternalLink className="h-4 w-4" />
@@ -118,10 +136,37 @@ export function FileViewerDialog({
           ) : null}
         </div>
 
-        {file && (file.truncated || file.multipleMatches) ? (
-          <div className="space-y-1 border-t border-border pt-3 text-xs text-muted-foreground">
-            {file.truncated ? <p>Showing the first 512 KB of this file.</p> : null}
-            {file.multipleMatches ? <p>Multiple files matched — showing the first.</p> : null}
+        {file && file.kind !== "missing" &&
+        (canRevealOnHost || file.truncated || file.multipleMatches) ? (
+          <div className="space-y-2 border-t border-border pt-3">
+            {canRevealOnHost ? (
+              <div className="flex flex-col items-start gap-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => revealMutation.mutate(file.path)}
+                  disabled={revealMutation.isPending}
+                >
+                  <FolderOpen className="h-4 w-4" />
+                  Reveal in Finder
+                </Button>
+                {revealMutation.variables === file.path && revealMutation.isError ? (
+                  <p className="text-xs text-destructive">
+                    {revealMutation.error instanceof Error
+                      ? revealMutation.error.message
+                      : "Couldn't reveal the file on the host."}
+                  </p>
+                ) : revealMutation.variables === file.path && revealMutation.isSuccess ? (
+                  <p className="text-xs text-muted-foreground">Revealed in Finder.</p>
+                ) : null}
+              </div>
+            ) : null}
+            {file.truncated || file.multipleMatches ? (
+              <div className="space-y-1 text-xs text-muted-foreground">
+                {file.truncated ? <p>Showing the first 512 KB of this file.</p> : null}
+                {file.multipleMatches ? <p>Multiple files matched — showing the first.</p> : null}
+              </div>
+            ) : null}
           </div>
         ) : null}
       </DialogContent>

@@ -42,6 +42,8 @@ export interface IssueFileResult {
   workspaceDir?: string;
   /** For `missing`: the project's git remote URL, when known. */
   repoUrl?: string | null;
+  /** For `missing`: a deep link to the file on the git host (`…/blob/<ref>/<path>`), when derivable. */
+  repoFileUrl?: string | null;
 }
 
 /** A file resolved within a workspace, ready to read or stream. */
@@ -52,8 +54,12 @@ export interface ResolvedWorkspaceFile {
 }
 
 interface WorkspaceContext {
+  /** Search root: the git repo top-level when the workspace is in a repo, else the workspace cwd. */
   root: string;
   repoUrl: string | null;
+  /** The workspace's git ref (branch/tag); used to build host-side deep links. */
+  repoRef: string | null;
+  defaultRef: string | null;
 }
 
 /** Strip `..`/`.`/leading-`/` segments so a path can never escape the workspace root. */
@@ -91,6 +97,34 @@ async function gitListWorkspaceFiles(root: string): Promise<string[] | null> {
   } catch {
     return null;
   }
+}
+
+/** Resolve the top-level directory of the git repo containing `dir`; null when not a repo. */
+async function gitRepoRoot(dir: string): Promise<string | null> {
+  try {
+    const { stdout } = await execFileAsync("git", ["-C", dir, "rev-parse", "--show-toplevel"]);
+    const root = stdout.trim();
+    return root || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Build a `…/blob/<ref>/<path>` deep link from a git remote URL; null when no usable URL. */
+function buildRepoFileUrl(
+  repoUrl: string | null,
+  ref: string | null,
+  filePath: string,
+): string | null {
+  if (!repoUrl) return null;
+  let httpsUrl = repoUrl.trim();
+  const ssh = httpsUrl.match(/^(?:ssh:\/\/)?git@([^:/]+)[:/](.+)$/);
+  if (ssh) httpsUrl = `https://${ssh[1]}/${ssh[2]}`;
+  httpsUrl = httpsUrl.replace(/\.git$/i, "").replace(/\/+$/, "");
+  if (!/^https?:\/\//i.test(httpsUrl)) return null;
+  const branch = ref?.trim() || "HEAD";
+  const encodedPath = filePath.split("/").map(encodeURIComponent).join("/");
+  return `${httpsUrl}/blob/${branch}/${encodedPath}`;
 }
 
 /** Pick workspace files matching a requested path: exact, then path-suffix, then basename. */
@@ -197,7 +231,12 @@ export function issueFileService(db: Db) {
     }
 
     const workspace = await db
-      .select({ cwd: projectWorkspaces.cwd, repoUrl: projectWorkspaces.repoUrl })
+      .select({
+        cwd: projectWorkspaces.cwd,
+        repoUrl: projectWorkspaces.repoUrl,
+        repoRef: projectWorkspaces.repoRef,
+        defaultRef: projectWorkspaces.defaultRef,
+      })
       .from(projectWorkspaces)
       .where(eq(projectWorkspaces.id, issue.projectWorkspaceId))
       .then((rows) => rows[0] ?? null);
@@ -205,7 +244,16 @@ export function issueFileService(db: Db) {
     if (!workspace || !cwd) {
       throw notFound("No workspace is configured for this issue");
     }
-    return { root: path.resolve(cwd), repoUrl: workspace.repoUrl ?? null };
+    // Search the whole git repo, not just the workspace cwd: a referenced file may live in a
+    // sibling tree outside the cwd subdirectory (the cwd is the agent's working dir, not a fence).
+    const resolvedCwd = path.resolve(cwd);
+    const root = (await gitRepoRoot(resolvedCwd)) ?? resolvedCwd;
+    return {
+      root,
+      repoUrl: workspace.repoUrl ?? null,
+      repoRef: workspace.repoRef ?? null,
+      defaultRef: workspace.defaultRef ?? null,
+    };
   }
 
   function normalizeRequest(requestedPath: string): string {
@@ -249,6 +297,7 @@ export function issueFileService(db: Db) {
         multipleMatches: false,
         workspaceDir: ctx.root,
         repoUrl: ctx.repoUrl,
+        repoFileUrl: buildRepoFileUrl(ctx.repoUrl, ctx.repoRef ?? ctx.defaultRef, normalized),
       };
     }
 
@@ -277,5 +326,19 @@ export function issueFileService(db: Db) {
     };
   }
 
-  return { resolveWorkspaceFile, readWorkspaceFile };
+  /** Reveal a workspace file in the host's file manager (macOS Finder). Throws when missing. */
+  async function revealWorkspaceFile(
+    companyId: string,
+    issueId: string,
+    requestedPath: string,
+  ): Promise<{ path: string }> {
+    const resolved = await resolveWorkspaceFile(companyId, issueId, requestedPath);
+    if (process.platform !== "darwin") {
+      throw badRequest("Revealing files in the file manager is only supported on macOS");
+    }
+    await execFileAsync("open", ["-R", resolved.absolutePath]);
+    return { path: resolved.relativePath };
+  }
+
+  return { resolveWorkspaceFile, readWorkspaceFile, revealWorkspaceFile };
 }

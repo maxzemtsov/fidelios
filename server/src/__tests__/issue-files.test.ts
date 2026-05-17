@@ -60,9 +60,13 @@ describeEmbeddedPostgres("issueFileService.readWorkspaceFile", () => {
 
   /**
    * Seed a company + project + workspace + issue. When `workspaceCwd` is null
-   * the issue is created without a `projectWorkspaceId`.
+   * the issue is created without a `projectWorkspaceId`. `opts` optionally sets
+   * the workspace's git remote URL and refs (used for host-side deep links).
    */
-  async function seedIssue(workspaceCwd: string | null) {
+  async function seedIssue(
+    workspaceCwd: string | null,
+    opts: { repoUrl?: string; repoRef?: string; defaultRef?: string } = {},
+  ) {
     const companyId = randomUUID();
     const projectId = randomUUID();
     const issueId = randomUUID();
@@ -89,6 +93,9 @@ describeEmbeddedPostgres("issueFileService.readWorkspaceFile", () => {
         projectId,
         name: "Primary workspace",
         cwd: workspaceCwd,
+        ...(opts.repoUrl ? { repoUrl: opts.repoUrl } : {}),
+        ...(opts.repoRef ? { repoRef: opts.repoRef } : {}),
+        ...(opts.defaultRef ? { defaultRef: opts.defaultRef } : {}),
       });
     }
 
@@ -163,6 +170,74 @@ describeEmbeddedPostgres("issueFileService.readWorkspaceFile", () => {
     expect(result.kind).toBe("text");
     expect(result.path).toBe("docs/deep/GIT_NOTE.md");
     expect(result.content).toBe("tracked-ish\n");
+  });
+
+  it("resolves a file outside the workspace cwd but inside the same git repo", async () => {
+    const repo = await makeWorkspaceDir();
+    execFileSync("git", ["init", "-q"], { cwd: repo });
+    await fs.mkdir(path.join(repo, "docs", "marketing", "exhibits"), { recursive: true });
+    await fs.writeFile(
+      path.join(repo, "docs", "marketing", "exhibits", "COMPETITOR_SCAN.md"),
+      "# Competitor scan\n",
+      "utf8",
+    );
+    // The workspace cwd is a *sibling* subdirectory; the file lives under docs/.
+    const cwd = path.join(repo, "marketing");
+    await fs.mkdir(cwd, { recursive: true });
+    const { companyId, issueId } = await seedIssue(cwd);
+
+    const result = await svc.readWorkspaceFile(
+      companyId,
+      issueId,
+      "docs/marketing/exhibits/COMPETITOR_SCAN.md",
+    );
+
+    expect(result.kind).toBe("text");
+    expect(result.path).toBe("docs/marketing/exhibits/COMPETITOR_SCAN.md");
+    expect(result.content).toBe("# Competitor scan\n");
+  });
+
+  it("returns a deep file link for a missing file when the workspace has an ssh repo URL", async () => {
+    const cwd = await makeWorkspaceDir();
+    const { companyId, issueId } = await seedIssue(cwd, {
+      repoUrl: "git@github.com:TraitTune-Inc/TraitTune_v2.git",
+      repoRef: "alpha",
+    });
+
+    const result = await svc.readWorkspaceFile(
+      companyId,
+      issueId,
+      "docs/marketing/exhibits/COMPETITOR_SCAN.md",
+    );
+
+    expect(result.kind).toBe("missing");
+    expect(result.repoFileUrl).toBe(
+      "https://github.com/TraitTune-Inc/TraitTune_v2/blob/alpha/docs/marketing/exhibits/COMPETITOR_SCAN.md",
+    );
+  });
+
+  it("builds the deep link from an https repo URL and falls back to the default ref", async () => {
+    const cwd = await makeWorkspaceDir();
+    const { companyId, issueId } = await seedIssue(cwd, {
+      repoUrl: "https://github.com/TraitTune-Inc/TraitTune_v2",
+      defaultRef: "main",
+    });
+
+    const result = await svc.readWorkspaceFile(companyId, issueId, "README.md");
+
+    expect(result.kind).toBe("missing");
+    expect(result.repoFileUrl).toBe(
+      "https://github.com/TraitTune-Inc/TraitTune_v2/blob/main/README.md",
+    );
+  });
+
+  it("revealWorkspaceFile rejects a missing file before touching the host", async () => {
+    const cwd = await makeWorkspaceDir();
+    const { companyId, issueId } = await seedIssue(cwd);
+
+    await expect(
+      svc.revealWorkspaceFile(companyId, issueId, "NOPE.md"),
+    ).rejects.toMatchObject({ status: 404 });
   });
 
   it("keeps a traversal attempt inside the workspace", async () => {
