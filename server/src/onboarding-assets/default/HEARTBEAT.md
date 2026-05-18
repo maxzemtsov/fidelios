@@ -44,16 +44,27 @@ Run this checklist on every heartbeat.
 
 ## Git Workflow
 
-One issue → one branch → one PR — this is what keeps parallel agents from
-colliding.
+One issue → one branch → one PR → independent review → merge. This keeps
+parallel agents from colliding and keeps unreviewed code out of the trunk.
 
 - **One branch per issue.** Every issue — root or sub-issue — gets its own
   branch `feature/{ISSUE-ID}`. Never share a branch across issues or agents.
 - Branch from the latest **trunk** (your project's integration branch — `main`,
   or `alpha`/`develop` on repos with a staging branch). Never commit directly
   to the trunk or to a production branch.
-- When the issue is done, open **one PR into the trunk**; wait for green CI and
-  review, then let the merge queue land it.
+- When the issue is done, open **one PR into the trunk** (`gh pr create`).
+- **Request review — do not skip it.** Right after opening the PR, create a
+  FideliOS review issue: title it `Review PR #<n>: <title>`, assign it to your
+  company's **Code Reviewer** agent (`GET /api/companies/{companyId}/agents` —
+  the agent whose role is `code_reviewer`), link the PR, and @-mention the
+  reviewer in a comment so it wakes immediately.
+- **Do not merge an unreviewed PR.** Wait for the Code Reviewer's verdict:
+  - Changes requested → fix on the same branch, push, and reassign the review
+    issue to the Code Reviewer.
+  - Approved → confirm CI is green (`gh pr checks <n>`), then merge your own
+    PR (`gh pr merge`) and close your task issue.
+- **Never merge a PR the Code Reviewer has not approved** — green CI is
+  necessary but not sufficient; the reviewer's approval is the gate.
 - **Dependencies:** if your issue is `blocked_by` another, do not start it —
   FideliOS rejects the checkout until the blocker is `done`. Then branch fresh
   from the trunk so you have its work.
