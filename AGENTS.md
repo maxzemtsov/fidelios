@@ -149,10 +149,20 @@ A change is done when all are true:
 
 ## 11. Git Workflow
 
-- **Never commit to `main`.**
-- Find your issue's **root parent** (top-level issue with no parentId). Use its branch: `feature/IRO-{root}`.
-- If no parent: create `git checkout -b feature/IRO-XXX`. If branch exists: `git checkout feature/IRO-XXX`.
-- All sub-issues commit to the root parent's branch.
-- When root issue is done: `gh pr create --base main`.
-- CTO reviews and merges all PRs.
+One issue → one branch → one PR. This is what lets multiple agents work in
+parallel without colliding.
+
+- **Never commit to `main`.** `main` is the integration trunk; it only ever
+  changes through a merged PR.
+- **One branch per issue.** Every issue — the root *and* every sub-issue — gets
+  its own branch. Never share a branch across issues or agents.
+- Branch from the latest trunk:
+  `git checkout main && git pull && git checkout -b feature/{ISSUE-ID}`.
+- **One PR per issue.** When the issue is done: `gh pr create --base main`.
+  Wait for green CI and review; the merge queue lands it.
+- **Dependencies.** If your issue is `blocked_by` another, do not start it —
+  FideliOS rejects the checkout. Wait until the blocker is `done` and merged,
+  then branch fresh from `main` so you have its work.
+- **Keep branches short-lived** — merge within hours, not days. A long-lived
+  branch is the main cause of painful merges.
 

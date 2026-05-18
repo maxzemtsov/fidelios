@@ -180,7 +180,7 @@ The agent's primary instructions. Must include:
 - NEVER run fidelios run from the repository source directory
 - NEVER modify production config paths to point into /var/folders/ or temp directories
 - NEVER delete database backups, .env files, or config without creating a backup first
-- ALWAYS work on feature branches (feature/{ISSUE-ID}) — never commit to main
+- ALWAYS work on a per-issue feature branch and open a PR — never commit to the trunk or a production branch
 - ALWAYS verify production port is 3100 after any config-related changes
 ```
 
@@ -200,6 +200,17 @@ What the agent does on every heartbeat: confirm identity and context, get
 assignments, checkout and work, follow up on approvals, escalate blockers, exit
 cleanly. Add any cadence specific to the role (e.g. a weekly research pass, a
 daily metrics review).
+
+It MUST include a **Git Workflow** section, with the repo's real trunk named:
+
+- One issue → one branch → one PR. Every issue — root or sub-issue — gets its
+  own `feature/{ISSUE-ID}` branch; never share a branch across issues or agents.
+- Branch from, and PR into, the repo's integration trunk — name it explicitly
+  (e.g. `alpha` for `TraitTune_v2`, `main` for repos with no staging branch).
+  Never commit to the trunk or a production branch directly.
+- Green CI + review, then the merge queue lands the PR.
+- If an issue is `blocked_by` another, do not start it — checkout is rejected
+  until the blocker is `done`; then branch fresh from the trunk.
 
 ### `TOOLS.md` — tools and access
 

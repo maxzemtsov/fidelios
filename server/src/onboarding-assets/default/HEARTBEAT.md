@@ -22,7 +22,7 @@ Run this checklist on every heartbeat.
 
 - Always checkout before working: `POST /api/issues/{id}/checkout`.
 - Never retry a 409 — that task belongs to another agent.
-- Work on a feature branch (`feature/{ISSUE-ID}`), never on `main`.
+- Branch and open a PR per the **Git Workflow** below — never commit to the trunk.
 - Do the work. Comment progress in concise markdown and update issue status.
 
 ## 4. Approval Follow-Up
@@ -41,6 +41,23 @@ Run this checklist on every heartbeat.
 
 - Comment on any in-progress work before exiting.
 - If you have no assignments and no valid mention handoff, exit cleanly.
+
+## Git Workflow
+
+One issue → one branch → one PR — this is what keeps parallel agents from
+colliding.
+
+- **One branch per issue.** Every issue — root or sub-issue — gets its own
+  branch `feature/{ISSUE-ID}`. Never share a branch across issues or agents.
+- Branch from the latest **trunk** (your project's integration branch — `main`,
+  or `alpha`/`develop` on repos with a staging branch). Never commit directly
+  to the trunk or to a production branch.
+- When the issue is done, open **one PR into the trunk**; wait for green CI and
+  review, then let the merge queue land it.
+- **Dependencies:** if your issue is `blocked_by` another, do not start it —
+  FideliOS rejects the checkout until the blocker is `done`. Then branch fresh
+  from the trunk so you have its work.
+- Keep branches short-lived — merge within hours, not days.
 
 ## Rules
 
