@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, ne, notInArray, or, sql } from "drizzle-orm";
 import type { Db } from "@fideliosai/db";
 import {
   activityLog,
@@ -76,6 +76,8 @@ export interface IssueFilters {
   originKind?: string;
   originId?: string;
   includeRoutineExecutions?: boolean;
+  /** Exclude issues that have an unresolved `blocked_by` dependency. */
+  skipBlockedByUnresolvedDependencies?: boolean;
   q?: string;
 }
 
@@ -676,6 +678,26 @@ export function issueService(db: Db) {
         if (labeledIssueIds.length === 0) return [];
         conditions.push(inArray(issues.id, labeledIssueIds.map((row) => row.issueId)));
       }
+      if (filters?.skipBlockedByUnresolvedDependencies) {
+        // An issue is blocked when it has a `blocked_by` relation to another
+        // issue that has not reached `done`/`cancelled`. Exclude those here so
+        // an agent's work queue never offers an issue it cannot act on.
+        const blockedRows = await db
+          .select({ issueId: issueRelations.issueId })
+          .from(issueRelations)
+          .innerJoin(issues, eq(issues.id, issueRelations.relatedIssueId))
+          .where(
+            and(
+              eq(issueRelations.companyId, companyId),
+              eq(issueRelations.type, "blocked_by"),
+              notInArray(issues.status, ["done", "cancelled"]),
+            ),
+          );
+        const blockedIssueIds = [...new Set(blockedRows.map((row) => row.issueId))];
+        if (blockedIssueIds.length > 0) {
+          conditions.push(notInArray(issues.id, blockedIssueIds));
+        }
+      }
       if (hasSearch) {
         conditions.push(
           or(
@@ -1150,12 +1172,48 @@ export function issueService(db: Db) {
 
     checkout: async (id: string, agentId: string, expectedStatuses: string[], checkoutRunId: string | null) => {
       const issueCompany = await db
-        .select({ companyId: issues.companyId })
+        .select({
+          companyId: issues.companyId,
+          status: issues.status,
+          assigneeAgentId: issues.assigneeAgentId,
+        })
         .from(issues)
         .where(eq(issues.id, id))
         .then((rows) => rows[0] ?? null);
       if (!issueCompany) throw notFound("Issue not found");
       await assertAssignableAgent(issueCompany.companyId, agentId);
+
+      // Blocker enforcement: reject a fresh checkout of an issue that has an
+      // unresolved `blocked_by` dependency. A re-checkout by the agent that
+      // already owns the in-progress issue is exempt, so an in-flight run is
+      // never interrupted if a blocker is added mid-run.
+      const isOwnerReCheckout =
+        issueCompany.status === "in_progress" && issueCompany.assigneeAgentId === agentId;
+      if (!isOwnerReCheckout) {
+        const unresolvedBlockers = await db
+          .select({
+            blockingIssueId: issueRelations.relatedIssueId,
+            identifier: issues.identifier,
+            title: issues.title,
+            status: issues.status,
+          })
+          .from(issueRelations)
+          .innerJoin(issues, eq(issues.id, issueRelations.relatedIssueId))
+          .where(
+            and(
+              eq(issueRelations.issueId, id),
+              eq(issueRelations.companyId, issueCompany.companyId),
+              eq(issueRelations.type, "blocked_by"),
+              notInArray(issues.status, ["done", "cancelled"]),
+            ),
+          );
+        if (unresolvedBlockers.length > 0) {
+          throw conflict("Issue is blocked by unresolved dependencies", {
+            issueId: id,
+            blockers: unresolvedBlockers,
+          });
+        }
+      }
 
       const now = new Date();
       const sameRunAssigneeCondition = checkoutRunId
