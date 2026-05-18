@@ -8,10 +8,11 @@ import {
 const BUNDLE_FILES = ["AGENTS.md", "SOUL.md", "HEARTBEAT.md", "TOOLS.md"];
 
 describe("default agent instructions bundle", () => {
-  it("resolves non-ceo roles to the default bundle", () => {
+  it("resolves each role to its instruction bundle", () => {
     expect(resolveDefaultAgentInstructionsBundleRole("general")).toBe("default");
     expect(resolveDefaultAgentInstructionsBundleRole("engineer")).toBe("default");
     expect(resolveDefaultAgentInstructionsBundleRole("ceo")).toBe("ceo");
+    expect(resolveDefaultAgentInstructionsBundleRole("code_reviewer")).toBe("code_reviewer");
   });
 
   it("scaffolds all four instruction files for the default role", async () => {
@@ -25,6 +26,14 @@ describe("default agent instructions bundle", () => {
   it("scaffolds all four instruction files for the ceo role", async () => {
     const bundle = await loadDefaultAgentInstructionsBundle("ceo");
     expect(Object.keys(bundle).sort()).toEqual([...BUNDLE_FILES].sort());
+  });
+
+  it("scaffolds all four instruction files for the code_reviewer role", async () => {
+    const bundle = await loadDefaultAgentInstructionsBundle("code_reviewer");
+    expect(Object.keys(bundle).sort()).toEqual([...BUNDLE_FILES].sort());
+    for (const name of BUNDLE_FILES) {
+      expect((bundle[name]?.trim().length ?? 0), `${name} should not be empty`).toBeGreaterThan(0);
+    }
   });
 
   describe("mergeAgentInstructionBundle", () => {
