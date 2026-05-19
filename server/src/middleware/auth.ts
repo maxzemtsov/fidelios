@@ -13,6 +13,22 @@ function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
+const RUN_ID_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * The `X-FideliOS-Run-Id` header flows into uuid-typed columns (agent config
+ * revisions, activity log). A malformed value must be dropped, not passed
+ * through, or those inserts fail with a Postgres uuid error and the route
+ * 500s. Returns the trimmed run id when it is a valid UUID, otherwise
+ * undefined — a stray header never breaks an otherwise-valid request.
+ */
+export function sanitizeRunId(raw: string | undefined | null): string | undefined {
+  if (!raw) return undefined;
+  const trimmed = raw.trim();
+  return RUN_ID_UUID_RE.test(trimmed) ? trimmed : undefined;
+}
+
 interface ActorMiddlewareOptions {
   deploymentMode: DeploymentMode;
   resolveSession?: (req: Request) => Promise<BetterAuthSessionResult | null>;
@@ -26,7 +42,7 @@ export function actorMiddleware(db: Db, opts: ActorMiddlewareOptions): RequestHa
         ? { type: "board", userId: "local-board", isInstanceAdmin: true, source: "local_implicit" }
         : { type: "none", source: "none" };
 
-    const runIdHeader = req.header("x-fidelios-run-id");
+    const runIdHeader = sanitizeRunId(req.header("x-fidelios-run-id"));
 
     const authHeader = req.header("authorization");
     if (!authHeader?.toLowerCase().startsWith("bearer ")) {
