@@ -246,6 +246,7 @@ function clearDevServerStatus() {
 async function runPnpm(args, options = {}) {
   return await new Promise((resolve, reject) => {
     const spawned = spawn(pnpmBin, args, {
+      cwd: options.cwd ?? repoRoot,
       stdio: options.stdio ?? ["ignore", "pipe", "pipe"],
       env: options.env ?? process.env,
       shell: process.platform === "win32",
@@ -357,6 +358,7 @@ async function maybePreflightMigrations(options = {}) {
   }
 
   const migrate = spawn(pnpmBin, ["db:migrate"], {
+    cwd: repoRoot,
     stdio: "inherit",
     env,
     shell: process.platform === "win32",
@@ -478,6 +480,7 @@ async function startServerChild() {
     pnpmBin,
     ["--filter", "@fideliosai/server", "dev", ...forwardedArgs],
     {
+      cwd: repoRoot,
       stdio: "inherit",
       env,
       shell: process.platform === "win32",

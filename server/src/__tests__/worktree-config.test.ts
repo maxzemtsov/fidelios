@@ -405,6 +405,8 @@ describe("worktree config repair", () => {
     process.env.FIDELIOS_HOME = isolatedHome;
     process.env.FIDELIOS_INSTANCE_ID = "tst-878-create-a-mine-tab-in-inbox";
     process.env.FIDELIOS_CONFIG = configPath;
+    delete process.env.PORT;
+    delete process.env.DATABASE_URL;
 
     maybePersistWorktreeRuntimePorts({
       serverPort: 3103,
@@ -432,4 +434,3 @@ describe("worktree config repair", () => {
     expect(config.auth.publicBaseUrl).toBe("http://127.0.0.1:3104/");
   });
 });
-

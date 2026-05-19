@@ -1,7 +1,13 @@
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildPlist, buildServicePath, buildSystemdUnit, resolveDevRepoDir } from "../commands/service.js";
+import {
+  buildDevServicePreflightArgs,
+  buildPlist,
+  buildServicePath,
+  buildSystemdUnit,
+  resolveDevRepoDir,
+} from "../commands/service.js";
 
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 
@@ -52,6 +58,13 @@ describe("service: buildServicePath", () => {
     const parts = pathStr.split(":");
     const occurrences = parts.filter((p) => p === "/opt/homebrew/bin").length;
     expect(occurrences).toBe(1);
+  });
+
+  it("can include resolved package-manager bins needed by dev services", () => {
+    const pathStr = buildServicePath("/opt/homebrew/bin/node", ["/Users/alice/Library/pnpm/bin/pnpm"]);
+    const parts = pathStr.split(":");
+    expect(parts[0]).toBe("/opt/homebrew/bin");
+    expect(parts[1]).toBe("/Users/alice/Library/pnpm/bin");
   });
 });
 
@@ -158,5 +171,13 @@ describe("resolveDevRepoDir", () => {
 
   it("returns null for a path that is not a fidelios checkout", () => {
     expect(resolveDevRepoDir(os.tmpdir())).toBeNull();
+  });
+});
+
+describe("service: dev mode preflight", () => {
+  it("imports the server adapter registry before installing a dev service", () => {
+    const args = buildDevServicePreflightArgs();
+    expect(args.slice(0, 5)).toEqual(["--filter", "@fideliosai/server", "exec", "tsx", "-e"]);
+    expect(args[5]).toContain("import('./src/adapters/registry.ts')");
   });
 });
