@@ -149,17 +149,26 @@ A change is done when all are true:
 
 ## 11. Git Workflow
 
-One issue → one branch → one PR. This is what lets multiple agents work in
-parallel without colliding.
+One issue → one branch → one PR → independent review → merge. This is what
+lets multiple agents work in parallel without colliding, and keeps unreviewed
+code out of the trunk.
 
 - **Never commit to `main`.** `main` is the integration trunk; it only ever
-  changes through a merged PR.
+  changes through a merged, reviewed PR.
 - **One branch per issue.** Every issue — the root *and* every sub-issue — gets
   its own branch. Never share a branch across issues or agents.
 - Branch from the latest trunk:
   `git checkout main && git pull && git checkout -b feature/{ISSUE-ID}`.
 - **One PR per issue.** When the issue is done: `gh pr create --base main`.
-  Wait for green CI and review; the merge queue lands it.
+- **Request review — do not skip it.** Right after opening the PR, create a
+  FideliOS review issue assigned to the company's **Code Reviewer** agent (role
+  `code_reviewer`): title it `Review PR #<n>: <title>`, link the PR, and
+  @-mention the reviewer so it wakes immediately.
+- **Do not merge until the Code Reviewer approves.** Green CI is necessary but
+  not sufficient — the reviewer's `approve` is the gate.
+  - Changes requested → fix on the same branch, push, reassign the review issue
+    to the Code Reviewer.
+  - Approved → confirm CI is green, then merge your own PR (`gh pr merge`).
 - **Dependencies.** If your issue is `blocked_by` another, do not start it —
   FideliOS rejects the checkout. Wait until the blocker is `done` and merged,
   then branch fresh from `main` so you have its work.
