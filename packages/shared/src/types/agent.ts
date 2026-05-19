@@ -28,6 +28,11 @@ export interface AgentInstructionsFileSummary {
 
 export interface AgentInstructionsFileDetail extends AgentInstructionsFileSummary {
   content: string;
+  /**
+   * Content hash of the file as read. Echo back as `baseEtag` when saving so a
+   * concurrent edit is rejected with HTTP 409 instead of silently clobbered.
+   */
+  etag: string;
 }
 
 export interface AgentInstructionsBundle {

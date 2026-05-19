@@ -1,6 +1,7 @@
+import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { notFound, unprocessable } from "../errors.js";
+import { conflict, notFound, unprocessable } from "../errors.js";
 import { resolveHomeAwarePath, resolveFideliOSInstanceRoot } from "../home-paths.js";
 
 const ENTRY_FILE_DEFAULT = "AGENTS.md";
@@ -48,6 +49,7 @@ type AgentInstructionsFileSummary = {
 type AgentInstructionsFileDetail = AgentInstructionsFileSummary & {
   content: string;
   editable: boolean;
+  etag: string;
 };
 
 type AgentInstructionsBundle = {
@@ -109,6 +111,15 @@ function inferLanguage(relativePath: string): string {
 
 function isMarkdown(relativePath: string) {
   return relativePath.toLowerCase().endsWith(".md");
+}
+
+/**
+ * Stable content hash used as an optimistic-lock token for instruction files.
+ * Returned from reads as `etag`; a write that passes a stale `baseEtag` is
+ * rejected so a concurrent edit cannot be silently clobbered.
+ */
+function computeInstructionsFileEtag(content: string): string {
+  return createHash("sha256").update(content, "utf8").digest("hex");
 }
 
 function normalizeRelativeFilePath(candidatePath: string): string {
@@ -482,6 +493,7 @@ export function agentInstructionsService() {
         deprecated: true,
         virtual: true,
         content,
+        etag: computeInstructionsFileEtag(content),
       };
     }
     if (!state.rootPath) throw notFound("Agent instructions bundle is not configured");
@@ -502,6 +514,7 @@ export function agentInstructionsService() {
       deprecated: false,
       virtual: false,
       content,
+      etag: computeInstructionsFileEtag(content),
     };
   }
 
@@ -600,7 +613,7 @@ export function agentInstructionsService() {
     agent: AgentLike,
     relativePath: string,
     content: string,
-    options?: { clearLegacyPromptTemplate?: boolean },
+    options?: { clearLegacyPromptTemplate?: boolean; baseEtag?: string },
   ): Promise<{
     bundle: AgentInstructionsBundle;
     file: AgentInstructionsFileDetail;
@@ -622,6 +635,18 @@ export function agentInstructionsService() {
 
     const prepared = await ensureWritableBundle(agent, options);
     const absolutePath = resolvePathWithinRoot(prepared.state.rootPath!, relativePath);
+    if (options?.baseEtag !== undefined) {
+      const existingContent = await fs.readFile(absolutePath, "utf8").catch(() => null);
+      if (existingContent !== null) {
+        const currentEtag = computeInstructionsFileEtag(existingContent);
+        if (currentEtag !== options.baseEtag) {
+          throw conflict("Agent instructions file was updated by someone else", {
+            path: normalizeRelativeFilePath(relativePath),
+            currentEtag,
+          });
+        }
+      }
+    }
     await fs.mkdir(path.dirname(absolutePath), { recursive: true });
     await fs.writeFile(absolutePath, content, "utf8");
     const nextAgent = { ...agent, adapterConfig: prepared.adapterConfig };

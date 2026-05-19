@@ -144,7 +144,7 @@ export const agentsApi = {
     ),
   saveInstructionsFile: (
     id: string,
-    data: { path: string; content: string; clearLegacyPromptTemplate?: boolean },
+    data: { path: string; content: string; baseEtag?: string; clearLegacyPromptTemplate?: boolean },
     companyId?: string,
   ) => api.put<AgentInstructionsFileDetail>(agentPath(id, companyId, "/instructions-bundle/file"), data),
   deleteInstructionsFile: (id: string, relativePath: string, companyId?: string) =>
