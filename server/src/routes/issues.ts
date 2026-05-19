@@ -285,6 +285,7 @@ export function issueRoutes(db: Db, storage: StorageService, deploymentMode: Dep
       originId: req.query.originId as string | undefined,
       includeRoutineExecutions:
         req.query.includeRoutineExecutions === "true" || req.query.includeRoutineExecutions === "1",
+      attention: req.query.attention === "blocked" ? "blocked" : undefined,
       q: req.query.q as string | undefined,
     });
     res.json(result);

@@ -23,6 +23,12 @@ import {
   projects,
 } from "@fideliosai/db";
 import { extractAgentMentionIds, extractProjectMentionIds } from "@fideliosai/shared";
+import type {
+  IssueBlockedAttention,
+  IssueBlockedByRef,
+  IssueBlockedReason,
+  IssueStatus,
+} from "@fideliosai/shared";
 import { conflict, notFound, unprocessable } from "../errors.js";
 import {
   defaultIssueExecutionWorkspaceSettingsForProject,
@@ -78,6 +84,8 @@ export interface IssueFilters {
   includeRoutineExecutions?: boolean;
   /** Exclude issues that have an unresolved `blocked_by` dependency. */
   skipBlockedByUnresolvedDependencies?: boolean;
+  /** Restrict to the blocked inbox: `blocked` issues plus issues with an unresolved blocker. */
+  attention?: "blocked";
   q?: string;
 }
 
@@ -455,6 +463,62 @@ function withActiveRuns(
   }));
 }
 
+const BLOCKED_INBOX_RESOLVED_STATUSES = ["done", "cancelled"];
+
+/**
+ * Annotate blocked-inbox rows with why each issue is blocked and the issues it
+ * is `blocked_by`. A `blocked_by` relation row stores the blocked issue in
+ * `issueId` and the blocker in `relatedIssueId`.
+ */
+async function annotateBlockedInbox<T extends { id: string }>(
+  db: Db,
+  companyId: string,
+  rows: T[],
+): Promise<(T & { blockedInbox: IssueBlockedAttention })[]> {
+  if (rows.length === 0) return [];
+  const issueIds = rows.map((row) => row.id);
+  const relationRows = await db
+    .select({
+      issueId: issueRelations.issueId,
+      blockerId: issues.id,
+      blockerIdentifier: issues.identifier,
+      blockerTitle: issues.title,
+      blockerStatus: issues.status,
+    })
+    .from(issueRelations)
+    .innerJoin(issues, eq(issues.id, issueRelations.relatedIssueId))
+    .where(
+      and(
+        eq(issueRelations.companyId, companyId),
+        eq(issueRelations.type, "blocked_by"),
+        inArray(issueRelations.issueId, issueIds),
+      ),
+    );
+  const blockersByIssue = new Map<string, IssueBlockedByRef[]>();
+  for (const row of relationRows) {
+    const blockers = blockersByIssue.get(row.issueId) ?? [];
+    blockers.push({
+      id: row.blockerId,
+      identifier: row.blockerIdentifier,
+      title: row.blockerTitle,
+      status: row.blockerStatus as IssueStatus,
+    });
+    blockersByIssue.set(row.issueId, blockers);
+  }
+  return rows.map((row) => {
+    const blockedBy = blockersByIssue.get(row.id) ?? [];
+    const hasUnresolvedBlocker = blockedBy.some(
+      (blocker) => !BLOCKED_INBOX_RESOLVED_STATUSES.includes(blocker.status),
+    );
+    const reason: IssueBlockedReason = hasUnresolvedBlocker
+      ? "blocked_by_dependency"
+      : blockedBy.length > 0
+        ? "stale_dependency"
+        : "manually_blocked";
+    return { ...row, blockedInbox: { reason, blockedBy } };
+  });
+}
+
 export function issueService(db: Db) {
   const instanceSettings = instanceSettingsService(db);
 
@@ -698,6 +762,29 @@ export function issueService(db: Db) {
           conditions.push(notInArray(issues.id, blockedIssueIds));
         }
       }
+      if (filters?.attention === "blocked") {
+        // Blocked inbox: issues explicitly `blocked`, plus issues with an
+        // unresolved `blocked_by` dependency (a `blocked_by` row stores the
+        // blocked issue in `issueId` and the blocker in `relatedIssueId`).
+        const dependencyBlockedRows = await db
+          .select({ issueId: issueRelations.issueId })
+          .from(issueRelations)
+          .innerJoin(issues, eq(issues.id, issueRelations.relatedIssueId))
+          .where(
+            and(
+              eq(issueRelations.companyId, companyId),
+              eq(issueRelations.type, "blocked_by"),
+              notInArray(issues.status, ["done", "cancelled"]),
+            ),
+          );
+        const dependencyBlockedIds = [...new Set(dependencyBlockedRows.map((row) => row.issueId))];
+        conditions.push(
+          dependencyBlockedIds.length > 0
+            ? or(eq(issues.status, "blocked"), inArray(issues.id, dependencyBlockedIds))!
+            : eq(issues.status, "blocked"),
+        );
+        conditions.push(notInArray(issues.status, ["done", "cancelled"]));
+      }
       if (hasSearch) {
         conditions.push(
           or(
@@ -733,11 +820,15 @@ export function issueService(db: Db) {
       const withLabels = await withIssueLabels(db, rows);
       const runMap = await activeRunMapForIssues(db, withLabels);
       const withRuns = withActiveRuns(withLabels, runMap);
-      if (!contextUserId || withRuns.length === 0) {
-        return withRuns;
+      const result =
+        filters?.attention === "blocked"
+          ? await annotateBlockedInbox(db, companyId, withRuns)
+          : withRuns;
+      if (!contextUserId || result.length === 0) {
+        return result;
       }
 
-      const issueIds = withRuns.map((row) => row.id);
+      const issueIds = result.map((row) => row.id);
       const statsRows = await db
         .select({
           issueId: issueComments.issueId,
@@ -777,7 +868,7 @@ export function issueService(db: Db) {
       const statsByIssueId = new Map(statsRows.map((row) => [row.issueId, row]));
       const readByIssueId = new Map(readRows.map((row) => [row.issueId, row.myLastReadAt]));
 
-      return withRuns.map((row) => ({
+      return result.map((row) => ({
         ...row,
         ...deriveIssueUserContext(row, contextUserId, {
           myLastCommentAt: statsByIssueId.get(row.id)?.myLastCommentAt ?? null,
