@@ -61,14 +61,34 @@ parallel agents from colliding and keeps unreviewed code out of the trunk.
 - **Do not merge an unreviewed PR.** Wait for the Code Reviewer's verdict:
   - Changes requested → fix on the same branch, push, and reassign the review
     issue to the Code Reviewer.
-  - Approved → confirm CI is green (`gh pr checks <n>`), then merge your own
-    PR (`gh pr merge`) and close your task issue.
+  - Approved → merge through your company's **merge slot** (see below).
 - **Never merge a PR the Code Reviewer has not approved** — green CI is
   necessary but not sufficient; the reviewer's approval is the gate.
 - **Dependencies:** if your issue is `blocked_by` another, do not start it —
   FideliOS rejects the checkout until the blocker is `done`. Then branch fresh
   from the trunk so you have its work.
 - Keep branches short-lived — merge within hours, not days.
+
+## Merge Slot
+
+Parallel engineers must never merge into the trunk at the same time — two PRs
+each CI-green against an *older* trunk can land together and break it. FideliOS
+gives every company one **merge slot**. Once your PR is reviewer-approved:
+
+1. **Acquire the slot.** `POST {FIDELIOS_API_URL}/api/companies/{FIDELIOS_COMPANY_ID}/merge-lock`
+   with the standard FideliOS headers. The response is `{"acquired":true,...}`
+   (you hold the slot) or `{"acquired":false,"heldBy":{...}}` (another engineer
+   is merging). On `false`, wait ~20s and call it again — repeat until `true`.
+2. **Sync onto the trunk.** `git fetch origin`, rebase your branch onto the
+   trunk, and push. If the trunk moved, wait for CI `gate` to go green again on
+   the new head (`gh pr checks <n>`).
+3. **Merge.** `gh pr merge` to land the PR, then close your task issue.
+4. **Release the slot — always, even if the merge failed:**
+   `DELETE {FIDELIOS_API_URL}/api/companies/{FIDELIOS_COMPANY_ID}/merge-lock`.
+
+Hold the slot only for the merge itself, never during long work. It auto-expires
+after 30 minutes as a safety net, but release promptly so the next engineer can
+merge.
 
 ## Rules
 

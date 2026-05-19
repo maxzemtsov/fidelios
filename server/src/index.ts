@@ -28,7 +28,7 @@ import { createApp } from "./app.js";
 import { loadConfig } from "./config.js";
 import { logger } from "./middleware/logger.js";
 import { setupLiveEventsWebSocketServer } from "./realtime/live-events-ws.js";
-import { heartbeatService, reconcilePersistedRuntimeServicesOnStartup, routineService } from "./services/index.js";
+import { heartbeatService, mergeLockService, reconcilePersistedRuntimeServicesOnStartup, routineService } from "./services/index.js";
 import { runningProcesses } from "./adapters/index.js";
 import { createStorageServiceFromConfig } from "./storage/index.js";
 import { printStartupBanner } from "./startup-banner.js";
@@ -620,6 +620,7 @@ export async function startServer(): Promise<StartedServer> {
   if (config.heartbeatSchedulerEnabled) {
     const heartbeat = heartbeatService(db as any);
     const routines = routineService(db as any);
+    const mergeLock = mergeLockService(db as any);
   
     // Kill orphaned processes from previous server lifetime, then reap and resume.
     void heartbeat
@@ -659,6 +660,19 @@ export async function startServer(): Promise<StartedServer> {
         .then(() => heartbeat.resumeQueuedRuns())
         .catch((err) => {
           logger.error({ err }, "periodic heartbeat recovery failed");
+        });
+
+      // Release merge slots whose holder run is terminal or whose TTL expired,
+      // so a crashed or wedged holder never blocks a company's merges.
+      void mergeLock
+        .reapExpiredMergeLocks(new Date())
+        .then((result) => {
+          if (result.reaped > 0) {
+            logger.info({ ...result }, "reaped expired merge locks");
+          }
+        })
+        .catch((err) => {
+          logger.error({ err }, "merge lock reaper tick failed");
         });
     }, config.heartbeatSchedulerIntervalMs);
   }
