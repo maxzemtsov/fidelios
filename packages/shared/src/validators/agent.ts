@@ -26,6 +26,7 @@ export type UpdateAgentInstructionsBundle = z.infer<typeof updateAgentInstructio
 export const upsertAgentInstructionsFileSchema = z.object({
   path: z.string().trim().min(1),
   content: z.string(),
+  baseEtag: z.string().min(1).optional(),
   clearLegacyPromptTemplate: z.boolean().optional().default(false),
 });
 

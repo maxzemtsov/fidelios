@@ -358,5 +358,63 @@ describe("agent instructions service", () => {
     ]);
     expect(exported.files).toEqual({ "AGENTS.md": "# Managed Agent\n" });
   });
+
+  it("rejects a write when baseEtag is stale", async () => {
+    const externalRoot = await makeTempDir("fidelios-agent-instructions-etag-stale-");
+    cleanupDirs.add(externalRoot);
+    await fs.writeFile(path.join(externalRoot, "AGENTS.md"), "# Original\n", "utf8");
+
+    const svc = agentInstructionsService();
+    const agent = makeAgent({
+      instructionsBundleMode: "external",
+      instructionsRootPath: externalRoot,
+      instructionsEntryFile: "AGENTS.md",
+      instructionsFilePath: path.join(externalRoot, "AGENTS.md"),
+    });
+
+    await expect(
+      svc.writeFile(agent, "AGENTS.md", "# Clobbered\n", { baseEtag: "stale-etag" }),
+    ).rejects.toMatchObject({ status: 409 });
+    await expect(fs.readFile(path.join(externalRoot, "AGENTS.md"), "utf8")).resolves.toBe("# Original\n");
+  });
+
+  it("accepts a write when baseEtag matches the current file", async () => {
+    const externalRoot = await makeTempDir("fidelios-agent-instructions-etag-match-");
+    cleanupDirs.add(externalRoot);
+    await fs.writeFile(path.join(externalRoot, "AGENTS.md"), "# Original\n", "utf8");
+
+    const svc = agentInstructionsService();
+    const agent = makeAgent({
+      instructionsBundleMode: "external",
+      instructionsRootPath: externalRoot,
+      instructionsEntryFile: "AGENTS.md",
+      instructionsFilePath: path.join(externalRoot, "AGENTS.md"),
+    });
+
+    const current = await svc.readFile(agent, "AGENTS.md");
+    const result = await svc.writeFile(agent, "AGENTS.md", "# Edited\n", { baseEtag: current.etag });
+
+    expect(result.file.content).toBe("# Edited\n");
+    expect(result.file.etag).not.toBe(current.etag);
+    await expect(fs.readFile(path.join(externalRoot, "AGENTS.md"), "utf8")).resolves.toBe("# Edited\n");
+  });
+
+  it("allows a write with no baseEtag for backward compatibility", async () => {
+    const externalRoot = await makeTempDir("fidelios-agent-instructions-etag-none-");
+    cleanupDirs.add(externalRoot);
+    await fs.writeFile(path.join(externalRoot, "AGENTS.md"), "# Original\n", "utf8");
+
+    const svc = agentInstructionsService();
+    const agent = makeAgent({
+      instructionsBundleMode: "external",
+      instructionsRootPath: externalRoot,
+      instructionsEntryFile: "AGENTS.md",
+      instructionsFilePath: path.join(externalRoot, "AGENTS.md"),
+    });
+
+    const result = await svc.writeFile(agent, "AGENTS.md", "# Edited\n");
+
+    expect(result.file.content).toBe("# Edited\n");
+  });
 });
 

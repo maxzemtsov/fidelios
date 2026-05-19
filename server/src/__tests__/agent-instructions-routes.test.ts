@@ -3,6 +3,7 @@ import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { agentRoutes } from "../routes/agents.js";
 import { errorHandler } from "../middleware/index.js";
+import { conflict } from "../errors.js";
 
 const mockAgentService = vi.hoisted(() => ({
   getById: vi.fn(),
@@ -192,7 +193,7 @@ describe("agent instructions bundle routes", () => {
       expect.objectContaining({ id: "11111111-1111-4111-8111-111111111111" }),
       "AGENTS.md",
       "# Updated Agent\n",
-      { clearLegacyPromptTemplate: true },
+      expect.objectContaining({ clearLegacyPromptTemplate: true }),
     );
     expect(mockAgentService.update).toHaveBeenCalledWith(
       "11111111-1111-4111-8111-111111111111",
@@ -206,6 +207,41 @@ describe("agent instructions bundle routes", () => {
       }),
       expect.any(Object),
     );
+  });
+
+  it("forwards baseEtag to the instructions service on write", async () => {
+    const res = await request(createApp())
+      .put("/api/agents/11111111-1111-4111-8111-111111111111/instructions-bundle/file?companyId=company-1")
+      .send({
+        path: "AGENTS.md",
+        content: "# Updated Agent\n",
+        baseEtag: "etag-from-client",
+      });
+
+    expect(res.status, JSON.stringify(res.body)).toBe(200);
+    expect(mockAgentInstructionsService.writeFile).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "11111111-1111-4111-8111-111111111111" }),
+      "AGENTS.md",
+      "# Updated Agent\n",
+      expect.objectContaining({ baseEtag: "etag-from-client" }),
+    );
+  });
+
+  it("returns 409 when the instructions service reports a concurrent edit", async () => {
+    mockAgentInstructionsService.writeFile.mockRejectedValueOnce(
+      conflict("Agent instructions file was updated by someone else", { currentEtag: "server-etag" }),
+    );
+
+    const res = await request(createApp())
+      .put("/api/agents/11111111-1111-4111-8111-111111111111/instructions-bundle/file?companyId=company-1")
+      .send({
+        path: "AGENTS.md",
+        content: "# Clobbering write\n",
+        baseEtag: "stale-etag",
+      });
+
+    expect(res.status).toBe(409);
+    expect(res.body.error).toBe("Agent instructions file was updated by someone else");
   });
 
   it("preserves managed instructions config when switching adapters", async () => {
