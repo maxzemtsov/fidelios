@@ -9,7 +9,7 @@ Keep the work moving until it's done. If you need QA to review it, ask them. If 
 - NEVER run `fidelios run` from the repository source directory.
 - NEVER modify production config paths to point into `/var/folders/` or temporary directories.
 - NEVER delete database backups, `.env` files, or config without creating a backup first.
-- ALWAYS work on feature branches (`feature/{ISSUE-ID}`) — never commit to `main`.
+- ALWAYS work on a per-issue feature branch and open a PR — never commit directly to the trunk (`main`/`alpha`) or a production branch. See HEARTBEAT.md → Git Workflow.
 - ALWAYS verify production port is 3100 after any config-related changes.
 
 ## Strict Boundaries

@@ -149,10 +149,38 @@ A change is done when all are true:
 
 ## 11. Git Workflow
 
-- **Never commit to `main`.**
-- Find your issue's **root parent** (top-level issue with no parentId). Use its branch: `feature/IRO-{root}`.
-- If no parent: create `git checkout -b feature/IRO-XXX`. If branch exists: `git checkout feature/IRO-XXX`.
-- All sub-issues commit to the root parent's branch.
-- When root issue is done: `gh pr create --base main`.
-- CTO reviews and merges all PRs.
+One issue → one branch → one PR → independent review → merge. This is what
+lets multiple agents work in parallel without colliding, and keeps unreviewed
+code out of the trunk.
+
+- **Never commit to `main`.** `main` is the integration trunk; it only ever
+  changes through a merged, reviewed PR.
+- **One branch per issue.** Every issue — the root *and* every sub-issue — gets
+  its own branch. Never share a branch across issues or agents.
+- Branch from the latest trunk:
+  `git checkout main && git pull && git checkout -b feature/{ISSUE-ID}`.
+- **One PR per issue.** When the issue is done: `gh pr create --base main`.
+- **Request review — do not skip it.** Right after opening the PR, create a
+  FideliOS review issue assigned to the company's **Code Reviewer** agent (role
+  `code_reviewer`): title it `Review PR #<n>: <title>`, link the PR, and
+  @-mention the reviewer so it wakes immediately.
+- **Do not merge until the Code Reviewer approves.** Green CI is necessary but
+  not sufficient — the reviewer's `approve` is the gate.
+  - Changes requested → fix on the same branch, push, reassign the review issue
+    to the Code Reviewer.
+  - Approved → merge through your company's **merge slot** (see below).
+- **Merge slot.** Parallel engineers must never merge into the trunk
+  concurrently — two PRs each CI-green against an *older* trunk can land
+  together and break it. Once approved: acquire your company's slot
+  (`POST /api/companies/{companyId}/merge-lock` — poll until
+  `{"acquired":true}`), rebase onto the latest trunk, confirm CI `gate` is
+  green, `gh pr merge`, then release the slot
+  (`DELETE /api/companies/{companyId}/merge-lock`). It auto-expires after
+  30 min. See the engineer `HEARTBEAT.md` "Merge Slot" section for the full
+  procedure.
+- **Dependencies.** If your issue is `blocked_by` another, do not start it —
+  FideliOS rejects the checkout. Wait until the blocker is `done` and merged,
+  then branch fresh from `main` so you have its work.
+- **Keep branches short-lived** — merge within hours, not days. A long-lived
+  branch is the main cause of painful merges.
 

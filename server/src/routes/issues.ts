@@ -15,6 +15,7 @@ import {
   updateIssueSchema,
   createIssueRelationSchema,
 } from "@fideliosai/shared";
+import type { DeploymentMode } from "@fideliosai/shared";
 import type { StorageService } from "../storage/types.js";
 import { validate } from "../middleware/validate.js";
 import {
@@ -24,6 +25,7 @@ import {
   goalService,
   heartbeatService,
   issueApprovalService,
+  issueFileService,
   issueService,
   documentService,
   logActivity,
@@ -40,7 +42,7 @@ import { queueIssueAssignmentWakeup } from "../services/issue-assignment-wakeup.
 
 const MAX_ISSUE_COMMENT_LIMIT = 500;
 
-export function issueRoutes(db: Db, storage: StorageService) {
+export function issueRoutes(db: Db, storage: StorageService, deploymentMode: DeploymentMode) {
   const router = Router();
   const svc = issueService(db);
   const access = accessService(db);
@@ -49,6 +51,7 @@ export function issueRoutes(db: Db, storage: StorageService) {
   const projectsSvc = projectService(db);
   const goalsSvc = goalService(db);
   const issueApprovalsSvc = issueApprovalService(db);
+  const issueFilesSvc = issueFileService(db);
   const executionWorkspacesSvc = executionWorkspaceService(db);
   const workProductsSvc = workProductService(db);
   const documentsSvc = documentService(db);
@@ -282,6 +285,7 @@ export function issueRoutes(db: Db, storage: StorageService) {
       originId: req.query.originId as string | undefined,
       includeRoutineExecutions:
         req.query.includeRoutineExecutions === "true" || req.query.includeRoutineExecutions === "1",
+      attention: req.query.attention === "blocked" ? "blocked" : undefined,
       q: req.query.q as string | undefined,
     });
     res.json(result);
@@ -1601,6 +1605,34 @@ export function issueRoutes(db: Db, storage: StorageService) {
     assertCompanyAccess(req, issue.companyId);
     const attachments = await svc.listAttachments(issueId);
     res.json(attachments.map(withContentPath));
+  });
+
+  router.get("/companies/:companyId/issues/:issueId/files", async (req, res) => {
+    const companyId = req.params.companyId as string;
+    const issueId = req.params.issueId as string;
+    assertCompanyAccess(req, companyId);
+    const requestedPath = String(req.query.path ?? "");
+    const wantsDownload =
+      req.query.download != null && req.query.download !== "0" && req.query.download !== "false";
+    if (wantsDownload) {
+      const resolved = await issueFilesSvc.resolveWorkspaceFile(companyId, issueId, requestedPath);
+      res.download(resolved.absolutePath);
+      return;
+    }
+    const result = await issueFilesSvc.readWorkspaceFile(companyId, issueId, requestedPath);
+    res.json(result);
+  });
+
+  router.post("/companies/:companyId/issues/:issueId/files/reveal", async (req, res) => {
+    const companyId = req.params.companyId as string;
+    const issueId = req.params.issueId as string;
+    assertCompanyAccess(req, companyId);
+    if (deploymentMode !== "local_trusted") {
+      throw forbidden("Revealing files on the host is only available in local mode");
+    }
+    const requestedPath = String((req.body as { path?: unknown } | undefined)?.path ?? "");
+    const result = await issueFilesSvc.revealWorkspaceFile(companyId, issueId, requestedPath);
+    res.json({ revealed: true, path: result.path });
   });
 
   router.post("/companies/:companyId/issues/:issueId/attachments", async (req, res) => {

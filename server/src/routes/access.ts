@@ -108,6 +108,7 @@ function readSkillMarkdown(skillName: string): string | null {
     normalized !== "fidelios" &&
     normalized !== "fidelios-create-agent" &&
     normalized !== "fidelios-create-plugin" &&
+    normalized !== "diagnose-agent-config" &&
     normalized !== "para-memory-files"
   )
     return null;

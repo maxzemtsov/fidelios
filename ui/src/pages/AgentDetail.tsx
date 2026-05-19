@@ -70,6 +70,7 @@ import {
   ArrowLeft,
   HelpCircle,
   FolderOpen,
+  AlertTriangle,
 } from "lucide-react";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -1716,18 +1717,26 @@ function PromptsTab({
     onError: () => setAwaitingRefresh(false),
   });
 
+  const [editConflict, setEditConflict] = useState(false);
   const saveFile = useMutation({
-    mutationFn: (data: { path: string; content: string; clearLegacyPromptTemplate?: boolean }) =>
+    mutationFn: (data: { path: string; content: string; baseEtag?: string; clearLegacyPromptTemplate?: boolean }) =>
       agentsApi.saveInstructionsFile(agent.id, data, companyId),
     onMutate: () => setAwaitingRefresh(true),
     onSuccess: (_, variables) => {
+      setEditConflict(false);
       setPendingFiles((prev) => prev.filter((f) => f !== variables.path));
       queryClient.invalidateQueries({ queryKey: queryKeys.agents.instructionsBundle(agent.id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.agents.instructionsFile(agent.id, variables.path) });
       queryClient.invalidateQueries({ queryKey: queryKeys.agents.detail(agent.id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.agents.detail(agent.urlKey) });
     },
-    onError: () => setAwaitingRefresh(false),
+    onError: (error, variables) => {
+      setAwaitingRefresh(false);
+      if (error instanceof ApiError && error.status === 409) {
+        setDraft(variables.content);
+        setEditConflict(true);
+      }
+    },
   });
 
   const deleteFile = useMutation({
@@ -1796,6 +1805,10 @@ function PromptsTab({
   }, [awaitingRefresh, currentMode, currentRootPath, selectedFileDetail, selectedFileExists, selectedOrEntryFile]);
 
   useEffect(() => {
+    setEditConflict(false);
+  }, [selectedOrEntryFile]);
+
+  useEffect(() => {
     if (!bundle) return;
     setBundleDraft((current) => {
       if (current) return current;
@@ -1849,6 +1862,7 @@ function PromptsTab({
           await saveFile.mutateAsync({
             path: selectedOrEntryFile,
             content: displayValue,
+            baseEtag: selectedFileExists ? selectedFileDetail?.etag : undefined,
             clearLegacyPromptTemplate: shouldClearLegacy,
           });
         }
@@ -1864,6 +1878,8 @@ function PromptsTab({
     isDirty,
     onSaveActionChange,
     saveFile,
+    selectedFileDetail,
+    selectedFileExists,
     selectedOrEntryFile,
     updateBundle,
   ]);
@@ -1901,6 +1917,24 @@ function PromptsTab({
     document.body.style.cursor = "col-resize";
     document.body.style.userSelect = "none";
   }, [filePanelWidth]);
+
+  const overwriteConflictingFile = () => {
+    setEditConflict(false);
+    saveFile.mutate({
+      path: selectedOrEntryFile,
+      content: displayValue,
+      clearLegacyPromptTemplate:
+        Boolean(bundle?.legacyPromptTemplateActive) || Boolean(bundle?.legacyBootstrapPromptTemplateActive),
+    });
+  };
+
+  const discardAndReloadFile = () => {
+    setEditConflict(false);
+    setDraft(null);
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.agents.instructionsFile(agent.id, selectedOrEntryFile),
+    });
+  };
 
   if (!isLocal) {
     return (
@@ -2261,6 +2295,39 @@ function PromptsTab({
               </Button>
             )}
           </div>
+
+          {editConflict && (
+            <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100 space-y-2">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                <span>
+                  This file changed since you opened it — another editor saved a newer
+                  version. Save again to overwrite their changes, or reload to discard yours.
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={overwriteConflictingFile}
+                  disabled={saveFile.isPending}
+                >
+                  Overwrite anyway
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={discardAndReloadFile}
+                  disabled={saveFile.isPending}
+                >
+                  <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                  Discard &amp; reload
+                </Button>
+              </div>
+            </div>
+          )}
 
           {selectedFileExists && fileLoading && !selectedFileDetail ? (
             <PromptEditorSkeleton />
@@ -3125,7 +3192,7 @@ function RunDetail({ run: initialRun, agentRouteId, adapterType }: { run: Heartb
                   onClick={() => runClaudeLogin.mutate()}
                   disabled={runClaudeLogin.isPending}
                 >
-                  {runClaudeLogin.isPending ? "Running claude login..." : "Login to Claude Code"}
+                  {runClaudeLogin.isPending ? "Running claude auth login..." : "Login to Claude Code"}
                 </Button>
                 {runClaudeLogin.isError && (
                   <p className="text-xs text-destructive">

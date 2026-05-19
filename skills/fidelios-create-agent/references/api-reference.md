@@ -42,8 +42,7 @@ Request body matches agent create shape:
   "adapterType": "claude_local",
   "adapterConfig": {
     "cwd": "/absolute/path",
-    "model": "claude-sonnet-4-5-20250929",
-    "promptTemplate": "You are CTO..."
+    "model": "claude-opus-4-7"
   },
   "runtimeConfig": {
     "heartbeat": {
@@ -51,6 +50,12 @@ Request body matches agent create shape:
       "intervalSec": 300,
       "wakeOnDemand": true
     }
+  },
+  "instructionFiles": {
+    "AGENTS.md": "# AGENTS.md — role-specific operational brief ...",
+    "SOUL.md": "# SOUL.md — role-specific persona ...",
+    "HEARTBEAT.md": "# HEARTBEAT.md — role-specific recurring checklist ...",
+    "TOOLS.md": "# TOOLS.md — tools and access ..."
   },
   "budgetMonthlyCents": 0,
   "sourceIssueId": "uuid-or-null",
@@ -80,6 +85,15 @@ Response:
 If company setting disables required approval, `approval` is `null` and the agent is created as `idle`.
 
 `desiredSkills` accepts company skill ids, canonical keys, or a unique slug. The server resolves and stores canonical company skill keys.
+
+`instructionFiles` is an optional map of the four managed bundle files —
+`AGENTS.md`, `SOUL.md`, `HEARTBEAT.md`, `TOOLS.md` — to their markdown content.
+Each file provided overrides that file in the scaffolded role bundle; omitted
+files keep the generic scaffold. The materialized bundle is shown in the hire
+approval so the human reviewer sees the full instruction package before
+deciding. A legacy `adapterConfig.promptTemplate` is still accepted and becomes
+`AGENTS.md`, but it no longer suppresses the other three files — prefer
+`instructionFiles`.
 
 ## Approval Lifecycle
 

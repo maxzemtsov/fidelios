@@ -60,6 +60,7 @@ import { DEFAULT_GEMINI_LOCAL_MODEL } from "@fideliosai/adapter-gemini-local";
 import { ensureOpenCodeModelConfiguredAndAvailable } from "@fideliosai/adapter-opencode-local/server";
 import {
   loadDefaultAgentInstructionsBundle,
+  mergeAgentInstructionBundle,
   resolveDefaultAgentInstructionsBundleRole,
 } from "../services/default-agent-instructions.js";
 
@@ -450,7 +451,7 @@ export function agentRoutes(db: Db) {
     role: string;
     adapterType: string;
     adapterConfig: unknown;
-  }>(agent: T): Promise<T> {
+  }>(agent: T, overrideFiles?: Record<string, unknown>): Promise<T> {
     if (!DEFAULT_MANAGED_INSTRUCTIONS_ADAPTER_TYPES.has(agent.adapterType)) {
       return agent;
     }
@@ -466,12 +467,16 @@ export function agentRoutes(db: Db) {
       return agent;
     }
 
+    // Start from the role-aware default scaffold (all four files for every
+    // role), then merge a legacy promptTemplate and any CEO-authored per-file
+    // content over it (see mergeAgentInstructionBundle).
+    const scaffold = await loadDefaultAgentInstructionsBundle(
+      resolveDefaultAgentInstructionsBundleRole(agent.role),
+    );
     const promptTemplate = typeof adapterConfig.promptTemplate === "string"
       ? adapterConfig.promptTemplate
       : "";
-    const files = promptTemplate.trim().length === 0
-      ? await loadDefaultAgentInstructionsBundle(resolveDefaultAgentInstructionsBundleRole(agent.role))
-      : { "AGENTS.md": promptTemplate };
+    const files = mergeAgentInstructionBundle(scaffold, { promptTemplate, overrideFiles });
     const materialized = await instructions.materializeManagedBundle(
       agent,
       files,
@@ -1074,6 +1079,7 @@ export function agentRoutes(db: Db) {
       assigneeAgentId: req.actor.agentId,
       status: "todo,in_progress,blocked",
       includeRoutineExecutions: true,
+      skipBlockedByUnresolvedDependencies: true,
     });
 
     res.json(
@@ -1253,6 +1259,7 @@ export function agentRoutes(db: Db) {
     const sourceIssueIds = parseSourceIssueIds(req.body);
     const {
       desiredSkills: requestedDesiredSkills,
+      instructionFiles: requestedInstructionFiles,
       sourceIssueId: _sourceIssueId,
       sourceIssueIds: _sourceIssueIds,
       ...hireInput
@@ -1300,7 +1307,10 @@ export function agentRoutes(db: Db) {
       spentMonthlyCents: 0,
       lastHeartbeatAt: null,
     });
-    const agent = await materializeDefaultInstructionsBundleForNewAgent(createdAgent);
+    const agent = await materializeDefaultInstructionsBundleForNewAgent(
+      createdAgent,
+      requestedInstructionFiles,
+    );
 
     let approval: Awaited<ReturnType<typeof approvalsSvc.getById>> | null = null;
     const actor = getActorInfo(req);
@@ -1633,6 +1643,19 @@ export function agentRoutes(db: Db) {
     res.json(await instructions.getBundle(existing));
   });
 
+  // Full materialized instruction bundle (every file's content), so the hire
+  // approval can show the complete instruction package to the human reviewer.
+  router.get("/agents/:id/instructions-bundle/files", async (req, res) => {
+    const id = req.params.id as string;
+    const existing = await svc.getById(id);
+    if (!existing) {
+      res.status(404).json({ error: "Agent not found" });
+      return;
+    }
+    await assertCanReadAgent(req, existing);
+    res.json(await instructions.exportFiles(existing));
+  });
+
   router.patch("/agents/:id/instructions-bundle", validate(updateAgentInstructionsBundleSchema), async (req, res) => {
     const id = req.params.id as string;
     const existing = await svc.getById(id);
@@ -1711,6 +1734,7 @@ export function agentRoutes(db: Db) {
     const actor = getActorInfo(req);
     const result = await instructions.writeFile(existing, req.body.path, req.body.content, {
       clearLegacyPromptTemplate: req.body.clearLegacyPromptTemplate,
+      baseEtag: req.body.baseEtag,
     });
     const normalizedAdapterConfig = await secretsSvc.normalizeAdapterConfigForPersistence(
       existing.companyId,

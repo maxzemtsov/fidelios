@@ -2847,7 +2847,6 @@ export function heartbeatService(db: Db) {
           errorMsg.includes("api_error") ||
           errorMsg.includes("ECONNRESET") ||
           errorMsg.includes("ETIMEDOUT") ||
-          errorCode === "claude_auth_required" ||
           exitCode === 143;
 
         if (isTransient) {

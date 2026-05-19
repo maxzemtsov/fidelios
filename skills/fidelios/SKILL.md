@@ -299,6 +299,9 @@ PATCH /api/agents/{agentId}/instructions-path
 | List issue attachments                    | `GET /api/issues/:issueId/attachments`                                                     |
 | Get attachment content                    | `GET /api/attachments/:attachmentId/content`                                               |
 | Delete attachment                         | `DELETE /api/attachments/:attachmentId`                                                    |
+| Acquire / poll merge slot | `POST /api/companies/:companyId/merge-lock` |
+| Release merge slot | `DELETE /api/companies/:companyId/merge-lock` |
+| Merge slot status | `GET /api/companies/:companyId/merge-lock` |
 
 ## Company Import / Export
 

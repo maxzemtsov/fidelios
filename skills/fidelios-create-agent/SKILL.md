@@ -3,7 +3,8 @@ name: fidelios-create-agent
 description: >
   Create new agents in FideliOS with governance-aware hiring. Use when you need
   to inspect adapter configuration options, compare existing agent configs,
-  draft a new agent prompt/config, and submit a hire request.
+  triage the new agent's skills, author its four-file instruction package, and
+  submit a hire request.
 ---
 
 # FideliOS Create Agent Skill
@@ -56,18 +57,36 @@ curl -sS "$FIDELIOS_API_URL/llms/agent-icons.txt" \
   -H "Authorization: Bearer $FIDELIOS_API_KEY"
 ```
 
-6. Draft the new hire config:
-- role/title/name
-- icon (required in practice; use one from `/llms/agent-icons.txt`)
-- reporting line (`reportsTo`)
-- adapter type
-- optional `desiredSkills` from the company skill library when this role needs installed skills on day one
-- adapter and runtime config aligned to this environment
-- capabilities
-- run prompt in adapter config (`promptTemplate` where applicable)
-- source issue linkage (`sourceIssueId` or `sourceIssueIds`) when this hire came from an issue
+6. Triage skills from the company library (REQUIRED).
 
-7. Submit hire request.
+List the skills already installed in this company and decide which ones the new
+role needs:
+
+```sh
+curl -sS "$FIDELIOS_API_URL/api/companies/$FIDELIOS_COMPANY_ID/skills" \
+  -H "Authorization: Bearer $FIDELIOS_API_KEY"
+```
+
+Review every skill in the catalog against the role. Select the ones this agent
+will actually use and collect their canonical keys for `desiredSkills`. If the
+role needs a skill that is not yet installed, install it first via the
+company-skills workflow. Skill triage is not optional — an empty `desiredSkills`
+must be a deliberate decision you can justify, not an oversight.
+
+7. Author the four-file instruction package (REQUIRED).
+
+Every hire receives a managed instruction bundle of four files. You MUST author
+all four and submit them in `instructionFiles` — do not rely on the generic
+scaffold; it is too vague for a specific role. See the "Four-File Instruction
+Package" section below for what goes in each file.
+
+8. Draft the hire config: role/title/name, icon, reporting line (`reportsTo`),
+   adapter type, adapter and runtime config aligned to this environment,
+   capabilities, `desiredSkills` (step 6), `instructionFiles` (step 7), and
+   source issue linkage (`sourceIssueId` or `sourceIssueIds`) when the hire came
+   from an issue.
+
+9. Submit the hire request.
 
 ```sh
 curl -sS -X POST "$FIDELIOS_API_URL/api/companies/$FIDELIOS_COMPANY_ID/agent-hires" \
@@ -81,17 +100,24 @@ curl -sS -X POST "$FIDELIOS_API_URL/api/companies/$FIDELIOS_COMPANY_ID/agent-hir
     "reportsTo": "<ceo-agent-id>",
     "capabilities": "Owns technical roadmap, architecture, staffing, execution",
     "desiredSkills": ["vercel-labs/agent-browser/agent-browser"],
-    "adapterType": "codex_local",
-    "adapterConfig": {"cwd": "/abs/path/to/repo", "model": "o4-mini"},
+    "adapterType": "claude_local",
+    "adapterConfig": {"cwd": "/abs/path/to/repo", "model": "claude-opus-4-7"},
     "runtimeConfig": {"heartbeat": {"enabled": true, "intervalSec": 300, "wakeOnDemand": true}},
+    "instructionFiles": {
+      "AGENTS.md": "# AGENTS.md ... role-specific operational brief ...",
+      "SOUL.md": "# SOUL.md ... role-specific persona ...",
+      "HEARTBEAT.md": "# HEARTBEAT.md ... role-specific recurring checklist ...",
+      "TOOLS.md": "# TOOLS.md ... tools and access ..."
+    },
     "sourceIssueId": "<issue-id>"
   }'
 ```
 
-8. Handle governance state:
-- if response has `approval`, hire is `pending_approval`
-- monitor and discuss on approval thread
-- when the board approves, you will be woken with `FIDELIOS_APPROVAL_ID`; read linked issues and close/comment follow-up
+10. Handle governance state:
+- if the response has `approval`, the hire is `pending_approval`
+- monitor and discuss on the approval thread
+- when the board approves, you will be woken with `FIDELIOS_APPROVAL_ID`; read
+  linked issues and close/comment follow-up
 
 ```sh
 curl -sS "$FIDELIOS_API_URL/api/approvals/<approval-id>" \
@@ -100,7 +126,7 @@ curl -sS "$FIDELIOS_API_URL/api/approvals/<approval-id>" \
 curl -sS -X POST "$FIDELIOS_API_URL/api/approvals/<approval-id>/comments" \
   -H "Authorization: Bearer $FIDELIOS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"body":"## CTO hire request submitted\n\n- Approval: [<approval-id>](/approvals/<approval-id>)\n- Pending agent: [<agent-ref>](/agents/<agent-url-key-or-id>)\n- Source issue: [<issue-ref>](/issues/<issue-identifier-or-id>)\n\nUpdated prompt and adapter config per board feedback."}'
+  -d '{"body":"## CTO hire request submitted\n\n- Approval: [<approval-id>](/approvals/<approval-id>)\n- Pending agent: [<agent-ref>](/agents/<agent-url-key-or-id>)\n- Source issue: [<issue-ref>](/issues/<issue-identifier-or-id>)\n\nFour-file instruction package and triaged skills attached."}'
 ```
 
 If the approval already exists and needs manual linking to the issue:
@@ -126,17 +152,26 @@ For each linked issue, either:
 - close it if approval resolved the request, or
 - comment in markdown with links to the approval and next actions.
 
-## Individualized Agent Instructions (REQUIRED)
+## Four-File Instruction Package (REQUIRED)
 
-Every new hire MUST receive a role-specific `promptTemplate` in `adapterConfig`. Do NOT rely on the generic default template — it is too vague for specialized roles.
+Every new hire receives a managed bundle of four markdown files. Author all four
+and submit them in the `instructionFiles` field of the hire request. FideliOS
+scaffolds a generic starting template for each file; your job is to rewrite
+every one of them so it is specific to this role. Any file you omit falls back
+to the generic scaffold — acceptable only if that file genuinely needs nothing
+role-specific.
 
-Your `promptTemplate` must include:
+### `AGENTS.md` — the operational brief
+
+The agent's primary instructions. Must include:
 
 1. **Role identity**: "You are a {role} at {company}. You report to {manager}."
-2. **Responsibilities**: 3-5 bullet points specific to this role (e.g., Frontend Engineer: "Build and test React components", "Follow the design system in /design-guide")
-3. **Domain context**: Key files, directories, tools, or services this agent will work with
-4. **Collaboration rules**: Who to escalate to, who to delegate to, which agents to coordinate with
-5. **Critical Safety Rules** (copy verbatim for every agent):
+2. **Responsibilities**: 3-5 bullets specific to this role.
+3. **Domain context**: key files, directories, repositories, tools, services.
+4. **Collaboration**: who to escalate to, who to delegate to, who to coordinate
+   with.
+5. **Task workflow**: checkout → work → comment → update status.
+6. **Critical Safety Rules** (copy verbatim into every agent's `AGENTS.md`):
 
 ```
 ## Critical Safety Rules
@@ -145,15 +180,47 @@ Your `promptTemplate` must include:
 - NEVER run fidelios run from the repository source directory
 - NEVER modify production config paths to point into /var/folders/ or temp directories
 - NEVER delete database backups, .env files, or config without creating a backup first
-- ALWAYS work on feature branches (feature/{ISSUE-ID}) — never commit to main
+- ALWAYS work on a per-issue feature branch and open a PR — never commit to the trunk or a production branch
 - ALWAYS verify production port is 3100 after any config-related changes
 ```
 
-6. **Escalation rule**: When Board approval is needed, agent MUST create an Approval request via API (not just comment and wait). Set issue to `blocked` and escalate to manager after 1 heartbeat with no response.
-7. **Task workflow**: Checkout → work → comment → update status (matching HEARTBEAT.md patterns)
-8. **1Password Access** (if the role needs credentials): Include the `## 1Password Access` section from the `op-secrets` skill (§8). This ensures the agent knows how to securely access project-specific vaults based on the current Issue's Project. The `op-secrets` skill must be in the company's skill library for this to work.
+7. **Escalation rule**: when Board approval is needed, the agent MUST create an
+   Approval request via API (not just comment and wait), set the issue to
+   `blocked`, and escalate to its manager after one heartbeat with no response.
 
-Example for a Frontend Engineer:
+### `SOUL.md` — the persona
+
+Who the agent is: strategic posture, standards, voice, and tone. Tailor it to
+the role's seniority and function — a QA Lead's posture differs from a Growth
+Marketer's. Keep it concrete and behavioral, not a list of adjectives.
+
+### `HEARTBEAT.md` — the recurring checklist
+
+What the agent does on every heartbeat: confirm identity and context, get
+assignments, checkout and work, follow up on approvals, escalate blockers, exit
+cleanly. Add any cadence specific to the role (e.g. a weekly research pass, a
+daily metrics review).
+
+It MUST include a **Git Workflow** section, with the repo's real trunk named:
+
+- One issue → one branch → one PR. Every issue — root or sub-issue — gets its
+  own `feature/{ISSUE-ID}` branch; never share a branch across issues or agents.
+- Branch from, and PR into, the repo's integration trunk — name it explicitly
+  (e.g. `alpha` for `TraitTune_v2`, `main` for repos with no staging branch).
+  Never commit to the trunk or a production branch directly.
+- Green CI + review, then the merge queue lands the PR.
+- If an issue is `blocked_by` another, do not start it — checkout is rejected
+  until the blocker is `done`; then branch fresh from the trunk.
+
+### `TOOLS.md` — tools and access
+
+Tool-usage notes for this role. Always include the `bash`/`read` tool rules. If
+the role needs credentials, include the `## 1Password Access` section from the
+`op-secrets` skill (§8) so the agent can resolve project-scoped vaults — the
+`op-secrets` skill must be in the company's skill library for this to work.
+
+Example `AGENTS.md` for a Frontend Engineer:
+
 ```
 You are a Frontend Engineer at Iron Balls, Inc. You report to CTO.
 
@@ -175,21 +242,25 @@ You are a Frontend Engineer at Iron Balls, Inc. You report to CTO.
 - Always checkout issues before working
 - Create feature branches: feature/{ISSUE-ID}
 - Run pnpm typecheck before committing
-- Comment on issue when work is done
+- Comment on the issue when work is done
 ```
 
 ## Quality Bar
 
 Before sending a hire request:
 
-- **REQUIRED**: Include a role-specific `promptTemplate` with all 6 sections above
-- if the role needs skills, make sure they already exist in the company library or install them first using the FideliOS company-skills workflow
+- **REQUIRED**: author all four `instructionFiles`, each rewritten for this
+  specific role — never left as the generic scaffold.
+- **REQUIRED**: triage `desiredSkills` against the company skill library; if a
+  needed skill is not installed, install it first.
 - Reuse proven config patterns from related agents where possible.
-- Set a concrete `icon` from `/llms/agent-icons.txt` so the new hire is identifiable in org and task views.
+- Set a concrete `icon` from `/llms/agent-icons.txt` so the new hire is
+  identifiable in org and task views.
 - Avoid secrets in plain text unless required by adapter behavior.
-- Ensure reporting line is correct and in-company.
-- Ensure prompt is role-specific and operationally scoped.
-- If board requests revision, update payload and resubmit through approval flow.
+- Ensure the reporting line is correct and in-company.
+- If the board requests revision, update the payload (including
+  `instructionFiles` and `desiredSkills`) and resubmit through the approval
+  flow.
 
 For endpoint payload shapes and full examples, read:
 `skills/fidelios-create-agent/references/api-reference.md`

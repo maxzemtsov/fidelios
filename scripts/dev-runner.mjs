@@ -436,14 +436,31 @@ async function waitForChildExit() {
   return await childExitPromise;
 }
 
+// Kill the server child's whole process group (pnpm → tsx → node server → workers); signalling only the pnpm wrapper orphans the real server.
+function killServerTree(pid, signal) {
+  if (pid == null) return;
+  try {
+    if (process.platform === "win32") {
+      spawn("taskkill", ["/pid", String(pid), "/T", "/F"], { stdio: "ignore" });
+    } else {
+      process.kill(-pid, signal);
+    }
+  } catch {
+    try {
+      process.kill(pid, signal);
+    } catch {
+      // process group already gone
+    }
+  }
+}
+
 async function stopChildForRestart() {
   if (!child) return { code: 0, signal: null };
   childExitWasExpected = true;
-  child.kill("SIGTERM");
+  const pid = child.pid;
+  killServerTree(pid, "SIGTERM");
   const killTimer = setTimeout(() => {
-    if (child) {
-      child.kill("SIGKILL");
-    }
+    killServerTree(pid, "SIGKILL");
   }, gracefulShutdownTimeoutMs);
   try {
     return await waitForChildExit();
@@ -462,7 +479,14 @@ async function startServerChild() {
   child = spawn(
     pnpmBin,
     ["--filter", "@fideliosai/server", "dev", ...forwardedArgs],
-    { cwd: repoRoot, stdio: "inherit", env, shell: process.platform === "win32" },
+    {
+      cwd: repoRoot,
+      stdio: "inherit",
+      env,
+      shell: process.platform === "win32",
+      // Own process group so killServerTree can take the whole tree down.
+      detached: process.platform !== "win32",
+    },
   );
 
   childExitPromise = new Promise((resolve, reject) => {
@@ -580,8 +604,17 @@ async function shutdown(signal) {
   }
 
   childExitWasExpected = true;
-  child.kill(signal);
-  const exit = await waitForChildExit();
+  const pid = child.pid;
+  killServerTree(pid, signal);
+  const killTimer = setTimeout(() => {
+    killServerTree(pid, "SIGKILL");
+  }, gracefulShutdownTimeoutMs);
+  let exit;
+  try {
+    exit = await waitForChildExit();
+  } finally {
+    clearTimeout(killTimer);
+  }
   if (exit.signal) {
     exitForSignal(exit.signal);
     return;

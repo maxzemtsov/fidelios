@@ -1,7 +1,7 @@
 import type { UsageSummary } from "@fideliosai/adapter-utils";
 import { asString, asNumber, parseObject, parseJson } from "@fideliosai/adapter-utils/server-utils";
 
-const CLAUDE_AUTH_REQUIRED_RE = /(?:not\s+logged\s+in|please\s+log\s+in|please\s+run\s+`?claude\s+login`?|login\s+required|requires\s+login|unauthorized|authentication\s+required)/i;
+const CLAUDE_AUTH_REQUIRED_RE = /(?:not\s+logged\s+in|invalid\s+api\s+key|please\s+run\s+`?(?:\/login|claude\s+(?:auth\s+)?login)`?|oauth\s+token\s+(?:has\s+)?expired)/i;
 const URL_RE = /(https?:\/\/[^\s'"`<>()[\]{};,!?]+[^\s'"`<>()[\]{};,!.?:]+)/gi;
 
 export function parseClaudeStreamJson(stdout: string) {
@@ -119,13 +119,26 @@ export function extractClaudeLoginUrl(text: string): string | null {
   return match[0]?.replace(/[\])}.!,?;:'\"]+$/g, "") ?? null;
 }
 
+function isClaudeFailureResult(parsed: Record<string, unknown> | null): boolean {
+  if (!parsed) return true;
+  const subtype = asString(parsed.subtype, "").trim().toLowerCase();
+  if (subtype && subtype !== "success") return true;
+  return parsed.is_error === true;
+}
+
 export function detectClaudeLoginRequired(input: {
   parsed: Record<string, unknown> | null;
   stdout: string;
   stderr: string;
 }): { requiresLogin: boolean; loginUrl: string | null } {
-  const resultText = asString(input.parsed?.result, "").trim();
-  const messages = [resultText, ...extractClaudeErrorMessages(input.parsed ?? {}), input.stdout, input.stderr]
+  // Trust only the CLI's error channels for auth state — a successful model turn may legitimately mention "/login".
+  const failed = isClaudeFailureResult(input.parsed);
+  const scanSources = [input.stderr, ...extractClaudeErrorMessages(input.parsed ?? {})];
+  if (failed) {
+    scanSources.push(asString(input.parsed?.result, ""));
+    if (!input.parsed) scanSources.push(input.stdout);
+  }
+  const messages = scanSources
     .join("\n")
     .split(/\r?\n/)
     .map((line) => line.trim())

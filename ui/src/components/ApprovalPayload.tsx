@@ -1,5 +1,8 @@
 import { UserPlus, Lightbulb, ShieldAlert, ShieldCheck } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { formatCents } from "../lib/utils";
+import { agentsApi } from "../api/agents";
+import { queryKeys } from "../lib/queryKeys";
 
 export const typeLabel: Record<string, string> = {
   hire_agent: "Hire Agent",
@@ -84,6 +87,73 @@ export function HireAgentPayload({ payload }: { payload: Record<string, unknown>
         </div>
       )}
       <SkillList values={payload.desiredSkills} />
+    </div>
+  );
+}
+
+const INSTRUCTION_FILE_ORDER = ["AGENTS.md", "SOUL.md", "HEARTBEAT.md", "TOOLS.md"];
+
+function formatInstructionSize(chars: number): string {
+  if (chars < 1024) return `${chars} B`;
+  return `${(chars / 1024).toFixed(1)} KB`;
+}
+
+/**
+ * Shows a hired agent's full four-file instruction package (AGENTS / SOUL /
+ * HEARTBEAT / TOOLS) so the reviewer sees the complete scope before deciding.
+ * Detail-page only — fetches the materialized bundle live and stays silent if
+ * the agent or bundle is gone (e.g. a rejected hire).
+ */
+export function HireInstructionPackage({ agentId }: { agentId: string }) {
+  const query = useQuery({
+    queryKey: queryKeys.agents.instructionsBundleFiles(agentId),
+    queryFn: () => agentsApi.instructionsBundleFiles(agentId),
+    retry: false,
+  });
+
+  if (query.isLoading) {
+    return (
+      <div className="flex items-start gap-2">
+        <span className="text-muted-foreground w-20 sm:w-24 shrink-0 text-xs pt-0.5">
+          Instructions
+        </span>
+        <span className="text-xs text-muted-foreground">Loading instruction package…</span>
+      </div>
+    );
+  }
+
+  const files = query.data?.files ?? {};
+  const entryFile = query.data?.entryFile ?? "AGENTS.md";
+  const names = [
+    ...INSTRUCTION_FILE_ORDER.filter((name) => name in files),
+    ...Object.keys(files).filter((name) => !INSTRUCTION_FILE_ORDER.includes(name)),
+  ];
+  if (names.length === 0) return null;
+
+  return (
+    <div className="flex items-start gap-2">
+      <span className="text-muted-foreground w-20 sm:w-24 shrink-0 text-xs pt-0.5">
+        Instructions
+      </span>
+      <div className="min-w-0 flex-1 space-y-1.5">
+        {names.map((name) => {
+          const content = files[name] ?? "";
+          return (
+            <details
+              key={name}
+              open={name === entryFile}
+              className="rounded border border-border/70 bg-muted/30"
+            >
+              <summary className="cursor-pointer px-2 py-1 font-mono text-[11px] text-muted-foreground">
+                {name} · {formatInstructionSize(content.length)}
+              </summary>
+              <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words border-t border-border/60 px-2 py-1.5 text-[11px] text-foreground">
+                {content.trim() || "(empty)"}
+              </pre>
+            </details>
+          );
+        })}
+      </div>
     </div>
   );
 }
