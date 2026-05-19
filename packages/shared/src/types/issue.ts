@@ -142,6 +142,8 @@ export interface Issue {
   myLastTouchAt?: Date | null;
   lastExternalCommentAt?: Date | null;
   isUnreadForMe?: boolean;
+  /** Populated when listing the blocked inbox (`attention=blocked`). */
+  blockedInbox?: IssueBlockedAttention | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -168,6 +170,32 @@ export interface IssueRelation {
   createdByActorType: string | null;
   createdByActorId: string | null;
   createdAt: Date;
+}
+
+// ── Blocked inbox ───────────────────────────────────────────────
+
+/**
+ * Why an issue surfaces in the blocked inbox.
+ * - `blocked_by_dependency` — has an unresolved `blocked_by` dependency.
+ * - `stale_dependency` — marked `blocked`, but every tracked blocker is now resolved.
+ * - `manually_blocked` — marked `blocked` with no tracked dependency.
+ */
+export type IssueBlockedReason =
+  | "blocked_by_dependency"
+  | "stale_dependency"
+  | "manually_blocked";
+
+export interface IssueBlockedByRef {
+  id: string;
+  identifier: string | null;
+  title: string;
+  status: IssueStatus;
+}
+
+export interface IssueBlockedAttention {
+  reason: IssueBlockedReason;
+  /** The issues this one is `blocked_by`, with their current status. */
+  blockedBy: IssueBlockedByRef[];
 }
 
 export interface IssueComment {
