@@ -8,6 +8,7 @@ export { projectService } from "./projects.js";
 export { issueService, type IssueFilters } from "./issues.js";
 export { issueApprovalService } from "./issue-approvals.js";
 export { issueFileService, type IssueFileResult } from "./issue-files.js";
+export { mergeLockService, DEFAULT_MERGE_LOCK_TTL_MS } from "./merge-locks.js";
 export { goalService } from "./goals.js";
 export { activityService, type ActivityFilters } from "./activity.js";
 export { approvalService } from "./approvals.js";

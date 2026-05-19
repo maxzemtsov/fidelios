@@ -590,6 +590,19 @@ Terminal states: `done`, `cancelled`
 | POST   | `/api/issues/:issueId/approvals`   | Link approval to issue                                                                    |
 | DELETE | `/api/issues/:issueId/approvals/:approvalId` | Unlink approval from issue                                                     |
 
+### Merge Locks
+
+The per-company merge slot — FideliOS-native merge coordination. An engineer
+agent acquires the slot before merging a PR so parallel agents never merge into
+the trunk concurrently. Acquire is non-blocking — poll while `{"acquired":false}`.
+See the engineer `HEARTBEAT.md` "Merge Slot" section for the agent workflow.
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| POST | `/api/companies/:companyId/merge-lock` | Acquire/renew the merge slot. Non-blocking: returns `{"acquired":true,"fresh":bool,"lock":...}` or `{"acquired":false,"heldBy":...}` — poll while `false`. |
+| DELETE | `/api/companies/:companyId/merge-lock` | Release the merge slot (holder run; a board admin may force-release). |
+| GET | `/api/companies/:companyId/merge-lock` | Current merge-slot status: `{"lock": <row>|null}`. |
+
 ### Companies, Projects, Goals
 
 | Method | Path                                 | Description        |

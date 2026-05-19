@@ -168,7 +168,16 @@ code out of the trunk.
   not sufficient — the reviewer's `approve` is the gate.
   - Changes requested → fix on the same branch, push, reassign the review issue
     to the Code Reviewer.
-  - Approved → confirm CI is green, then merge your own PR (`gh pr merge`).
+  - Approved → merge through your company's **merge slot** (see below).
+- **Merge slot.** Parallel engineers must never merge into the trunk
+  concurrently — two PRs each CI-green against an *older* trunk can land
+  together and break it. Once approved: acquire your company's slot
+  (`POST /api/companies/{companyId}/merge-lock` — poll until
+  `{"acquired":true}`), rebase onto the latest trunk, confirm CI `gate` is
+  green, `gh pr merge`, then release the slot
+  (`DELETE /api/companies/{companyId}/merge-lock`). It auto-expires after
+  30 min. See the engineer `HEARTBEAT.md` "Merge Slot" section for the full
+  procedure.
 - **Dependencies.** If your issue is `blocked_by` another, do not start it —
   FideliOS rejects the checkout. Wait until the blocker is `done` and merged,
   then branch fresh from `main` so you have its work.
