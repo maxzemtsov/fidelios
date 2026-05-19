@@ -161,6 +161,13 @@ embedded-Postgres migrations automatically. Confirm the deploy with
   review. The conventions hold only as long as agents and operators follow them.
 - **Docker is not a required check** — a broken image can land on `main`
   silently; rapid pushes concurrency-cancel in-flight `nightly` builds.
+- **`docker/*` deprecation annotations persist** — the `docker/*` actions
+  (`build-push-action`, `login-action`, `metadata-action`, `setup-buildx-action`)
+  still declare Node 20. `docker.yml` sets `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`,
+  so they run on Node 24 and will not break at the 2026-06-02 cutover — but
+  GitHub still emits a Node-20 deprecation *annotation* on every Docker run. The
+  annotation clears only when Docker ships Node-24-native versions of those
+  actions; it is not a FideliOS defect and the run stays green.
 - **Deploy is fully manual** — nothing links a published npm release to the
   launchd host; a released-but-not-deployed state is invisible until someone
   compares `/api/health` `version` against `npm view fidelios version`.
